@@ -1,0 +1,145 @@
+.user-dashboard {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  .dashboard-header {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: rgba($primary-color, 0.1);
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h1 {
+      font-size: 1.8rem;
+      color: $text-light;
+      
+      [data-theme='dark'] & {
+        color: $text-dark;
+      }
+    }
+
+    .stats {
+      display: flex;
+      gap: 2rem;
+
+      .stat-item {
+        text-align: center;
+        .stat-number {
+          display: block;
+          font-size: 1.5rem;
+          font-weight: bold;
+          color: $primary-color;
+        }
+        .stat-label {
+          font-size: 0.9rem;
+          color: $text-light;
+          
+          [data-theme='dark'] & {
+            color: $text-dark;
+          }
+        }
+      }
+    }
+  }
+
+  .active-tests, .test-history {
+    margin-bottom: 3rem;
+
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: $text-light;
+      
+      [data-theme='dark'] & {
+        color: $text-dark;
+      }
+    }
+  }
+
+  .tests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .history-table {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+    .table-header, .table-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 1rem;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .table-header {
+      background: $primary-color;
+      color: white;
+      font-weight: bold;
+    }
+
+    .table-row {
+      background: $background-light;
+      border-bottom: 1px solid $border-light;
+      
+      [data-theme='dark'] & {
+        background: $background-dark;
+        border-color: $border-dark;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .status {
+        text-transform: capitalize;
+        font-weight: 500;
+
+        &.completed {
+          color: #10b981;
+        }
+        &.pending {
+          color: #f59e0b;
+        }
+        &.expired {
+          color: #ef4444;
+        }
+      }
+    }
+  }
+
+  .error-message {
+    color: #ef4444;
+    padding: 2rem;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  @include mobile {
+    padding: 1rem;
+    
+    .dashboard-header {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .tests-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .history-table {
+      .table-header, .table-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+        font-size: 0.9rem;
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+.admin-dashboard {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 2rem;
+  background: $background-light;
+
+  [data-theme='dark'] & {
+    background: $background-dark;
+  }
+}
+
+@include mobile {
+  .admin-dashboard {
+    flex-direction: column;
+  }
+}
