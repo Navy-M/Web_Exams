@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import AdminSidebar from '../../components/Admin/AdminSidebar';
-import '../../styles/admin.scss';
+import '../../styles/admin.css';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');

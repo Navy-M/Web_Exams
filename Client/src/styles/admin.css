@@ -6,14 +6,14 @@
 .admin-main {
   flex: 1;
   padding: 2rem;
-  background: $background-light;
-
-  [data-theme='dark'] & {
-    background: $background-dark;
-  }
+  background: var(--background-light);
 }
 
-@include mobile {
+[data-theme="dark"] .admin-main {
+  background: var(--background-dark);
+}
+
+@media (max-width: 768px) {
   .admin-dashboard {
     flex-direction: column;
   }

@@ -1,20 +1,13 @@
-import express from 'express';
-import { protect, admin } from '../middleware/authMiddleware.js';
-import { 
-  createTest, 
-  assignTest, 
-  getTestResults 
-} from '../controllers/testController.js';
-
+import express from "express";
+import { protect, admin } from "../middleware/authMiddleware.js";
+import * as ctrl from "../controllers/testController.js";
 const router = express.Router();
-
-router.route('/')
-  .post(protect, admin, createTest);
-
-router.route('/:testId/assign')
-  .post(protect, admin, assignTest);
-
-router.route('/:testId/results')
-  .get(protect, admin, getTestResults);
-
+router.use(protect);
+router.route("/").get(ctrl.getTests).post(admin, ctrl.createTest);
+router
+  .route("/:id")
+  .get(ctrl.getTestById)
+  .put(admin, ctrl.updateTest)
+  .delete(admin, ctrl.deleteTest);
+router.post("/:id/assign", admin, ctrl.assignTest);
 export default router;

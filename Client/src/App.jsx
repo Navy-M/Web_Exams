@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import LoginPage from './pages/Public/LoginPage';
 import AdminDashboard from './pages/Admin/Dashboard';

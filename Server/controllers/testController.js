@@ -1,66 +1,62 @@
-import Test from '../models/Test.js';
-import User from '../models/User.js';
-import UserTest from '../models/UserTest.js';
+import Test from "../models/Test.js";
 
-
-export const createTest = async (req, res) => {
+export const createTest = async (req, res, next) => {
   try {
-    const { name, description, questions } = req.body;
-    
-    const test = await Test.create({
-      name,
-      description,
-      questions,
-      createdBy: req.user._id
-    });
-
+    const test = await Test.create({ ...req.body, createdBy: req.user._id });
     res.status(201).json(test);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server Error' });
+  } catch (e) {
+    next(e);
   }
 };
-
-export const assignTest = async (req, res) => {
+export const getTests = async (req, res, next) => {
   try {
-    const { testId, userIds, deadline } = req.body;
-    
-    const test = await Test.findByIdAndUpdate(
-      testId,
-      { 
-        $addToSet: { 
-          assignedTo: { 
-            $each: userIds.map(userId => ({ 
-              user: userId, 
-              deadline 
-            })) 
-          } 
-        } 
-      },
-      { new: true }
-    );
-
-    await User.updateMany(
-      { _id: { $in: userIds } },
-      { $addToSet: { testsAssigned: testId } }
-    );
-
+    const tests = await Test.find();
+    res.json(tests);
+  } catch (e) {
+    next(e);
+  }
+};
+export const getTestById = async (req, res, next) => {
+  try {
+    const test = await Test.findById(req.params.id);
     res.json(test);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server Error' });
+  } catch (e) {
+    next(e);
   }
 };
-
-export const getTestResults = async (req, res) => {
+export const updateTest = async (req, res, next) => {
   try {
-    const results = await UserTest.find({ test: req.params.testId })
-      .populate('user', 'email profile')
-      .populate('test', 'name');
-    
-    res.json(results);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server Error' });
+    const updated = await Test.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    res.json(updated);
+  } catch (e) {
+    next(e);
+  }
+};
+export const deleteTest = async (req, res, next) => {
+  try {
+    await Test.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+  } catch (e) {
+    next(e);
+  }
+};
+export const assignTest = async (req, res, next) => {
+  try {
+    const { userIds, deadline } = req.body;
+    const test = await Test.findById(req.params.id);
+    test.assignedTo.push(...userIds.map((u) => ({ user: u, deadline })));
+    await test.save();
+    res.json(test);
+  } catch (e) {
+    next(e);
+  }
+};
+export const getTestResults = async (req, res, next) => {
+  try {
+    /* implement UserTest lookup */
+  } catch (e) {
+    next(e);
   }
 };

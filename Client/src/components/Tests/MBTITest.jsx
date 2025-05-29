@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import '../../styles/test.scss';
+import '../../styles/test.css';
 
 const MBTITest = ({ questions }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);

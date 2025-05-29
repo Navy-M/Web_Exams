@@ -1,0 +1,60 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--background-light);
+}
+
+[data-theme="dark"] .login-container {
+  background: var(--background-dark);
+}
+
+.login-form {
+  width: 400px;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  color: inherit;
+}
+
+[data-theme="dark"] .login-form {
+  background: #262626; /* approx lighten($background-dark, 5%) */
+  color: var(--text-dark);
+}
+
+.login-form h1 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.login-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.login-form .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.login-form .form-group input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  color: inherit;
+  background: white;
+  transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+}
+
+[data-theme="dark"] .login-form .form-group input {
+  border-color: var(--border-dark);
+  background: var(--background-dark);
+  color: var(--text-dark);
+}
+
+.login-form .error-message {
+  color: #dc3545;
+  margin-bottom: 1rem;
+}

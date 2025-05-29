@@ -1,10 +1,10 @@
-import express from 'express';
-import { protect, admin } from '../middleware/authMiddleware.js';
-import { getUsers } from '../controllers/userController.js';
+import express from "express";
+import { protect, admin } from "../middleware/authMiddleware.js";
+import { getUsers, getProfile } from "../controllers/userController.js";
 
 const router = express.Router();
 
-router.route('/')
-  .get(protect, admin, getUsers);
+router.get("/profile", protect, getProfile); // Authenticated user's own profile
+router.get("/", protect, admin, getUsers); // Admin: list all users
 
 export default router;

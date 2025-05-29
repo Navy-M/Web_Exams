@@ -1,6 +1,6 @@
 // components/User/TestCard.js
 import { Link } from 'react-router-dom';
-import '../../styles/test-Card.scss'
+import '../../styles/test-Card.css'
 
 const TestCard = ({ test, onStart }) => {
   return (

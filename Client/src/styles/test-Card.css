@@ -1,0 +1,82 @@
+.test-card {
+  background: #f0f0f0; /* replace $background-light */
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+[data-theme='dark'] .test-card {
+  background: #1a1a1a; /* replace lighten($background-dark, 5%) */
+}
+
+.test-card:hover {
+  transform: translateY(-2px);
+}
+
+.test-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #333333; /* replace $text-light */
+}
+
+[data-theme='dark'] .test-card h3 {
+  color: #e0e0e0; /* replace $text-dark */
+}
+
+.test-card .test-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  color: #333333; /* replace $text-light */
+}
+
+[data-theme='dark'] .test-card .test-meta {
+  color: #e0e0e0; /* replace $text-dark */
+}
+
+.test-card .test-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.test-card .test-actions .start-button {
+  background-color: #007bff; /* replace $primary-color */
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.test-card .test-actions .start-button:hover {
+  background-color: #0056b3; /* darker shade */
+}
+
+.test-card .test-actions .view-details {
+  color: #007bff; /* replace $primary-color */
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.test-card .test-actions .view-details:hover {
+  text-decoration: underline;
+}
+
+/* Mobile styles */
+@media (max-width: 600px) {
+  .test-card {
+    padding: 1rem;
+  }
+
+  .test-card .test-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

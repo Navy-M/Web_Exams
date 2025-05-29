@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getAssignedTests } from '../../services/api';
+import { getTestResults } from '../../services/api';
 import TestCard from '../../components/User/TestCard';
-import LoadingSpinner from '../../components/Common/LoadingSpinner';
-import '../../styles/user-dashboard.scss';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import '../../styles/user-dashboard.css';
 
 const UserDashboard = () => {
   const [tests, setTests] = useState([]);
@@ -16,7 +16,7 @@ const UserDashboard = () => {
   useEffect(() => {
     const fetchTests = async () => {
       try {
-        const data = await getAssignedTests(user.id);
+        const data = await getTestResults(user.id);
         setTests(data);
       } catch (err) {
         setError('Failed to load tests. Please try again later.');
@@ -25,7 +25,7 @@ const UserDashboard = () => {
       }
     };
 
-    fetchTests();
+    // fetchTests();
   }, [user.id]);
 
   const handleStartTest = (testId) => {
