@@ -1,47 +1,51 @@
 const errorHandler = (err, req, res, next) => {
   let statusCode = err.statusCode || 500;
-  let message = err.message || 'Internal Server Error';
+  let message = err.message || "Internal Server Error";
 
-  // Handle specific MongoDB errors
-  if (err.name === 'CastError') {
+  // 🔎 Mongoose: Invalid ObjectId
+  if (err.name === "CastError") {
     statusCode = 400;
-    message = `Resource not found with id: ${err.value}`;
+    message = `Invalid ID: ${err.value}`;
   }
 
-  // Handle validation errors
-  if (err.name === 'ValidationError') {
+  // 📛 Mongoose: Validation Errors
+  if (err.name === "ValidationError") {
     statusCode = 400;
-    message = Object.values(err.errors).map(val => val.message).join(', ');
+    message = Object.values(err.errors)
+      .map((val) => val.message)
+      .join(", ");
   }
 
-  // Handle JWT errors
-  if (err.name === 'JsonWebTokenError') {
+  // 🔐 JWT: Invalid Token
+  if (err.name === "JsonWebTokenError") {
     statusCode = 401;
-    message = 'Invalid token';
+    message = "Invalid token. Please log in again.";
   }
 
-  // Handle token expiration
-  if (err.name === 'TokenExpiredError') {
+  // ⌛ JWT: Expired Token
+  if (err.name === "TokenExpiredError") {
     statusCode = 401;
-    message = 'Token expired';
+    message = "Token has expired. Please log in again.";
   }
 
-  // Handle duplicate key errors
+  // 🔁 MongoDB: Duplicate Key
   if (err.code === 11000) {
     statusCode = 400;
-    message = 'Duplicate field value entered';
+    const field = Object.keys(err.keyValue)[0];
+    message = `Duplicate field: '${field}' already exists.`;
   }
 
-  // Handle express-validator errors
+  // ❌ Express-validator
   if (err.errors && Array.isArray(err.errors)) {
     statusCode = 400;
-    message = err.errors.map(e => e.msg).join(', ');
+    message = err.errors.map((e) => e.msg).join(", ");
   }
 
+  // 🛑 Final response
   res.status(statusCode).json({
     success: false,
     message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 };
 

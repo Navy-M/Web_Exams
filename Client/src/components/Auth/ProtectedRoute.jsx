@@ -1,19 +1,23 @@
+// src/components/Auth/ProtectedRoute.jsx
 import { useContext } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const ProtectedRoute = ({ role }) => {
   const { user } = useAuth();
-  const location = useLocation();
+// console.log(user);
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Not logged in
+    return <Navigate to="/login" replace />;
   }
 
   if (role && user.role !== role) {
-    return <Navigate to="/unauthorized" replace />;
+    // Role doesn't match
+    return <Navigate to="/dashboard" replace />;
   }
-  
+
+  // User is authenticated and role matches (if specified)
   return <Outlet />;
 };
 

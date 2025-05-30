@@ -1,56 +1,10 @@
 import axios from 'axios';
 
+// Create Axios instance
 const API = axios.create({
-  baseURL: "http://localhost:5000/api", // Backend base URL
-  withCredentials: true, // To include cookies for auth
+  baseURL: 'http://localhost:5000/api',
+  withCredentials: true, // Required for sending cookies (for auth)
 });
-
-// --- AUTH API ---
-export const login = async (credentials) => {
-  try {
-    const res = await API.post('/auth/login', credentials);
-    return res; // will contain res.data.token and res.data.user (you handle this in context)
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Login failed');
-  }
-};
-
-export const getProfile = async () => {
-  try {
-    const res = await API.get('/auth/me');
-    return res;
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Failed to fetch profile');
-  }
-};
-
-export const logout = async () => {
-  try {
-    await API.post('/auth/logout');
-    localStorage.removeItem("token");
-  } catch (error) {
-    console.error("Logout failed:", error);
-  }
-};
-
-// --- USERS API ---
-export const getUsers = () => API.get('/users');
-export const getUserById = (userId) => API.get(`/users/${userId}`);
-export const createUser = (userData) => API.post('/users', userData);
-export const updateUser = (userId, updatedData) => API.put(`/users/${userId}`, updatedData);
-export const deleteUser = (userId) => API.delete(`/users/${userId}`);
-
-// --- TESTS API ---
-export const createTest = (testData) => API.post('/tests', testData);
-export const getTests = () => API.get('/tests');
-export const getTestById = (testId) => API.get(`/tests/${testId}`);
-export const updateTest = (testId, updatedData) => API.put(`/tests/${testId}`, updatedData);
-export const deleteTest = (testId) => API.delete(`/tests/${testId}`);
-
-export const assignTest = (testId, userIds, deadline) =>
-  API.post(`/tests/${testId}/assign`, { userIds, deadline });
-
-export const getTestResults = (testId) => API.get(`/tests/${testId}/results`);
 
 // --- REQUEST INTERCEPTOR ---
 API.interceptors.request.use((config) => {
@@ -59,17 +13,91 @@ API.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
-});
+}, (error) => Promise.reject(error));
 
 // --- RESPONSE INTERCEPTOR ---
 API.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && error.response.status === 401) {
-      window.location.href = '/login'; // Redirect to login if unauthorized
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const message = error.response?.data?.message || 'Unexpected error';
+
+    if (status === 401) {
+      console.warn('Unauthorized - redirecting to login...');
+      window.location.href = '/login';
     }
-    return Promise.reject(error);
+
+    return Promise.reject(new Error(message));
   }
 );
+
+
+export const checkServer = async () => {
+  try {
+    const res = await axios.get('http://localhost:5000/api/health', {
+      withCredentials: true, // Send cookies if any
+    });
+    console.log('Server reachable:', res.data.message);
+  } catch (err) {
+    console.error('Axios connection error:', err.message);
+  }
+};
+
+// --- AUTH API ---
+export const login = async (credentials) => {
+  console.log('====== api login function called ======', credentials);
+  try {
+    const res = await API.post('/auth/login', credentials);
+    // Optional: Save token if sent in response body instead of cookie
+    if (res.data?.token) {
+      localStorage.setItem('token', res.data.token);
+    }
+    return res.data;
+  } catch (error) {
+    console.error('Login error:', error.message);
+    throw error;
+  }
+};
+
+export const getProfile = async () => {
+  try {
+    const res = await API.get('/auth/profile');
+    // console.log(res);
+    
+    return res.data;
+  } catch (error) {
+    console.error('Profile error:', error.message);
+    throw error;
+  }
+};
+
+export const logout = async () => {
+  try {
+    await API.post('/auth/logout');
+    localStorage.removeItem('token');
+  } catch (error) {
+    console.error('Logout failed:', error.message);
+    throw error;
+  }
+};
+
+// --- USERS API ---
+export const getUsers = async () => (await API.get('/users')).data;
+export const getUserById = async (userId) => (await API.get(`/users/${userId}`)).data;
+export const createUser = async (userData) => (await API.post('/users', userData)).data;
+export const updateUser = async (userId, updatedData) => (await API.put(`/users/${userId}`, updatedData)).data;
+export const deleteUser = async (userId) => (await API.delete(`/users/${userId}`)).data;
+
+// --- TESTS API ---
+export const createTest = async (testData) => (await API.post('/tests', testData)).data;
+export const getTests = async () => (await API.get('/tests')).data;
+export const getTestById = async (testId) => (await API.get(`/tests/${testId}`)).data;
+export const updateTest = async (testId, updatedData) => (await API.put(`/tests/${testId}`, updatedData)).data;
+export const deleteTest = async (testId) => (await API.delete(`/tests/${testId}`)).data;
+
+export const assignTest = async (testId, userIds, deadline) =>
+  (await API.post(`/tests/${testId}/assign`, { userIds, deadline })).data;
+
+export const getTestResults = async (testId) => (await API.get(`/tests/${testId}/results`)).data;
 
 export default API;

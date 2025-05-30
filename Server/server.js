@@ -10,25 +10,41 @@ import authRoutes from "./routes/authRoutes.js";
 import testRoutes from "./routes/testRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import errorHandler from "./middleware/errorMiddleware.js";
+import url from "url";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Clean FRONTEND_URL: remove trailing slash if exists
+const frontendURL = process.env.FRONTEND_URL?.replace(/\/$/, "");
+
 app.use(helmet());
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: frontendURL,
     credentials: true,
   })
 );
-app.use(express.json());
-app.use(cookieParser());
-app.use(mongoSanitize());
 
-// Rate limiting
+// Body parsing must come before mongoSanitize middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(cookieParser());
+
+// If you need original query parsed for some reason
+// app.use((req, res, next) => {
+//   req._query = url.parse(req.url, true).query;
+//   next();
+// });
+
+// Sanitize against NoSQL injection attacks
+// app.use(mongoSanitize());
+
+// Rate limiter middleware
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
@@ -40,11 +56,21 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tests", testRoutes);
 app.use("/api/users", userRoutes);
 
-// Error handling
-app.use(errorHandler); // Make sure this is after all routes
+app.get("/api/health", (req, res) => {
+  console.log("Health check hit");
+  try {
+    res.status(200).json({ message: "Healthy ✅" });
+  } catch (error) {
+    console.error("Health check error:", error);
+    res.status(500).json({ error: "Health check failed" });
+  }
+});
+
+// Error handling middleware (last)
+app.use(errorHandler);
 
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`✅ Server running on port ${PORT}`);
   });
 });

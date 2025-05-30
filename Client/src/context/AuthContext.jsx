@@ -7,35 +7,46 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await api.getProfile();
+        setUser(res.user);
+      } catch (err) {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    checkAuth();
+  }, []);
+
   const login = async (credentials) => {
-    const response = await api.login(credentials);
-    const { token, user } = response.data;
-    localStorage.setItem('token', token);
-    setUser(user);
+    // test
+    // console.log('====== AuthContext login function called ======', credentials);
+    try 
+    {
+      const response = await api.login(credentials);
+      const { token, user } = response;
+      localStorage.setItem('token', token);
+      setUser(user);
+    return user;
+    } 
+    catch (err) {
+        throw err;
+    }
   };
 
+ 
   const logout = async () => {
     await api.logout();
     localStorage.removeItem('token');
     setUser(null);
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
   
-    api.getProfile(token)
-      .then((res) => setUser(res.data))
-      .catch((err) => {
-        console.error("Failed to fetch profile:", err.message);
-        setUser(null);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
   return (
     <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
