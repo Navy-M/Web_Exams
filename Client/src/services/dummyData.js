@@ -1,4 +1,4 @@
-const Disc_Test = [
+export const Disc_Test = [
   {
     id: 1,
     type: "best",
@@ -625,7 +625,7 @@ const Disc_Test = [
   },
 ];
 
-const Haland_Test = [
+export const Haland_Test = [
   {
     id: 1,
     text: "نصب وسایل الکتریکی را دوست دارم.",
@@ -985,7 +985,7 @@ const Haland_Test = [
   },
 ];
 
-const Gardner_Test = [
+export const Gardner_Test = [
   {
     id: 1,
     text: "به کتاب و کتابخوانی علاقه‌ی فراوان دارم.",

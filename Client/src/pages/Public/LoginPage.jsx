@@ -92,7 +92,7 @@ const LoginPage = () => {
         <button type="submit" className="button-primary" disabled={loading}>
           {loading ? <LoadingSpinner size={20} color="#fff" /> : 'Sign In'}
         </button>
-        <button type="button" onClick={checkServer}>check</button>
+        {/* <button type="button" onClick={checkServer}>check</button> */}
       </form>
     </div>
   );

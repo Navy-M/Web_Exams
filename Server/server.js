@@ -10,7 +10,6 @@ import authRoutes from "./routes/authRoutes.js";
 import testRoutes from "./routes/testRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import errorHandler from "./middleware/errorMiddleware.js";
-import url from "url";
 
 dotenv.config();
 
@@ -47,7 +46,7 @@ app.use(cookieParser());
 // Rate limiter middleware
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 100, // Allow 100 requests per minute per IP
 });
 app.use(limiter);
 

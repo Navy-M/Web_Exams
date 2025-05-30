@@ -12,7 +12,6 @@ const AdminDashboard = () => {
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
       <h1>Admin Dashboard</h1>
-      <p>Welcome, {user.email}</p>
 
       <main className="admin-main">
         {activeTab === 'users' && <div>User Management</div>}

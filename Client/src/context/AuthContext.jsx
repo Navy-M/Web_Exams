@@ -5,6 +5,7 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [userToken, setUserToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
 
@@ -20,8 +21,12 @@ export const AuthProvider = ({ children }) => {
       }
     };
   
-    checkAuth();
-  }, []);
+    // if (userToken) {
+    //   checkAuth(); // only if token exists
+    // }
+      checkAuth();
+
+  }, [userToken]);
 
   const login = async (credentials) => {
     // test
@@ -32,6 +37,7 @@ export const AuthProvider = ({ children }) => {
       const { token, user } = response;
       localStorage.setItem('token', token);
       setUser(user);
+      setUserToken(token);
     return user;
     } 
     catch (err) {
@@ -44,6 +50,7 @@ export const AuthProvider = ({ children }) => {
     await api.logout();
     localStorage.removeItem('token');
     setUser(null);
+    setUserToken(null);
   };
 
   

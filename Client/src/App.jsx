@@ -3,7 +3,7 @@ import ProtectedRoute from "./components/Auth/ProtectedRoute";
 import LoginPage from "./pages/Public/LoginPage";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import UserDashboard from "./pages/User/Dashboard";
-import TestsPage from "./pages/Admin/Dashboard";
+import TestsPage from "./pages/Admin/TestsPage";
 
 const App = () => (
   <Routes>
@@ -18,6 +18,7 @@ const App = () => (
     {/* User routes */}
     <Route element={<ProtectedRoute role="user" />}>
       <Route path="/dashboard" element={<UserDashboard />} />
+      <Route path="/users/tests" element={<TestsPage />} />
     </Route>
 
     {/* Redirect unknown routes */}

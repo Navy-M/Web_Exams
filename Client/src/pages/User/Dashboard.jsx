@@ -5,13 +5,19 @@ import { getTestResults } from '../../services/api';
 import TestCard from '../../components/User/TestCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import '../../styles/user-dashboard.css';
+import { useTheme } from '../../context/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts';
 
 const UserDashboard = () => {
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     const fetchTests = async () => {
@@ -25,12 +31,10 @@ const UserDashboard = () => {
       }
     };
 
-    // fetchTests();
-  }, [user.id]);
+    if (user?.id) fetchTests();
+  }, [user?.id]);
 
-  const handleStartTest = (testId) => {
-    navigate(`/test/${testId}`);
-  };
+  const handleStartTest = (testId) => navigate(`/test/${testId}`);
 
   const getTestStatus = (test) => {
     if (test.completed) return 'Completed';
@@ -38,71 +42,100 @@ const UserDashboard = () => {
     return 'Pending';
   };
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const completedTests = tests.filter(t => t.completed);
+
   return (
     <div className="user-dashboard">
-      <div className="dashboard-header">
-        <h1>Welcome, {user.email}</h1>
+      <header className="dashboard-header">
+        <div className="header-top">
+          <button onClick={toggleTheme} className="theme-toggle">
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            {isDark ? 'Light Mode' : 'Dark Mode'}
+          </button>
+          <h1 className="user-email">{user.email}</h1>
+          <button onClick={handleLogout} className="logout-button">Logout</button>
+        </div>
+
         <div className="stats">
           <div className="stat-item">
-            <span className="stat-number">{tests.length}</span>
-            <span className="stat-label">Total Tests</span>
+            <h3>{tests.length}</h3>
+            <p>Total Tests</p>
           </div>
           <div className="stat-item">
-            <span className="stat-number">
-              {tests.filter(t => t.status === 'completed').length}
-            </span>
-            <span className="stat-label">Completed</span>
+            <h3>{completedTests.length}</h3>
+            <p>Completed</p>
+          </div>
+          <div className="stat-item">
+            <h3>{tests.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
+            <p>Total Points</p>
           </div>
         </div>
-      </div>
+      </header>
 
       {loading ? (
         <LoadingSpinner />
       ) : error ? (
-        <div className="error-message">{error}</div>
+        <p className="error-message">{error}</p>
       ) : (
         <>
           <section className="active-tests">
             <h2>Active Tests</h2>
             <div className="tests-grid">
-              {tests
-                .filter(t => getTestStatus(t) === 'Pending')
-                .map(test => (
-                  <TestCard
-                    key={test._id}
-                    test={test}
-                    onStart={() => handleStartTest(test._id)}
-                  />
-                ))}
+              {tests.filter(t => getTestStatus(t) === 'Pending').map(test => (
+                <TestCard
+                  key={test._id}
+                  test={test}
+                  onStart={() => handleStartTest(test._id)}
+                />
+              ))}
             </div>
           </section>
 
+          {completedTests.length > 0 && (
+            <section className="score-graph">
+              <h2>Score Over Time</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={completedTests.map(t => ({
+                  name: t.name,
+                  score: t.score || 0,
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="score" stroke="#2563eb" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </section>
+          )}
+
           <section className="test-history">
             <h2>Test History</h2>
-            <div className="history-table">
-              <div className="table-header">
-                <span>Test Name</span>
-                <span>Date Completed</span>
-                <span>Status</span>
-                <span>Score</span>
-              </div>
-              {tests
-                .filter(t => getTestStatus(t) !== 'Pending')
-                .map(test => (
-                  <div key={test._id} className="table-row">
-                    <span>{test.name}</span>
-                    <span>
-                      {test.completedAt 
-                        ? new Date(test.completedAt).toLocaleDateString() 
-                        : '-'}
-                    </span>
-                    <span className={`status ${getTestStatus(test).toLowerCase()}`}>
-                      {getTestStatus(test)}
-                    </span>
-                    <span>{test.score || '-'}</span>
-                  </div>
+            <table className="history-table">
+              <thead>
+                <tr>
+                  <th>Test Name</th>
+                  <th>Date Completed</th>
+                  <th>Status</th>
+                  <th>Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tests.filter(t => getTestStatus(t) !== 'Pending').map(test => (
+                  <tr key={test._id}>
+                    <td>{test.name}</td>
+                    <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
+                    <td className={getTestStatus(test).toLowerCase()}>{getTestStatus(test)}</td>
+                    <td>{test.score || '-'}</td>
+                  </tr>
                 ))}
-            </div>
+              </tbody>
+            </table>
           </section>
         </>
       )}
