@@ -1,3 +1,49 @@
+export const Test_Cards = [
+  {
+    id: "disc",
+    name: "آزمون DISC",
+    description: "شخصیت خود را از طریق مدل DISC بشناسید.",
+    type: "personality",
+    questionFormat: "multipleChoiceTrait", // Options with associated traits
+    createdAt: "",
+    completedAt: null,
+    deadline: "",
+  },
+
+  {
+    id: "holland",
+    name: "آزمون هالند",
+    description: "تیپ شغلی خود را با آزمون هالند شناسایی کنید.",
+    type: "interest",
+    questionFormat: "yesNo",
+    createdAt: "",
+    completedAt: null,
+    deadline: "",
+  },
+
+  {
+    id: "gardner",
+    name: "آزمون هوش‌های چندگانه گاردنر",
+    description: "سطح هوش‌های مختلف خود را ارزیابی کنید.",
+    type: "intelligence",
+    questionFormat: "likert",
+    createdAt: "",
+    completedAt: null,
+    deadline: "",
+  },
+
+  {
+    id: "mbti",
+    name: "آزمون MBTI",
+    description: "با شاخص تیپ‌های مایرز-بریگز، تیپ شخصیتی خود را بشناسید.",
+    type: "personality",
+    questionFormat: "eitherOr",
+    createdAt: "",
+    completedAt: null,
+    deadline: "",
+  },
+];
+
 export const Disc_Test = [
   {
     id: 1,
@@ -1387,3 +1433,40 @@ export const Gardner_Test = [
     options: ["خیلی کم", "کمی", "تاحدی", "زیاد", "خیلی زیاد"],
   },
 ];
+
+// const testSchema = new mongoose.Schema({
+//   name: { type: String, required: true },
+//   description: String,
+//   difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
+//   category: String,
+//   image: String,
+//   timeLimit: Number, // in minutes
+//   questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
+//   recommended: { type: Boolean, default: false },
+//   isPublic: { type: Boolean, default: true },
+//   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+//   createdAt: { type: Date, default: Date.now },
+// });
+
+// export const users = [
+//   {
+//     _id: "683840d4d49ea8978f995e89",
+//     email: "cooci.ebrahimi@gmail.com",
+//     password: "$2b$10$V7Hidj7jAaD4MbozLXUVruHLan0okCYYAJ/qqYDSqHGuc9qVSyD8C",
+//     role: "admin",
+//     profile: {
+//       fullName: "Creator",
+//       age: 24,
+//       gender: "Male",
+//     },
+//     testsAssigned: [
+//       {
+//         testName: "MBTITest",
+//         completedAt: "2025-05-29T11:11:16.374+00:00",
+//         duraion
+//       }
+//     ],
+//     createdAt: "2025-05-29T11:11:16.374+00:00",
+//     updatedAt: "2025-05-29T11:11:16.374+00:00",
+//   },
+// ];

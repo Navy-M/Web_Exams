@@ -2,21 +2,66 @@ import { useState } from 'react';
 import AdminSidebar from '../../components/Admin/AdminSidebar';
 import '../../styles/admin.css';
 import { useAuth } from '../../context/AuthContext';
+import { Test_Cards } from '../../services/dummyData';
+import UsersPage from "./UsersPage";
+import TestsPage from "./TestsPage";
+import TestsStatus from "../../components/Admin/TestsStatus";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');
   const{user} = useAuth();
 
+  const handleEditUser = (id) => {
+    console.log('Edit user with ID:', id);
+    // Navigate to edit page or open a modal
+  };
+
+  const handleDeleteUser = (id) => {
+    const confirmed = window.confirm('آیا از حذف کاربر مطمئن هستید؟');
+    if (confirmed) {
+      setUsers(prev => prev.filter(user => user.id !== id));
+    }
+  };
+
   return (
     <div className="admin-dashboard">
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
-      <h1>Admin Dashboard</h1>
+      
 
       <main className="admin-main">
-        {activeTab === 'users' && <div>User Management</div>}
-        {activeTab === 'tests' && <div>Test Management</div>}
-        {activeTab === 'results' && <div>Results Overview</div>}
+        <h1>Hi {user.email}</h1>
+        <hr/>
+        <br/>
+        <br/>
+        {activeTab === 'dashboard' && <TestsStatus/>}
+        {activeTab === 'users' && <UsersPage/>}
+        {activeTab === 'tests' && <div>
+          <section className="admin-tests-section">
+              <h2>لیست آزمون‌ها</h2>
+              <table className="admin-tests-table">
+                <thead>
+                  <tr>
+                    <th>نام آزمون</th>
+                    <th>نوع</th>
+                    <th>فرمت سوال</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Test_Cards.map(test => (
+                    <tr key={test.id}>
+                      <td>{test.name}</td>
+                      <td>{test.type}</td>
+                      <td>{test.questionFormat}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+            <br/>
+            <br/>
+            <TestsPage/>
+        </div>}
       </main>
     </div>
   );

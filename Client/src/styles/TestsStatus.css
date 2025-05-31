@@ -1,0 +1,18 @@
+.admin-search-input {
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+.admin-user-tests-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.admin-user-tests-table th,
+td {
+  border: 1px solid #eee;
+  padding: 0.75rem;
+  text-align: left;
+}

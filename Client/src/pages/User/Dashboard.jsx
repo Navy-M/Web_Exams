@@ -11,6 +11,9 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 
+import TestCardGrid from '../../components/common/TestCardGrid'; // ✅ added
+import { Test_Cards } from '../../services/dummyData';
+
 const UserDashboard = () => {
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +25,7 @@ const UserDashboard = () => {
   useEffect(() => {
     const fetchTests = async () => {
       try {
-        const data = await getTestResults(user.id);
+        const data = Test_Cards;
         setTests(data);
       } catch (err) {
         setError('Failed to load tests. Please try again later.');
@@ -48,6 +51,8 @@ const UserDashboard = () => {
   };
 
   const completedTests = tests.filter(t => t.completed);
+
+  const takenTestIds = tests.map(t => t._id || t.id); // IDs of completed/active tests
 
   return (
     <div className="user-dashboard">
@@ -84,7 +89,7 @@ const UserDashboard = () => {
       ) : (
         <>
           <section className="active-tests">
-            <h2>Active Tests</h2>
+            <h2>Submited  Tests</h2>
             <div className="tests-grid">
               {tests.filter(t => getTestStatus(t) === 'Pending').map(test => (
                 <TestCard
@@ -96,7 +101,12 @@ const UserDashboard = () => {
             </div>
           </section>
 
-          {completedTests.length > 0 && (
+          <section className="recommended-tests">
+            <h2>Recommended Tests</h2>
+            <TestCardGrid onSelectTest={handleStartTest} />
+          </section>
+
+          {/* {completedTests.length > 0 && (
             <section className="score-graph">
               <h2>Score Over Time</h2>
               <ResponsiveContainer width="100%" height={300}>
@@ -112,31 +122,33 @@ const UserDashboard = () => {
                 </LineChart>
               </ResponsiveContainer>
             </section>
-          )}
+          )} */}
 
-          <section className="test-history">
-            <h2>Test History</h2>
-            <table className="history-table">
-              <thead>
-                <tr>
-                  <th>Test Name</th>
-                  <th>Date Completed</th>
-                  <th>Status</th>
-                  <th>Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tests.filter(t => getTestStatus(t) !== 'Pending').map(test => (
-                  <tr key={test._id}>
-                    <td>{test.name}</td>
-                    <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
-                    <td className={getTestStatus(test).toLowerCase()}>{getTestStatus(test)}</td>
-                    <td>{test.score || '-'}</td>
+          {tests.length > 0 && 
+            <section className="test-history">
+              <h2>Test History</h2>
+              <table className="history-table">
+                <thead>
+                  <tr>
+                    <th>Test Name</th>
+                    <th>Date Completed</th>
+                    <th>Status</th>
+                    <th>Score</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
+                </thead>
+                <tbody>
+                  {tests.filter(t => getTestStatus(t) !== 'Pending').map(test => (
+                    <tr key={test._id}>
+                      <td>{test.name}</td>
+                      <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
+                      <td className={getTestStatus(test).toLowerCase()}>{getTestStatus(test)}</td>
+                      <td>{test.score || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          }
         </>
       )}
     </div>

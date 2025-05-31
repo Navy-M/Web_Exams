@@ -1,22 +1,27 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext'; 
 import { Sun, Moon } from 'lucide-react';
 
-const AdminSidebar = () => {
-  const navigate = useNavigate();
+const AdminSidebar = ({ activeTab, setActiveTab }) => {
   const { logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
 
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      // You may want to redirect after logout or reset UI state
+      window.location.href = '/login';
     } catch (err) {
       console.error('Logout failed', err);
     }
   };
+
+  const menuItems = [
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'users', label: 'Users' },
+    { key: 'tests', label: 'Tests' },
+  ];
 
   return (
     <aside style={{
@@ -51,20 +56,33 @@ const AdminSidebar = () => {
           {isDark ? <Sun size={18} /> : <Moon size={18} />}
           {isDark ? 'Light Mode' : 'Dark Mode'}
         </button>
-        <br/>
-        <h2>Admin Menu</h2>
-        <br/>
-        <br/>
-        
-        <nav>
+
+        <h2 style={{ marginTop: '2rem' }}>Admin Menu</h2>
+
+        <nav style={{ marginTop: '1rem' }}>
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            <li><a href="/admin/dashboard" style={{ color: 'white', textDecoration: 'none' }}>Dashboard</a></li>
-            <li><a href="/admin/users" style={{ color: 'white', textDecoration: 'none' }}>Users</a></li>
-            <li><a href="/admin/settings" style={{ color: 'white', textDecoration: 'none' }}>Tests</a></li>
+            {menuItems.map(item => (
+              <li key={item.key}>
+                <button
+                  onClick={() => setActiveTab(item.key)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'white',
+                    padding: '0.5rem 0',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontWeight: activeTab === item.key ? 'bold' : 'normal',
+                    textDecoration: activeTab === item.key ? 'underline' : 'none',
+                    width: '100%',
+                  }}
+                >
+                  {item.label}
+                </button>
+              </li>
+            ))}
           </ul>
         </nav>
-
-        
       </div>
 
       <button
