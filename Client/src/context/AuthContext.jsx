@@ -14,6 +14,8 @@ export const AuthProvider = ({ children }) => {
       try {
         const res = await api.getProfile();
         setUser(res.user);
+        // console.log(res.user);
+        
       } catch (err) {
         setUser(null);
       } finally {
@@ -62,3 +64,7 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+
+
+

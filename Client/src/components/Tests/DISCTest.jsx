@@ -2,17 +2,23 @@
 import React, { useState } from "react";
 import { Disc_Test } from "../../services/dummyData";
 import "../../styles/DiscTest.css";
+// import { useParams, useNavigate } from 'react-router-dom';
+
 
 const DiscTest = () => {
+  // const { testId } = useParams();
+  // const [questions, setQuestions] = useState([]);
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
 
-  const currentQuestion = discQuestions[currentIndex];
+  const currentQuestion = Disc_Test[currentIndex];
+  // console.log(currentQuestion);
 
   const handleSelect = (trait) => {
     setAnswers([...answers, { id: currentQuestion.id, trait }]);
 
-    if (currentIndex + 1 < discQuestions.length) {
+    if (currentIndex + 1 < Disc_Test.length) {
       setCurrentIndex(currentIndex + 1);
     } else {
       // Finished all questions
@@ -37,7 +43,7 @@ const DiscTest = () => {
           ))}
         </div>
         <p className="progress">
-          سؤال {currentIndex + 1} از {discQuestions.length}
+          سؤال {currentIndex + 1} از {Disc_Test.length}
         </p>
       </div>
     </div>

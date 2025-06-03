@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import '../../styles/test.css';
+import { Mbti_Test } from '../../services/dummyData';
 
-const MBTITest = ({ questions }) => {
+const MBTITest = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
 
@@ -14,17 +15,17 @@ const MBTITest = ({ questions }) => {
       <h2>MBTI Personality Test</h2>
       
       <div className="question-container">
-        <p>Question {currentQuestion + 1} of {questions.length}</p>
-        <h3>{questions[currentQuestion].text}</h3>
+        <p>Question {currentQuestion + 1} of {Mbti_Test.length}</p>
+        <h3>{Mbti_Test[currentQuestion].text}</h3>
         
         <div className="options-grid">
-          {questions[currentQuestion].options.map((option, index) => (
+          {Mbti_Test[currentQuestion].options.map((option, index) => (
             <button
               key={index}
               className={`option-button ${
-                answers[questions[currentQuestion].id] === option.value ? 'selected' : ''
+                answers[Mbti_Test[currentQuestion].id] === option.value ? 'selected' : ''
               }`}
-              onClick={() => handleAnswer(questions[currentQuestion].id, option.value)}
+              onClick={() => handleAnswer(Mbti_Test[currentQuestion].id, option.value)}
             >
               {option.text}
             </button>

@@ -2,16 +2,19 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext'; 
 import { Sun, Moon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
   const { logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  
 
   const handleLogout = async () => {
     try {
       await logout();
-      // You may want to redirect after logout or reset UI state
-      window.location.href = '/login';
+      navigate('/login');
     } catch (err) {
       console.error('Logout failed', err);
     }

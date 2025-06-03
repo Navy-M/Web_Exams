@@ -30,7 +30,7 @@ const LoginPage = () => {
     setError('');
     setEmail('');
     setPassword('');
-  }, [user, loading, navigate]);
+  }, [user, loading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

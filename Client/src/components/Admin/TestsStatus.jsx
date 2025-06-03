@@ -45,24 +45,24 @@ const TestsStatus = () => {
       <table className="admin-user-tests-table">
         <thead>
           <tr>
-            <th>نام</th>
+            <th>نام و نام خانوادگی</th>
             <th>ایمیل</th>
-            <th>نقش</th>
             <th>آزمون‌ها</th>
           </tr>
         </thead>
         <tbody>
           {filtered.map(user => (
             <tr key={user._id}>
-              <td>{user.name}</td>
+              <td>{user.profile.fullName}</td>
               <td>{user.email}</td>
-              <td>{user.role}</td>
               <td>
-                {user.tests?.length > 0 ? (
+                {user.testsAssigned?.private?.length > 0 ? (
+
+                  
                   <ul>
-                    {user.tests.map(test => (
+                    {user.testsAssigned.private.map(test => (
                       <li key={test.id}>
-                        {test.name} - امتیاز: {test.score ?? 'نامشخص'}
+                        {test.testName} - امتیاز: {test.score ?? 'نامشخص'}
                       </li>
                     ))}
                   </ul>

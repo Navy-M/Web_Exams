@@ -8,19 +8,19 @@ const TestCard = ({ test, onStart }) => {
       <h3>{test.name}</h3>
       <div className="test-meta">
         <span className="deadline">
-          Deadline: {new Date(test.deadline).toLocaleDateString()}
+          تاریخ اتمام: {new Date(test.deadline).toLocaleDateString()}
         </span>
-        <span className="duration">Duration: {test.duration} mins</span>
+        <span className="duration">مدت آزمون: {test.duration?.from} دقیقه</span>
       </div>
       <div className="test-actions">
         <button 
           onClick={onStart}
           className="start-button"
         >
-          Start Test
+          شروع آزمون
         </button>
         <Link to={`/test/instructions/${test._id}`} className="view-details">
-          View Details
+          مشاهده جزیات
         </Link>
       </div>
     </div>

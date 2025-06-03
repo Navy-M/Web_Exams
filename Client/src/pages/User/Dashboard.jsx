@@ -15,18 +15,27 @@ import TestCardGrid from '../../components/common/TestCardGrid'; // ✅ added
 import { Test_Cards } from '../../services/dummyData';
 
 const UserDashboard = () => {
-  const [tests, setTests] = useState([]);
+  const { user, logout } = useAuth();
+  const [allTests, setAllTests] = useState([]);
+  const [completedTests, setCompletedTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     const fetchTests = async () => {
       try {
+        // Fill existing Test information
         const data = Test_Cards;
-        setTests(data);
+        setAllTests(data);
+
+        // Fill user Tests Data
+        const userData = user?.testsAssigned || [];
+        console.log(user);
+        
+        setCompletedTests(userData);
+
       } catch (err) {
         setError('Failed to load tests. Please try again later.');
       } finally {
@@ -37,10 +46,14 @@ const UserDashboard = () => {
     if (user?.id) fetchTests();
   }, [user?.id]);
 
-  const handleStartTest = (testId) => navigate(`/test/${testId}`);
+  const handleStartTest = (testId) => {
+    // console.log(testId);
+    navigate(`/users/starttest/${testId}`);
+    
+  }
 
   const getTestStatus = (test) => {
-    if (test.completed) return 'Completed';
+    if (completedTests.some(completed => completed.testName === test.id) ) return 'Completed';
     if (new Date(test.deadline) < new Date()) return 'Expired';
     return 'Pending';
   };
@@ -50,9 +63,8 @@ const UserDashboard = () => {
     navigate('/login');
   };
 
-  const completedTests = tests.filter(t => t.completed);
+  
 
-  const takenTestIds = tests.map(t => t._id || t.id); // IDs of completed/active tests
 
   return (
     <div className="user-dashboard">
@@ -68,15 +80,15 @@ const UserDashboard = () => {
 
         <div className="stats">
           <div className="stat-item">
-            <h3>{tests.length}</h3>
+            <h3>{allTests.length}</h3>
             <p>Total Tests</p>
           </div>
           <div className="stat-item">
-            <h3>{completedTests.length}</h3>
+            <h3>{completedTests?.length}</h3>
             <p>Completed</p>
           </div>
           <div className="stat-item">
-            <h3>{tests.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
+            <h3>{completedTests.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
             <p>Total Points</p>
           </div>
         </div>
@@ -88,22 +100,16 @@ const UserDashboard = () => {
         <p className="error-message">{error}</p>
       ) : (
         <>
-          <section className="active-tests">
-            <h2>Submited  Tests</h2>
-            <div className="tests-grid">
-              {tests.filter(t => getTestStatus(t) === 'Pending').map(test => (
-                <TestCard
-                  key={test._id}
-                  test={test}
-                  onStart={() => handleStartTest(test._id)}
-                />
-              ))}
-            </div>
-          </section>
-
           <section className="recommended-tests">
             <h2>Recommended Tests</h2>
-            <TestCardGrid onSelectTest={handleStartTest} />
+            {/* <TestCardGrid onSelectTest={handleStartTest} /> */}
+            {allTests.filter(t => getTestStatus(t) === 'Pending').map(test => (
+                <TestCard
+                  key={test.id}
+                  test={test}
+                  onStart={() => handleStartTest(test.id)}
+                />
+              ))}
           </section>
 
           {/* {completedTests.length > 0 && (
@@ -124,30 +130,47 @@ const UserDashboard = () => {
             </section>
           )} */}
 
-          {tests.length > 0 && 
-            <section className="test-history">
-              <h2>Test History</h2>
-              <table className="history-table">
-                <thead>
-                  <tr>
-                    <th>Test Name</th>
-                    <th>Date Completed</th>
-                    <th>Status</th>
-                    <th>Score</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tests.filter(t => getTestStatus(t) !== 'Pending').map(test => (
-                    <tr key={test._id}>
-                      <td>{test.name}</td>
-                      <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
-                      <td className={getTestStatus(test).toLowerCase()}>{getTestStatus(test)}</td>
-                      <td>{test.score || '-'}</td>
+          {completedTests.length > 0 &&
+            <>
+              <section className="active-tests">
+                <h2>Submited  Tests</h2>
+                <div className="tests-grid">
+                  <TestCardGrid onSelectTest={handleStartTest} />
+              
+                  {/* {completedTests.map(test => {
+                    <div key={test.id} className="test-card" onClick={() => onSelectTest(test.id)}>
+                    <h3>{test.name}</h3>
+                    <p>{test.description}</p>
+                    <span className="tag">{test.type}</span>
+                  </div>
+                  })} */}
+                </div>
+              </section>
+           
+              <section className="test-history">
+                <h2>Test History</h2>
+                <table className="history-table">
+                  <thead>
+                    <tr>
+                      <th>Test Name</th>
+                      <th>Date Completed</th>
+                      <th>duraion</th>
+                      <th>Score</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
+                  </thead>
+                  <tbody>
+                    {completedTests.map(test => (
+                      <tr key={test.testName}>
+                        <td>{test.testName}</td>
+                        <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
+                        <td className={getTestStatus(test).toLowerCase()}>{test.duration} Min</td>
+                        <td>{test.score || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            </>
           }
         </>
       )}

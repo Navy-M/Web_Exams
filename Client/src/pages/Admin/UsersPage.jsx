@@ -18,7 +18,8 @@ const UsersPage = () => {
       setLoading(true);
       try {
         const usersData = await getUsers();
-        setUsers(usersData);
+        const nonAdminUsers = usersData.filter(user => user.role !== 'admin');
+        setUsers(nonAdminUsers);
         setError('');
       } catch (err) {
         console.error(err);
@@ -55,7 +56,7 @@ const UsersPage = () => {
         <table className="admin-users-table">
           <thead>
             <tr>
-              <th>نام</th>
+              <th>نام و نام خانوادگی</th>
               <th>ایمیل</th>
               <th>نقش</th>
               <th>اقدامات</th>
@@ -64,7 +65,7 @@ const UsersPage = () => {
           <tbody>
             {users.map(user => (
               <tr key={user._id}>
-                <td>{user.name}</td>
+                <td>{user.profile.fullName}</td>
                 <td>{user.email}</td>
                 <td>{user.role}</td>
                 <td>
