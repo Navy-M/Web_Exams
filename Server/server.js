@@ -7,8 +7,8 @@ import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
-import testRoutes from "./routes/testRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import resultsRoutes from "./routes/resultsRoutes.js";
 import errorHandler from "./middleware/errorMiddleware.js";
 
 dotenv.config();
@@ -52,8 +52,8 @@ app.use(limiter);
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/tests", testRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/results", resultsRoutes);
 
 app.get("/api/health", (req, res) => {
   console.log("Health check hit");

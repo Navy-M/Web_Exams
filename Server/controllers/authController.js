@@ -154,7 +154,7 @@ export const getProfile = async (req, res) => {
         email: user.email,
         role: user.role,
         name: user.name || null,
-        testsAssigned: user.testsAssigned.public || [],
+        testsAssigned: user.testsAssigned || [],
       },
     });
   } catch (err) {

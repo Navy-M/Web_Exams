@@ -1,29 +1,46 @@
 // components/DiscTest.jsx
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Disc_Test } from "../../services/dummyData";
 import "../../styles/DiscTest.css";
-// import { useParams, useNavigate } from 'react-router-dom';
-
+import { useAuth } from "../../context/AuthContext";
+import { submitResult } from '../../services/api';
 
 const DiscTest = () => {
-  // const { testId } = useParams();
-  // const [questions, setQuestions] = useState([]);
-  
+  const { user } = useAuth();
+  const startTimeRef = useRef(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
 
   const currentQuestion = Disc_Test[currentIndex];
-  // console.log(currentQuestion);
 
-  const handleSelect = (trait) => {
-    setAnswers([...answers, { id: currentQuestion.id, trait }]);
+  const handleSelect = async (trait) => {
+    const updatedAnswers = [...answers, {
+      questionId: currentQuestion.id,
+      selectedOption: trait,
+      score: 1 // You can change this based on trait logic
+    }];
+    setAnswers(updatedAnswers);
 
     if (currentIndex + 1 < Disc_Test.length) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      // Finished all questions
-      console.log("DISC Answers:", answers);
-      alert("آزمون تمام شد!");
+      const resultData = {
+        user: user.id,
+        testType: 'DISC',
+        answers: updatedAnswers,
+        otherResult: [],
+        adminFeedback: '',
+        startedAt: new Date(startTimeRef.current),
+        submittedAt: new Date()
+      };
+
+      try {
+        const result = await submitResult(resultData);
+        console.log("Result saved:", result);
+        alert("آزمون تمام شد!");
+      } catch (err) {
+        alert("ارسال نتایج با خطا مواجه شد.");
+      }
     }
   };
 

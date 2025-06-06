@@ -1,3 +1,4 @@
+// models/Result.js
 import mongoose from "mongoose";
 
 const resultSchema = new mongoose.Schema(
@@ -9,8 +10,8 @@ const resultSchema = new mongoose.Schema(
     },
     testType: {
       type: String,
-      required: true,
       enum: ["MBTI", "DISC", "MII", "CSTA", "HII"],
+      required: true,
     },
     answers: [
       {
@@ -19,12 +20,13 @@ const resultSchema = new mongoose.Schema(
         score: Number,
       },
     ],
-    summary: {
-      type: mongoose.Schema.Types.Mixed,
-    },
-    durationInSeconds: {
-      type: Number,
-      required: true, // optional if you'd like to allow some old records without it
+    score: Number,
+    durationInSeconds: Number,
+    otherResult: [String],
+    adminFeedback: String,
+    startedAt: {
+      type: Date,
+      required: true,
     },
     submittedAt: {
       type: Date,
@@ -34,6 +36,23 @@ const resultSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Result = mongoose.model("Result", resultSchema);
+// Middleware to calculate total score and duration
+resultSchema.pre("save", function (next) {
+  if (this.answers && this.answers.length > 0) {
+    this.score = this.answers.reduce((sum, ans) => sum + (ans.score || 0), 0);
+  } else {
+    this.score = 0;
+  }
 
+  if (this.startedAt && this.submittedAt) {
+    const durationMs = this.submittedAt - this.startedAt;
+    this.durationInSeconds = Math.floor(durationMs / 1000);
+  } else {
+    this.durationInSeconds = 0;
+  }
+
+  next();
+});
+
+const Result = mongoose.model("Result", resultSchema);
 export default Result;

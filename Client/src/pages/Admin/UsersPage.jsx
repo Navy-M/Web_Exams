@@ -70,7 +70,8 @@ const UsersPage = () => {
                 <td>{user.role}</td>
                 <td>
                   {/* Add edit/create functionality later */}
-                  <button onClick={() => alert('ویرایش به‌زودی')}>ویرایش</button>
+                  {/* <button onClick={() => alert('ویرایش به‌زودی')}>ویرایش</button> */}
+                  <button onClick={() => alert("به ")}>بازدید</button>
                   <button onClick={() => handleDeleteUser(user._id)}>حذف</button>
                 </td>
               </tr>

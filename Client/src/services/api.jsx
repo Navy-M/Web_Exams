@@ -97,4 +97,15 @@ export const assignTest = async (testId, userIds, deadline) =>
 
 export const getTestResults = async (testId) => (await API.get(`/tests/${testId}/results`)).data;
 
+// --- RESULTS API ---
+export const submitResult = async (resultData) => {
+  try {
+    const response = await API.post('/results', resultData);
+    return response.data;
+  } catch (error) {
+    console.error('Error submitting result:', error);
+    throw error;
+  }
+};
+
 export default API;
