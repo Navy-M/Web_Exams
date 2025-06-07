@@ -61,7 +61,7 @@ const TestsStatus = () => {
                   
                   <ul>
                     {user.testsAssigned.private.map(test => (
-                      <li key={test.id}>
+                      <li key={test.testName}>
                         {test.testName} - امتیاز: {test.score ?? 'نامشخص'}
                       </li>
                     ))}

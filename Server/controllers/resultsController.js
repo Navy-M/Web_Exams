@@ -72,6 +72,7 @@ export const getResultsByUser = async (req, res) => {
   }
 };
 
+// Save Results 
 export const submitTestResult = async (req, res) => {
   try {
     const { user, testType, answers, score, otherResult, startedAt } = req.body;
@@ -106,6 +107,84 @@ export const submitTestResult = async (req, res) => {
     res.status(201).json(savedResult);
   } catch (err) {
     console.error("Error submitting result:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Update admin feedback and result details
+export const updateResultEvaluation = async (req, res) => {
+  try {
+    const { resultId } = req.params;
+    const { adminFeedback, otherResult, score, publishToUser } = req.body;
+    const { userId: adminId, role } = req.user; // From your auth middleware
+
+    // Verify admin privileges
+    if (role !== 'admin') {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    // Prepare update object
+    const updateData = {
+      adminFeedback,
+      evaluatedAt: new Date(),
+      evaluatedBy: adminId,
+      ...(otherResult && { otherResult }), // Only update if provided
+      ...(score && { score }) // Only update if provided
+    };
+
+    // 1. Update the main Result document
+    const updatedResult = await Result.findByIdAndUpdate(
+      resultId,
+      { $set: updateData },
+      { new: true }
+    ).populate('user', 'name email');
+
+    if (!updatedResult) {
+      return res.status(404).json({ message: "Result not found" });
+    }
+
+    // 2. Update the private copy in User collection (if exists)
+    await User.updateOne(
+      {
+        _id: updatedResult.user._id,
+        "testsAssigned.private.resultId": resultId
+      },
+      {
+        $set: {
+          "testsAssigned.private.$.adminFeedback": adminFeedback,
+          "testsAssigned.private.$.score": score || updatedResult.score,
+          "testsAssigned.private.$.evaluatedAt": new Date()
+        }
+      }
+    );
+
+    // 3. Optionally publish to user's public results
+    if (publishToUser) {
+      const publicSummary = {
+        resultId: updatedResult._id,
+        testType: updatedResult.testType,
+        completedAt: updatedResult.completedAt,
+        score: score || updatedResult.score,
+        adminFeedback,
+        evaluatedAt: new Date()
+      };
+
+      await User.findByIdAndUpdate(
+        updatedResult.user._id,
+        {
+          $addToSet: { "testsAssigned.public": publicSummary }
+        }
+      );
+    }
+
+    res.status(200).json({
+      message: "Evaluation updated successfully",
+      result: updatedResult,
+      published: publishToUser
+    });
+
+  } catch (error) {
+    console.error("Error updating evaluation:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

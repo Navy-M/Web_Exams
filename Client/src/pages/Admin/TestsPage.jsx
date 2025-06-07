@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import TestCardGrid from "../../components/common/TestCardGrid";
+import TestResultCardGrid from "../../components/common/TestResultCardGrid";
 
 const TestsPage = () => {
   const [selectedTestId, setSelectedTestId] = useState(null);
@@ -13,7 +13,7 @@ const TestsPage = () => {
   return (
     <div>
       {!selectedTestId ? (
-        <TestCardGrid onSelectTest={handleSelectTest} />
+        <TestResultCardGrid onSelectTest={handleSelectTest} />
       ) : (
         <div>Start Test ID: {selectedTestId}</div>
         // Load the actual test component based on selectedTestId

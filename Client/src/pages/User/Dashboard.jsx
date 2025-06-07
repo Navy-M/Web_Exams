@@ -11,7 +11,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 
-import TestCardGrid from '../../components/common/TestCardGrid'; // ✅ added
+import TestResultCardGrid from '../../components/Common/TestResultCardGrid'; // ✅ added
 import { Test_Cards } from '../../services/dummyData';
 
 const UserDashboard = () => {
@@ -31,7 +31,7 @@ const UserDashboard = () => {
         setAllTests(data);
 
         // Fill user Tests Data
-        const userData = user?.testsAssigned || [];
+        const userData = user?.testsAssigned.public || [];
         console.log(user);
         
         setCompletedTests(userData);
@@ -81,15 +81,15 @@ const UserDashboard = () => {
         <div className="stats">
           <div className="stat-item">
             <h3>{allTests.length}</h3>
-            <p>Total Tests</p>
+            <p>کل تست ها</p>
           </div>
           <div className="stat-item">
             <h3>{completedTests?.length}</h3>
-            <p>Completed</p>
+            <p>کامل شده</p>
           </div>
           <div className="stat-item">
             <h3>{completedTests.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
-            <p>Total Points</p>
+            <p>مجموع امتیازات</p>
           </div>
         </div>
       </header>
@@ -100,8 +100,11 @@ const UserDashboard = () => {
         <p className="error-message">{error}</p>
       ) : (
         <>
+          <br/>
+
           <section className="recommended-tests">
-            <h2>Recommended Tests</h2>
+            <h2>تست های پیشنهادی</h2>
+            <br/>
             {/* <TestCardGrid onSelectTest={handleStartTest} /> */}
             {allTests.filter(t => getTestStatus(t) === 'Pending').map(test => (
                 <TestCard
@@ -111,6 +114,8 @@ const UserDashboard = () => {
                 />
               ))}
           </section>
+
+          {/* <br/> */}
 
           {/* {completedTests.length > 0 && (
             <section className="score-graph">
@@ -130,12 +135,17 @@ const UserDashboard = () => {
             </section>
           )} */}
 
+          
+          <br/>
+          <hr/>
+          <br/>
+
           {completedTests.length > 0 &&
             <>
               <section className="active-tests">
-                <h2>Submited  Tests</h2>
+                <h2>تست های انجام شده</h2>
                 <div className="tests-grid">
-                  <TestCardGrid onSelectTest={handleStartTest} />
+                  <TestResultCardGrid onSelectTest={handleStartTest} />
               
                   {/* {completedTests.map(test => {
                     <div key={test.id} className="test-card" onClick={() => onSelectTest(test.id)}>
@@ -148,14 +158,14 @@ const UserDashboard = () => {
               </section>
            
               <section className="test-history">
-                <h2>Test History</h2>
+                <h2>تاریخچه تست ها</h2>
                 <table className="history-table">
                   <thead>
                     <tr>
-                      <th>Test Name</th>
-                      <th>Date Completed</th>
-                      <th>duraion</th>
-                      <th>Score</th>
+                      <th>نام تست</th>
+                      <th>تاریخ تکمیل</th>
+                      <th>مدت زمان</th>
+                      <th>امتیاز</th>
                     </tr>
                   </thead>
                   <tbody>

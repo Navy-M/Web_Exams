@@ -107,5 +107,26 @@ export const submitResult = async (resultData) => {
     throw error;
   }
 };
+export const getUserResults = async (userId) => {
+  try {
+    const response = await API.post(`/results/${userId}/list`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user results:', error);
+    throw error;
+  }
+};
+export const submitTestFeedback = async (feedbackData) => {
+  try {
+    const response = await API.patch(
+      `/users/${feedbackData.userId}/results/${feedbackData.resultId}/evaluate`,
+      { feedback: feedbackData.feedback }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error submitting feedback:', error);
+    throw error;
+  }
+};
 
 export default API;

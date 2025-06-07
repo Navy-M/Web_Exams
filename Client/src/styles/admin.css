@@ -81,3 +81,60 @@
 .admin-users-table button:hover {
   opacity: 0.9;
 }
+
+
+.admin-users-container {
+  direction: rtl;
+  padding: 20px;
+  font-family: 'IRANSans', sans-serif;
+}
+
+.user-results-section {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.results-table th, .results-table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: right;
+}
+
+.feedback-form {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f0f0f0;
+  border-radius: 8px;
+}
+
+.feedback-form textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.back-button, .view-button {
+  background: #4CAF50;
+  color: white;
+}
+
+.delete-button {
+  background: #f44336;
+  color: white;
+}
+
+.cancel-button {
+  background: #ccc;
+}
