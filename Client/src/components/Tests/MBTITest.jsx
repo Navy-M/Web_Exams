@@ -1,37 +1,82 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import '../../styles/test.css';
 import { Mbti_Test } from '../../services/dummyData';
+import { useAuth } from '../../context/AuthContext';
+import { submitResult } from '../../services/api';
 
 const MBTITest = () => {
+  const { user } = useAuth();
+  const startTimeRef = useRef(Date.now());
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
 
   const handleAnswer = (questionId, answer) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
+
+    // Delay to show selection before moving to next
+    setTimeout(() => {
+      if (currentQuestion + 1 < Mbti_Test.length) {
+        setCurrentQuestion(currentQuestion + 1);
+      } else {
+        handleSubmit();
+      }
+    }, 200); // Optional delay
+  };
+
+  const handleSubmit = async () => {
+    // Convert answers object to array format for backend
+    const formattedAnswers = Object.entries(answers).map(([questionId, selectedOption]) => ({
+      questionId,
+      selectedOption,
+      score: 1, // Optional, use actual logic if needed
+    }));
+
+    const resultData = {
+      user: user.id,
+      testType: 'MBTI',
+      answers: formattedAnswers,
+      otherResult: [],
+      adminFeedback: '',
+      startedAt: new Date(startTimeRef.current),
+      submittedAt: new Date(),
+    };
+
+    try {
+      const result = await submitResult(resultData);
+      console.log("MBTI Result saved:", result);
+      alert("آزمون MBTI تمام شد!");
+    } catch (err) {
+      console.error("Submission error:", err);
+      alert("خطا در ارسال نتایج آزمون");
+    }
   };
 
   return (
     <div className="test-container">
       <h2>MBTI Personality Test</h2>
-      
-      <div className="question-container">
-        <p>Question {currentQuestion + 1} of {Mbti_Test.length}</p>
-        <h3>{Mbti_Test[currentQuestion].text}</h3>
-        
-        <div className="options-grid">
-          {Mbti_Test[currentQuestion].options.map((option, index) => (
-            <button
-              key={index}
-              className={`option-button ${
-                answers[Mbti_Test[currentQuestion].id] === option.value ? 'selected' : ''
-              }`}
-              onClick={() => handleAnswer(Mbti_Test[currentQuestion].id, option.value)}
-            >
-              {option.text}
-            </button>
-          ))}
+
+      {currentQuestion < Mbti_Test.length ? (
+        <div className="question-container">
+          <p>سوال {currentQuestion + 1} از {Mbti_Test.length}</p>
+          <h3>{Mbti_Test[currentQuestion].text}</h3>
+
+          <div className="options-grid">
+            {Mbti_Test[currentQuestion].options.map((option, index) => (
+              <button
+                key={index}
+                className={`option-button ${
+                  answers[Mbti_Test[currentQuestion].id] === option.value ? 'selected' : ''
+                }`}
+                onClick={() => handleAnswer(Mbti_Test[currentQuestion].id, option.value)}
+              >
+                {option.text}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <p className="completion-message">در حال ارسال نتیجه...</p>
+      )}
     </div>
   );
 };

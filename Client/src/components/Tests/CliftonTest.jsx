@@ -1,37 +1,56 @@
-// src/components/Tests/CliftonTest.jsx
-import { useState } from 'react';
-import '../../styles/test.css';              // re‑use your existing test styles
+import { useState, useRef } from 'react';
+import '../../styles/test.css';
 import { Clifton_Test } from '../../services/dummyData';
+import { useAuth } from '../../context/AuthContext';
+import { submitResult } from '../../services/api';
 
 const CliftonTest = () => {
+  const { user } = useAuth();
+  const startTimeRef = useRef(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({});   // { questionId: chosenTheme }
+  const [answers, setAnswers] = useState({});
 
   const currentQ = Clifton_Test[currentIndex];
 
-  /** Handle click on either statement */
-  const handleSelect = (theme) => {
-    setAnswers((prev) => ({ ...prev, [currentQ.id]: theme }));
+  const handleSelect = async (theme) => {
+    const updatedAnswers = { ...answers, [currentQ.id]: theme };
+    setAnswers(updatedAnswers);
 
-    // Auto‑advance to next statement (or finish if last)
     if (currentIndex + 1 < Clifton_Test.length) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      console.log('✅ Clifton answers:', {
-        ...answers,
-        [currentQ.id]: theme,
-      });
-      alert('آزمون تمام شد!');
-      // TODO: send `answers` to the server or navigate to a summary page
+      const formattedAnswers = Object.entries(updatedAnswers).map(
+        ([questionId, selectedTheme]) => ({
+          questionId: parseInt(questionId),
+          selectedOption: selectedTheme,
+          score: 1 // optional, or you can adjust later
+        })
+      );
+
+      const resultData = {
+        user: user.id,
+        testType: 'CLIFTON',
+        answers: formattedAnswers,
+        otherResult: [],
+        adminFeedback: '',
+        startedAt: new Date(startTimeRef.current),
+        submittedAt: new Date()
+      };
+
+      try {
+        const result = await submitResult(resultData);
+        console.log("✅ Clifton Test result saved:", result);
+        alert("آزمون کلیفتون با موفقیت ثبت شد!");
+      } catch (error) {
+        console.error("❌ خطا در ارسال آزمون کلیفتون:", error);
+        alert("خطا در ذخیره آزمون کلیفتون");
+      }
     }
   };
 
   return (
     <div className="test-container">
-
       <div className="question-container">
-        
-        {/* Two‑column grid for the A/B statements */}
         <div className="options-grid two-col">
           <button
             className={`option-button ${
@@ -52,7 +71,7 @@ const CliftonTest = () => {
           </button>
         </div>
       </div>
-      <p> Statement&nbsp;{currentIndex + 1}&nbsp;of&nbsp;{Clifton_Test.length}</p>
+      <p>سؤال {currentIndex + 1} از {Clifton_Test.length}</p>
     </div>
   );
 };

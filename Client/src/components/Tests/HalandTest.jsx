@@ -1,23 +1,49 @@
-// components/HalandTest.jsx
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Haland_Test } from "../../services/dummyData";
 import "../../styles/halandTest.css";
+import { useAuth } from "../../context/AuthContext";
+import { submitResult } from "../../services/api";
 
 const HalandTest = () => {
+  const { user } = useAuth();
+  const startTimeRef = useRef(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
 
   const currentQuestion = Haland_Test[currentIndex];
 
-  const handleAnswer = (choice) => {
-    setAnswers([...answers, { id: currentQuestion.id, answer: choice }]);
+  const handleAnswer = async (choice) => {
+    const updatedAnswers = [
+      ...answers,
+      {
+        questionId: currentQuestion.id,
+        selectedOption: choice,
+        score: 1, // Customize scoring if needed
+      },
+    ];
+    setAnswers(updatedAnswers);
 
     if (currentIndex + 1 < Haland_Test.length) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      console.log("Haland Test Answers:", answers);
-      alert("آزمون هالند تمام شد!");
-      // You could navigate to a results page or show results here
+      const resultData = {
+        user: user.id,
+        testType: "HALAND",
+        answers: updatedAnswers,
+        otherResult: [],
+        adminFeedback: "",
+        startedAt: new Date(startTimeRef.current),
+        submittedAt: new Date(),
+      };
+
+      try {
+        const result = await submitResult(resultData);
+        console.log("Haland Test Result saved:", result);
+        alert("آزمون هالند با موفقیت ثبت شد!");
+      } catch (err) {
+        console.error("Submission error:", err);
+        alert("خطا در ثبت نتیجه آزمون هالند");
+      }
     }
   };
 

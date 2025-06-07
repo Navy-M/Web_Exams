@@ -27,88 +27,64 @@ export const getUsers = async (req, res, next) => {
 };
 
 // Admin submits evaluation and manages test visibility
-export const evaluateUserTest = async (req, res) => {
+export const updateTestFeedback = async (req, res) => {
+  const { userId, resultId } = req.params;
+  const { feedback } = req.body;
+
   try {
-    const { userId, resultId } = req.params;
-    const { feedback, score, publish } = req.body;
+    // console.log("userId :", userId, ".....  resultsID :", resultId);
 
-    // 1. Verify admin and user exist
-    const adminUser = await User.findById(req.user._id);
-    const targetUser = await User.findById(userId);
-    
-    if (!targetUser) return res.status(404).json({ message: "User not found" });
+    // Step 1: Update the Result document
+    const result = await Result.findById(resultId);
+    console.log(result);
 
-    // 2. Update the Result document (if using separate Result model)
-    const updatedResult = await Result.findOneAndUpdate(
-      { _id: resultId, user: userId },
-      { 
-        $set: { 
-          adminFeedback: feedback,
-          score: score,
-          evaluatedAt: new Date(),
-          evaluatedBy: req.user._id,
-          isPublished: publish 
-        } 
-      },
-      { new: true }
-    );
-
-    if (!updatedResult) {
+    if (!result)
       return res.status(404).json({ message: "Test result not found" });
+
+    result.adminFeedback = feedback;
+    await result.save();
+
+    // Step 2: Update the User document
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const feedbackSummary = {
+      resultId: result._id,
+      feedback,
+      submittedAt: new Date(),
+      completedAt: result.createdAt,
+      score: result.score,
+      duration: result.durationInSeconds,
+      testType: result.testType,
+    };
+
+    // Get from user Private
+    if (
+      user.testsAssigned.private.find((p) => {
+        p.testType === result._id;
+      })
+    ) {
+      return res
+        .status(444)
+        .json({ message: "test not find in private Layer" });
     }
 
-    // 3. Update user's private test entry
-    const userUpdate = await User.updateOne(
-      { 
-        _id: userId,
-        "testsAssigned.private.testId": resultId // Match by testId in private array
-      },
-      { 
-        $set: { 
-          "testsAssigned.private.$.adminFeedback": feedback,
-          "testsAssigned.private.$.score": score,
-          "testsAssigned.private.$.isPublished": publish,
-          "testsAssigned.private.$.evaluatedAt": new Date(),
-          "testsAssigned.private.$.evaluatedBy": req.user._id
-        } 
-      }
+    // Push into public if not already there
+    const exists = user.testsAssigned?.public?.some(
+      (entry) => entry.resultId.toString() === result._id.toString()
     );
 
-    // 4. If publishing, add to public array (without duplicating)
-    if (publish) {
-      const privateTest = targetUser.testsAssigned.private.find(
-        t => t.testId.toString() === resultId
-      );
-
-      if (privateTest) {
-        await User.updateOne(
-          { _id: userId, "testsAssigned.public.testId": { $ne: resultId } },
-          {
-            $addToSet: {
-              "testsAssigned.public": {
-                testId: resultId,
-                testName: privateTest.testName,
-                testType: privateTest.testType,
-                score: score,
-                adminFeedback: feedback,
-                completedAt: privateTest.completedAt,
-                duration: privateTest.duration,
-                evaluatedAt: new Date()
-              }
-            }
-          }
-        );
-      }
+    if (!exists) {
+      user.testsAssigned.public.push(feedbackSummary);
     }
 
-    res.status(200).json({
-      message: "Evaluation submitted successfully",
-      result: updatedResult,
-      published: publish
-    });
+    await user.save();
 
+    res
+      .status(200)
+      .json({ message: "Feedback submitted successfully", result });
   } catch (error) {
-    console.error("Evaluation error:", error);
-    res.status(500).json({ message: "Server error during evaluation" });
+    console.error("Error submitting feedback:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

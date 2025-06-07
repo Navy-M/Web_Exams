@@ -37,6 +37,13 @@ export const createResult = async (req, res) => {
       endedAt,
       duration: durationInSeconds,
     });
+    if (
+      Result.find((r) => {
+        r.user === user._id && Result.testType === newResult.testType;
+      })
+    ) {
+      return res.status(409).json({ message: "this test submited once." });
+    }
 
     await newResult.save();
     res.status(201).json(newResult);
@@ -72,7 +79,7 @@ export const getResultsByUser = async (req, res) => {
   }
 };
 
-// Save Results 
+// Save Results
 export const submitTestResult = async (req, res) => {
   try {
     const { user, testType, answers, score, otherResult, startedAt } = req.body;
@@ -119,7 +126,7 @@ export const updateResultEvaluation = async (req, res) => {
     const { userId: adminId, role } = req.user; // From your auth middleware
 
     // Verify admin privileges
-    if (role !== 'admin') {
+    if (role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
 
@@ -129,7 +136,7 @@ export const updateResultEvaluation = async (req, res) => {
       evaluatedAt: new Date(),
       evaluatedBy: adminId,
       ...(otherResult && { otherResult }), // Only update if provided
-      ...(score && { score }) // Only update if provided
+      ...(score && { score }), // Only update if provided
     };
 
     // 1. Update the main Result document
@@ -137,7 +144,7 @@ export const updateResultEvaluation = async (req, res) => {
       resultId,
       { $set: updateData },
       { new: true }
-    ).populate('user', 'name email');
+    ).populate("user", "name email");
 
     if (!updatedResult) {
       return res.status(404).json({ message: "Result not found" });
@@ -147,14 +154,14 @@ export const updateResultEvaluation = async (req, res) => {
     await User.updateOne(
       {
         _id: updatedResult.user._id,
-        "testsAssigned.private.resultId": resultId
+        "testsAssigned.private.resultId": resultId,
       },
       {
         $set: {
           "testsAssigned.private.$.adminFeedback": adminFeedback,
           "testsAssigned.private.$.score": score || updatedResult.score,
-          "testsAssigned.private.$.evaluatedAt": new Date()
-        }
+          "testsAssigned.private.$.evaluatedAt": new Date(),
+        },
       }
     );
 
@@ -166,23 +173,19 @@ export const updateResultEvaluation = async (req, res) => {
         completedAt: updatedResult.completedAt,
         score: score || updatedResult.score,
         adminFeedback,
-        evaluatedAt: new Date()
+        evaluatedAt: new Date(),
       };
 
-      await User.findByIdAndUpdate(
-        updatedResult.user._id,
-        {
-          $addToSet: { "testsAssigned.public": publicSummary }
-        }
-      );
+      await User.findByIdAndUpdate(updatedResult.user._id, {
+        $addToSet: { "testsAssigned.public": publicSummary },
+      });
     }
 
     res.status(200).json({
       message: "Evaluation updated successfully",
       result: updatedResult,
-      published: publishToUser
+      published: publishToUser,
     });
-
   } catch (error) {
     console.error("Error updating evaluation:", error);
     res.status(500).json({ message: "Server error" });

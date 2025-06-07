@@ -7,6 +7,7 @@ import {
   getUserResults,
   submitTestFeedback
 } from "../../services/api";
+import "./usersPage.css";
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -44,7 +45,7 @@ const UsersPage = () => {
         try {
           // const results = await getUserResults(visitingUser._id);
           // setUserResults(results);
-          setUserResults(visitingUser.testsAssigned.public);
+          setUserResults(visitingUser.testsAssigned.private);
         } catch (err) {
           console.error(err);
           alert('خطا در دریافت نتایج کاربر');
@@ -69,6 +70,7 @@ const UsersPage = () => {
 
   const handleSubmitFeedback = async () => {
     if (!feedback.trim() || !selectedResult) return;
+      console.log(feedback);
 
     try {
       await submitTestFeedback({
@@ -81,6 +83,8 @@ const UsersPage = () => {
       setSelectedResult(null);
       // Refresh results
       const results = await getUserResults(visitingUser._id);
+      console.log(results);
+      
       setUserResults(results);
     } catch (err) {
       console.error(err);
@@ -135,6 +139,7 @@ const UsersPage = () => {
                         <button 
                           onClick={() => setSelectedResult(result)}
                           disabled={!!selectedResult}
+                          className='submit-feedback'
                         >
                           ثبت بازخورد
                         </button>
@@ -157,7 +162,7 @@ const UsersPage = () => {
                   rows={4}
                 />
                 <div className="form-actions">
-                  <button onClick={handleSubmitFeedback}>ثبت نهایی</button>
+                  <button className="form-actions-submit" onClick={handleSubmitFeedback}>ثبت نهایی</button>
                   <button 
                     onClick={() => {
                       setSelectedResult(null);

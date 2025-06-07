@@ -53,7 +53,7 @@ const UserDashboard = () => {
   }
 
   const getTestStatus = (test) => {
-    if (completedTests.some(completed => completed.testName === test.id) ) return 'Completed';
+    if (completedTests.some(completed => completed.testType === test.id) ) return 'Completed';
     if (new Date(test.deadline) < new Date()) return 'Expired';
     return 'Pending';
   };
@@ -85,7 +85,7 @@ const UserDashboard = () => {
           </div>
           <div className="stat-item">
             <h3>{completedTests?.length}</h3>
-            <p>کامل شده</p>
+            <p>انجام شده</p>
           </div>
           <div className="stat-item">
             <h3>{completedTests.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
