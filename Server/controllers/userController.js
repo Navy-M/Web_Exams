@@ -61,7 +61,7 @@ export const updateTestFeedback = async (req, res) => {
     // Get from user Private
     if (
       user.testsAssigned.private.find((p) => {
-        p.testType === result._id;
+        p.resultId === result._id;
       })
     ) {
       return res

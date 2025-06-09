@@ -28,21 +28,27 @@ const StarterTestPage = () => {
       setStarted(true);
     };
 
-    const fetch_Questions = (id) => {
-      // Fill Questions Data 
-      const testMap = {
-        mbti: Haland_Test,
-        holland: Haland_Test,
-        gardner: Gardner_Test,
-        disc: Disc_Test,
-        clifton: Clifton_Test,
-      };
-      const Q = testMap[id] || Haland_Test;
+    // const fetch_Questions = (id) => {
+    //   // Fill Questions Data 
+    //   const testMap = {
+    //     mbti: Haland_Test,
+    //     holland: Haland_Test,
+    //     gardner: Gardner_Test,
+    //     disc: Disc_Test,
+    //     clifton: Clifton_Test,
+    //   };
+    //   const Q = testMap[id] || Haland_Test;
       
-      // console.log(Q);
-      setQuestions(Q);
-    }
+    //   // console.log(Q);
+    //   setQuestions(Q);
+    // }
   
+
+    // const finishTest = () => {
+    //   navigate('/users/dashboard');
+    // }
+
+
     useEffect(() => {
       const fetchTests = async () => {
         try {
@@ -55,7 +61,7 @@ const StarterTestPage = () => {
           console.log(currentTest.duration);
 
           // Fill user Tests Data
-          const completed  = user?.testsAssigned || [];
+          const completed  = user?.testsAssigned.private || [];
           setCompletedTests(completed );
           console.log(testId);
 
@@ -93,19 +99,18 @@ const StarterTestPage = () => {
           </button>
         </>
       ) : (
-        <div className="test-interface">
-          <h2>{currentTest.name}</h2>
-          {/* <p>{JSON.stringify(questions)}</p> */}
+          <div className="test-interface">
+                  <h2>{currentTest.name}</h2>
+                  {/* <p>{JSON.stringify(questions)}</p> */}
 
-          {testId === 'mbti' && <MBTITest  />}
-          {testId === 'disc' && <DiscTest  />}
-          {testId === 'holland' && <HollandTest  />}
-          {testId === 'gardner' && <GardnerTest  />}
-          {testId === 'clifton' && <CliftonTest  />}
+                  {testId === 'mbti' && <MBTITest  />}
+                  {testId === 'disc' && <DiscTest  />}
+                  {testId === 'holland' && <HollandTest  />}
+                  {testId === 'gardner' && <GardnerTest  />}
+                  {testId === 'clifton' && <CliftonTest  />}
 
-          
-          <button className="submit-button" onClick={() => navigate('/users/dashboard')}>Submit Test</button>
-        </div>
+                  {/* <button className="submit-button" onClick={finishTest}>Submit Test</button> */}
+                </div>
       )}
     </div>
   )

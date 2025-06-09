@@ -4,9 +4,11 @@ import { Disc_Test } from "../../services/dummyData";
 import "../../styles/DiscTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from '../../services/api';
+import {useNavigate} from "react-router-dom";
 
 const DiscTest = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
@@ -35,9 +37,15 @@ const DiscTest = () => {
       };
 
       try {
+        
         const result = await submitResult(resultData);
-        console.log("Result saved:", result);
-        alert("آزمون تمام شد!");
+        if (result?.user) {
+          console.log("Result saved:", result);
+          alert("آزمون تمام شد!");
+          navigate("/");
+        } else {
+          alert(" تغیرات کاربری انجام نشد!")
+        }
       } catch (err) {
         alert("ارسال نتایج با خطا مواجه شد.");
       }

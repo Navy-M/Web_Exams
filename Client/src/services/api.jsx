@@ -101,12 +101,27 @@ export const getTestResults = async (testId) => (await API.get(`/tests/${testId}
 export const submitResult = async (resultData) => {
   try {
     const response = await API.post('/results', resultData);
+    console.log("submitResult response : ",response);
+    
     return response.data;
   } catch (error) {
     console.error('Error submitting result:', error);
     throw error;
   }
 };
+
+// export const submitUserResult = async (miniResultData) => {
+//   try {
+//     const response = await API.post(`/results/${miniResultData.}/userResult`, miniResultData);
+//     console.log("submitUserResult response : ",response);
+    
+//     return response.data;
+//   } catch (error) {
+//     console.error('Error submitting result:', error);
+//     throw error;
+//   }
+// }
+
 export const getUserResults = async (userId) => {
   try {
     const response = await API.post(`/results/${userId}/list`);

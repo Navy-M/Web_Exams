@@ -26,6 +26,17 @@ export const createResult = async (req, res) => {
       (endedAt - new Date(startedAt)) / 1000
     );
 
+    // Check if result already exists
+    const existingResult = await Result.findOne({
+      user: user, // if user is just an ID
+      testType: testType,
+    });
+    if (existingResult) {
+      return res
+        .status(409)
+        .json({ message: "This test has already been submitted." });
+    }
+
     const newResult = new Result({
       user,
       testType,
@@ -37,13 +48,6 @@ export const createResult = async (req, res) => {
       endedAt,
       duration: durationInSeconds,
     });
-    if (
-      Result.find((r) => {
-        r.user === user._id && Result.testType === newResult.testType;
-      })
-    ) {
-      return res.status(409).json({ message: "this test submited once." });
-    }
 
     await newResult.save();
     res.status(201).json(newResult);
@@ -99,7 +103,7 @@ export const submitTestResult = async (req, res) => {
     const savedResult = await result.save();
 
     // Small object to store in user's private array
-    const assignmentSummary = {
+    const miniResult = {
       resultId: savedResult._id,
       testType,
       completedAt: result.completedAt,
@@ -107,11 +111,18 @@ export const submitTestResult = async (req, res) => {
     };
 
     // Push to user's private assigned tests
-    await User.findByIdAndUpdate(user, {
-      $push: { "testsAssigned.private": assignmentSummary },
-    });
+    await User.findByIdAndUpdate(
+      user,
+      { $push: { "testsAssigned.private": miniResult } },
+      { new: true, useFindAndModify: false } // optional options
+    );
 
-    res.status(201).json(savedResult);
+    const message = {
+      status: "success",
+      text: " your test result successfully submited. ",
+    };
+
+    res.status(201).json(message);
   } catch (err) {
     console.error("Error submitting result:", err);
     res.status(500).json({ message: "Server error" });
