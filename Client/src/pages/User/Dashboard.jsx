@@ -53,6 +53,7 @@ const UserDashboard = () => {
   }
 
   const getTestStatus = (test) => {
+    // console.log("completedTests : " , completedTests);
     if (completedTests.private.some(completed => completed.testType === test.id) ) return 'Completed';
     if (new Date(test.deadline) < new Date()) return 'Expired';
     return 'Pending';
@@ -78,20 +79,27 @@ const UserDashboard = () => {
           <button onClick={handleLogout} className="logout-button">Logout</button>
         </div>
 
-        <div className="stats">
-          <div className="stat-item">
-            <h3>{allTests.length}</h3>
-            <p>کل تست ها</p>
+        {user.profile?.age & user.profile?.gender ? 
+          <div className="stats">
+            <div className="stat-item">
+              <h3>{allTests.length}</h3>
+              <p>کل تست ها</p>
+            </div>
+            <div className="stat-item">
+              <h3>{completedTests.private?.length}</h3>
+              <p>انجام شده</p>
+            </div>
+            <div className="stat-item">
+              <h3>{completedTests.public?.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
+              <p>مجموع امتیازات</p>
+            </div>
           </div>
-          <div className="stat-item">
-            <h3>{completedTests.private?.length}</h3>
-            <p>انجام شده</p>
+          : <div className='complete-user-profile'>
+           <p> لطفا ابتدا اطلاعات خود را تکمیل نمایید.</p>
+           <button type="submit" className="button-primary complete-user-profile-btn"  onClick={() => alert("start complete information")}>تکمیل اطلاعات</button>
           </div>
-          <div className="stat-item">
-            <h3>{completedTests.public?.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
-            <p>مجموع امتیازات</p>
-          </div>
-        </div>
+        }
+
       </header>
 
       {loading ? (
@@ -102,19 +110,21 @@ const UserDashboard = () => {
         <>
           <br/>
 
-          <section className="recommended-tests">
-            <h2>تست های پیشنهادی</h2>
-            <br/>
-            {/* {JSON.stringify(allTests.length)} */}
-            {/* <TestCardGrid onSelectTest={handleStartTest} /> */}
-            {allTests.filter(t => getTestStatus(t) === 'Pending').map(test => (
-                <TestCard
-                  key={test.id}
-                  test={test}
-                  onStart={() => handleStartTest(test.id)}
-                />
-              ))}
-          </section>
+          { allTests.filter(t => getTestStatus(t) === 'Pending').length > 0 &&
+            <section className="recommended-tests">
+              <h2>تست های پیشنهادی</h2>
+              <br/>
+              {/* {JSON.stringify(allTests.length)} */}
+              {/* <TestCardGrid onSelectTest={handleStartTest} /> */}
+              {allTests.filter(t => getTestStatus(t) === 'Pending').map(test => (
+                  <TestCard
+                    key={test.id}
+                    test={test}
+                    onStart={() => handleStartTest(test.id)}
+                  />
+                ))}
+            </section>
+          }
 
           {/* <br/> */}
 

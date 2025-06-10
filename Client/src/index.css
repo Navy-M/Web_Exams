@@ -11,6 +11,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --userName-color: #eb7125;
   --primary-color: #2563eb;
   --secondary-color: #4f46e5;
   --background-light: #ffffff;

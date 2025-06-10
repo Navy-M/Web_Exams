@@ -1,18 +1,21 @@
 import React, { useState, useRef } from "react";
-import { Haland_Test } from "../../services/dummyData";
+import { Holland_Test } from "../../services/dummyData";
 import "../../styles/halandTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
+import {useNavigate} from "react-router-dom";
+
 
 const HalandTest = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
 
-  const currentQuestion = Haland_Test[currentIndex];
+  const currentQuestion = Holland_Test[currentIndex];
 
-  const handleAnswer = async (choice) => {
+  const handleSelect = async (choice) => {
     const updatedAnswers = [
       ...answers,
       {
@@ -23,13 +26,14 @@ const HalandTest = () => {
     ];
     setAnswers(updatedAnswers);
 
-    if (currentIndex + 1 < Haland_Test.length) {
+    if (currentIndex + 1 < Holland_Test.length) {
       setCurrentIndex(currentIndex + 1);
     } else {
       const resultData = {
         user: user.id,
-        testType: "HALAND",
+        testType: "HOLLAND",
         answers: updatedAnswers,
+        score:  0,
         otherResult: [],
         adminFeedback: "",
         startedAt: new Date(startTimeRef.current),
@@ -38,8 +42,12 @@ const HalandTest = () => {
 
       try {
         const result = await submitResult(resultData);
-        console.log("Haland Test Result saved:", result);
-        alert("آزمون هالند با موفقیت ثبت شد!");
+        if (result?.user) {
+          console.log("HOLLAND Result saved:", result);
+          alert("آزمون هالند با موفقیت ثبت شد!");
+          navigate("/");
+
+        }
       } catch (err) {
         console.error("Submission error:", err);
         alert("خطا در ثبت نتیجه آزمون هالند");
@@ -56,14 +64,14 @@ const HalandTest = () => {
             <button
               key={idx}
               className="option-button"
-              onClick={() => handleAnswer(option)}
+              onClick={() => handleSelect(option)}
             >
               {option}
             </button>
           ))}
         </div>
         <p className="progress">
-          سؤال {currentIndex + 1} از {Haland_Test.length}
+          سؤال {currentIndex + 1} از {Holland_Test.length}
         </p>
       </div>
     </div>

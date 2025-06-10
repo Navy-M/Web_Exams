@@ -11,7 +11,7 @@ export const Test_Cards = [
   },
 
   {
-    id: "holland",
+    id: "HOLLAND",
     name: "آزمون هالند",
     description: "تیپ شغلی خود را با آزمون هالند شناسایی کنید.",
     type: "interest",
@@ -22,7 +22,7 @@ export const Test_Cards = [
   },
 
   {
-    id: "gardner",
+    id: "GARDNER",
     name: "آزمون هوش‌های چندگانه گاردنر",
     description: "سطح هوش‌های مختلف خود را ارزیابی کنید.",
     type: "intelligence",
@@ -44,7 +44,7 @@ export const Test_Cards = [
   },
 
   {
-    id: "clifton",
+    id: "CLIFTON",
     name: "آزمون نقاط قوت کلیفتون",
     description:
       "نقاط قوت غالب خود را با استفاده از ارزیابی کلیفتون شناسایی کنید.",
@@ -1194,7 +1194,7 @@ export const Disc_Test = [
   },
 ];
 
-export const Haland_Test = [
+export const Holland_Test = [
   {
     id: 1,
     text: "نصب وسایل الکتریکی را دوست دارم.",

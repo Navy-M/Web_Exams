@@ -6,6 +6,7 @@ import { Test_Cards } from '../../services/dummyData';
 import UsersPage from "./UsersPage";
 import TestsPage from "./TestsPage";
 import TestsStatus from "../../components/Admin/TestsStatus";
+import { AlignCenter } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');
@@ -42,14 +43,16 @@ const AdminDashboard = () => {
               <table className="admin-tests-table">
                 <thead>
                   <tr>
+                    <th style={{textAlign: 'center'}}>ردیف</th>
                     <th>نام آزمون</th>
                     <th>نوع</th>
                     <th>فرمت سوال</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {Test_Cards.map(test => (
+                  {Test_Cards.map( ( test, index) => (
                     <tr key={test.id}>
+                      <td style={{textAlign: 'center'}}>{index + 1}</td>
                       <td>{test.name}</td>
                       <td>{test.type}</td>
                       <td>{test.questionFormat}</td>

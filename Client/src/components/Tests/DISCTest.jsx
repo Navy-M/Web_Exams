@@ -30,6 +30,7 @@ const DiscTest = () => {
         user: user.id,
         testType: 'DISC',
         answers: updatedAnswers,
+        score:  0,
         otherResult: [],
         adminFeedback: '',
         startedAt: new Date(startTimeRef.current),
@@ -40,7 +41,7 @@ const DiscTest = () => {
         
         const result = await submitResult(resultData);
         if (result?.user) {
-          console.log("Result saved:", result);
+          console.log("DISC Result saved:", result);
           alert("آزمون تمام شد!");
           navigate("/");
         } else {

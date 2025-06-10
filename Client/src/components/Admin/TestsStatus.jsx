@@ -24,8 +24,9 @@ const TestsStatus = () => {
     const keyword = search.toLowerCase();
     const result = users.filter(user =>
   (user.name?.toLowerCase()?.includes(keyword)) ||
-  (user.email?.toLowerCase()?.includes(keyword)) ||
-  (user.role?.toLowerCase()?.includes(keyword))
+  (user.email?.toLowerCase()?.includes(keyword)) 
+  // ||
+  // (user.role?.toLowerCase()?.includes(keyword))
 );
     setFiltered(result);
   }, [search, users]);
@@ -36,7 +37,7 @@ const TestsStatus = () => {
 
       <input
         type="text"
-        placeholder="جستجو بر اساس نام، ایمیل یا نقش..."
+        placeholder="جستجو بر اساس نام یا ایمیل ..."
         value={search}
         onChange={e => setSearch(e.target.value)}
         className="admin-search-input"
@@ -45,24 +46,24 @@ const TestsStatus = () => {
       <table className="admin-user-tests-table">
         <thead>
           <tr>
+            <th>ردیف</th>
             <th>نام و نام خانوادگی</th>
             <th>ایمیل</th>
             <th>آزمون‌ها</th>
           </tr>
         </thead>
         <tbody>
-          {filtered.map(user => (
+          {filtered.map( (user, index)=> (
             <tr key={user._id}>
+              <td style={{textAlign: 'center'}}>{index + 1}</td>
               <td>{user.profile.fullName}</td>
               <td>{user.email}</td>
               <td>
                 {user.testsAssigned?.private?.length > 0 ? (
-
-                  
                   <ul>
                     {user.testsAssigned.private.map(test => (
                       <li key={test.testName}>
-                        {test.testName} - امتیاز: {test.score ?? 'نامشخص'}
+                        {test.testType} - امتیاز: {test.score ?? 'نامشخص'}
                       </li>
                     ))}
                   </ul>

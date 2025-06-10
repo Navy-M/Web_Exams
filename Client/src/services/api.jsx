@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {Haland_Test } from './dummyData'
+import {Holland_Test } from './dummyData'
 
 // Create Axios instance
 const API = axios.create({
@@ -90,7 +90,7 @@ export const updateUser = async (userId, updatedData) => (await API.put(`/users/
 export const deleteUser = async (userId) => (await API.delete(`/users/${userId}`)).data;
 
 // --- TESTS API ---
-export const getTests = async () => ( Haland_Test);
+export const getTests = async () => ( Holland_Test);
 
 export const assignTest = async (testId, userIds, deadline) =>
   (await API.post(`/tests/${testId}/assign`, { userIds, deadline })).data;

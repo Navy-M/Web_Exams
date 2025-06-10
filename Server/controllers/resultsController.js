@@ -96,7 +96,7 @@ export const submitTestResult = async (req, res) => {
     const result = new Result({
       user,
       testType,
-      _answers: answers,
+      answers,
       score,
       other_Result: otherResult,
       adminFeedback: "", // initially empty
@@ -139,7 +139,7 @@ export const submitTestResult = async (req, res) => {
     //
     // res.status(201).json(message);
   } catch (err) {
-    console.error("Error submitting result:", err);
+    console.error("Error submitting result to db:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

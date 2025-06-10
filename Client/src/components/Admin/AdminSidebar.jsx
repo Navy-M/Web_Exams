@@ -37,6 +37,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
+      position: 'fixed'
     }}>
       <div>
         {/* Theme Toggle Button */}

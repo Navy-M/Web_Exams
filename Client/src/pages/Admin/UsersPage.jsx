@@ -28,7 +28,7 @@ const UsersPage = () => {
         
         const nonAdminUsers = usersData.filter(user => user.role !== 'admin');
         setUsers(nonAdminUsers);
-        console.log(nonAdminUsers);
+        // console.log(nonAdminUsers);
 
 
         setError('');
@@ -97,7 +97,7 @@ const UsersPage = () => {
   };
 
   const formatDate = (dateString) => {
-    console.log("dateString:", dateString );
+    // console.log("dateString:", dateString );
     
     return format(new Date(dateString), 'd MMMM yyyy - HH:mm', {
       locale: faIR
@@ -149,6 +149,17 @@ const UsersPage = () => {
                         >
                           ثبت بازخورد
                         </button>
+                        {!result.score && 
+                        <button 
+                        onClick={() => {console.log(`this is starting to check ${result.testType} test`);
+                        alert(`this is starting to check ${result.testType} test`);
+                      }}
+                      disabled={!!selectedResult}
+                      className='check_test'
+                      >
+                          تصحیح 
+                        </button>
+                        }
                       </td>
                     </tr>
                   ))}
@@ -195,6 +206,7 @@ const UsersPage = () => {
             <table className="admin-users-table">
               <thead>
                 <tr>
+                  <th>ردیف</th>
                   <th>نام و نام خانوادگی</th>
                   <th>ایمیل</th>
                   <th>نقش</th>
@@ -202,8 +214,9 @@ const UsersPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.map(user => (
+                {users.map((user, index) => (
                   <tr key={user._id}>
+                    <td style={{textAlign: 'center'}}>{index + 1}</td>
                     <td>{user.profile.fullName}</td>
                     <td>{user.email}</td>
                     <td>{user.role}</td>

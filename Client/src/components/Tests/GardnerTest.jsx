@@ -3,9 +3,12 @@ import { Gardner_Test } from "../../services/dummyData";
 import "../../styles/GardnerTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
+import {useNavigate} from "react-router-dom";
+
 
 const GardnerTest = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
@@ -20,7 +23,7 @@ const GardnerTest = () => {
     "خیلی زیاد": 5,
   };
 
-const handleAnswer = async (choice) => {
+const handleSelect = async (choice) => {
   const updatedAnswers = [
     ...answers,
     {
@@ -38,6 +41,7 @@ const handleAnswer = async (choice) => {
       user: user.id,
       testType: "GARDNER",
       answers: updatedAnswers,
+      score:  0,
       otherResult: [],
       adminFeedback: "",
       startedAt: new Date(startTimeRef.current),
@@ -46,8 +50,11 @@ const handleAnswer = async (choice) => {
 
     try {
       const result = await submitResult(resultData);
-      console.log("Gardner Test Result saved:", result);
-      alert("آزمون گاردنر با موفقیت ثبت شد!");
+      if (result?.user) {
+        console.log("GARDNER Result saved:", result);
+        alert("آزمون گاردنر با موفقیت ثبت شد!");
+        navigate("/");
+      }
     } catch (err) {
       console.error("Error submitting Gardner test result:", err);
       alert("خطا در ثبت نتیجه آزمون گاردنر");
@@ -72,7 +79,7 @@ const handleAnswer = async (choice) => {
             <button
               key={idx}
               className="option-button"
-              onClick={() => handleAnswer(option)}
+              onClick={() => handleSelect(option)}
             >
               {option}
             </button>

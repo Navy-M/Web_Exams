@@ -3,9 +3,12 @@ import '../../styles/test.css';
 import { Clifton_Test } from '../../services/dummyData';
 import { useAuth } from '../../context/AuthContext';
 import { submitResult } from '../../services/api';
+import {useNavigate} from "react-router-dom";
+
 
 const CliftonTest = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -31,6 +34,7 @@ const CliftonTest = () => {
         user: user.id,
         testType: 'CLIFTON',
         answers: formattedAnswers,
+        score:  0,
         otherResult: [],
         adminFeedback: '',
         startedAt: new Date(startTimeRef.current),
@@ -39,8 +43,12 @@ const CliftonTest = () => {
 
       try {
         const result = await submitResult(resultData);
-        console.log("✅ Clifton Test result saved:", result);
-        alert("آزمون کلیفتون با موفقیت ثبت شد!");
+
+        if (result?.user) {
+          console.log("✅ Clifton result saved:", result);
+          alert("آزمون کلیفتون با موفقیت ثبت شد!");
+          navigate("/");
+        }
       } catch (error) {
         console.error("❌ خطا در ارسال آزمون کلیفتون:", error);
         alert("خطا در ذخیره آزمون کلیفتون");

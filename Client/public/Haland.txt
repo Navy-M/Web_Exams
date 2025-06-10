@@ -1465,3 +1465,66 @@ me
 5
 6
 7
+
+
+
+
+// other test example ...
+
+
+Are you...
+ Able to do your own thing?	 Intuitive?
+ Enthusiastic?	 Athletic?
+ Outgoing?	 Scientific-use information to solve new problems?
+ Well groomed?	 A nature lover?
+ Creative?	 Efficient?
+ Assertive?	 Insightful?
+ Precise?	 Able to operate tools and machinery?
+ Energetic?	 Curious?
+ Helpful?	 Practical?
+ Free spirit or a rebel?	 Methodical?
+ Imaginative?	 Self-confident?
+ Inventive, original?	 Straight forward?
+ Mechanically inclined?	 Friendly?
+ Observant?	 Idealistic?
+ Mechanical?	 Responsible?
+ Analytical (like to figure things out)?	 Persuasive?
+ Understanding?	 Sociable?
+Can you...
+ Sell things or promote ideas?	 Operate mechanical equipment or power tools?
+ Pitch a tent?	 Design fashions, interiors or quilts?
+ Teach/train others?	 Organize activities and events?
+ Suggest a better way to accomplish a task?	 Use machines and power tools?
+ Understand science-use information to figure things out?	 Keep accurate records?
+ Do complex calculations?	 Mediate disputes?
+ Lead a group discussion?	 Cooperate well with others?
+ Play a musical instrument?	 Think abstractly?
+ Express yourself clearly?	 Fix electrical things?
+ Write useful business letters?	 Use a computer?
+ Start projects?	 Use a microscope?
+ Work well within a system?	 Sing, act or dance?
+ Play a sport?	 Tolerate weather conditions?
+ Convince people to do things your way?	 Sketch, draw, paint?
+ Do a lot of paperwork in a short time?	 Lead a group?
+ Solve mechanical problems?	 Solve math problems?
+ Plan and supervise an activity?	 Give talks or speeches?
+ Make original crafts, dinners, school or work projects?	 Write stories, poetry, music?
+Do you like to...
+ Perform experiments?	 Start your own political campaign?
+ Be elected to office or make your opinions heard?	 Be physically active?
+ Work with young people?	 Be responsible for details?
+ Push through to task completion?	 Be in the center of activity?
+ Cook without a recipe to guide you?	 Express your own style?
+ Work outdoors?	 Explore ideas?
+ Read fiction, plays, poetry?	 Be outdoors?
+ Do volunteer service?	 Tinker or work with your hands?
+ Cook?	 Use computers?
+ Work independently (by yourself with little direction)?	 Work on cars, lawnmowers or sewing machines; repair kids' toys?
+ Read scientific or technical magazines?	 Participate in meetings?
+ Work on crafts, make gifts for friends and relatives?	 Make sure things get done?
+ Take photographs?	 Type, file, use a 10-key pad?
+ Keep detailed records?	 Win a leadership or sales award?
+ Work in groups?	 Attend concerts, theaters, art exhibits?
+ Make decisions affecting others?	 Meet important people?
+ Work with numbers?	 Follow clearly defined procedures?
+ Play team sports?	 Help people with problems?

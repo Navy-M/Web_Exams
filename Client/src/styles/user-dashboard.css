@@ -104,3 +104,22 @@
 .score-graph {
   margin-top: 2rem;
 }
+
+.complete-user-profile {
+  display: flex;
+  direction: rtl;
+  text-align: center;
+  align-items: center;
+  align-content: center;
+  background-color: #f56751;
+  min-height: 9rem;
+  font-size: larger;
+  padding: 0% 20%;
+}
+
+.complete-user-profile-btn {
+  margin-right: 5rem;
+  padding: 1rem;
+  font-size: larger;
+  background-color: green;
+}

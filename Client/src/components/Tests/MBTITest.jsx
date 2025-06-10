@@ -3,14 +3,17 @@ import '../../styles/test.css';
 import { Mbti_Test } from '../../services/dummyData';
 import { useAuth } from '../../context/AuthContext';
 import { submitResult } from '../../services/api';
+import {useNavigate} from "react-router-dom";
+
 
 const MBTITest = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
 
-  const handleAnswer = (questionId, answer) => {
+  const handleSelect = (questionId, answer) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
 
     // Delay to show selection before moving to next
@@ -35,6 +38,7 @@ const MBTITest = () => {
       user: user.id,
       testType: 'MBTI',
       answers: formattedAnswers,
+      score:  0,
       otherResult: [],
       adminFeedback: '',
       startedAt: new Date(startTimeRef.current),
@@ -43,8 +47,12 @@ const MBTITest = () => {
 
     try {
       const result = await submitResult(resultData);
-      console.log("MBTI Result saved:", result);
-      alert("آزمون MBTI تمام شد!");
+
+      if (result?.user) {
+        console.log("MBTI Result saved:", result);
+        alert("آزمون MBTI تمام شد!");
+        navigate("/");
+      }
     } catch (err) {
       console.error("Submission error:", err);
       alert("خطا در ارسال نتایج آزمون");
@@ -67,9 +75,9 @@ const MBTITest = () => {
                 className={`option-button ${
                   answers[Mbti_Test[currentQuestion].id] === option.value ? 'selected' : ''
                 }`}
-                onClick={() => handleAnswer(Mbti_Test[currentQuestion].id, option.value)}
+                onClick={() => handleSelect(Mbti_Test[currentQuestion].id, option.value)}
               >
-                {option.text}
+                {option}
               </button>
             ))}
           </div>

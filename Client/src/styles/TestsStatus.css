@@ -11,8 +11,15 @@
   border-collapse: collapse;
 }
 .admin-user-tests-table th,
-td {
+.admin-user-tests-table td {
   border: 1px solid #eee;
   padding: 0.75rem;
+  text-align: right;
+  direction: rtl;
+}
+
+.admin-user-tests-table ul {
+  direction: ltr;
   text-align: left;
+  padding-left: 1rem;
 }

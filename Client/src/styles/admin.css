@@ -1,12 +1,17 @@
 .admin-dashboard {
   display: flex;
   min-height: 100vh;
+
+  h1 {
+    color: var(--userName-color);
+  }
 }
 
 .admin-main {
   flex: 1;
   padding: 2rem;
   background: var(--background-light);
+  margin-left: 250px;
 }
 
 [data-theme="dark"] .admin-main {
@@ -21,6 +26,7 @@
 
 .admin-tests-section {
   margin-top: 2rem;
+  direction: rtl;
 
   h2 {
     font-size: 1.5rem;
@@ -33,21 +39,60 @@
     background: var(--card-bg);
     border-radius: 8px;
     overflow: hidden;
+    direction: rtl;
 
     th,
     td {
       padding: 12px;
-      text-align: left;
+      text-align: right;
       border-bottom: 1px solid #eee;
+      color: var(--text-light);
+      direction: rtl;
     }
 
     th {
       background: var(--header-bg);
       font-weight: bold;
+      direction: rtl;
     }
 
     tr:hover {
       background-color: rgba(0, 0, 0, 0.04);
     }
+  }
+}
+
+.admin-user-tests-section {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  direction: rtl;
+
+  h2 {
+    margin-bottom: 1rem;
+  }
+
+  .admin-search-input {
+    margin-bottom: 2rem;
+  }
+
+  th,
+  td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    color: var(--text-light);
+    direction: rtl;
+  }
+
+  th {
+    background: var(--header-bg);
+    font-weight: bold;
+  }
+
+  tr:hover {
+    background-color: rgba(0, 0, 0, 0.04);
   }
 }

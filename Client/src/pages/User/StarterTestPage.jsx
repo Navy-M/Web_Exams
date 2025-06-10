@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from 'react'
-import { Clifton_Test, Test_Cards } from '../../services/dummyData';
+import {  Test_Cards } from '../../services/dummyData';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import {Disc_Test, Haland_Test, Gardner_Test} from '../../services/dummyData';
+import {Disc_Test, Clifton_Test, Mbti_Test, Holland_Test, Gardner_Test} from '../../services/dummyData';
 import "../../styles/starterTestPage.css";
 import DiscTest from '../../components/Tests/DISCTest';
-import HollandTest from '../../components/Tests/HalandTest';
+import HollandTest from '../../components/Tests/HollandTest';
 import GardnerTest from '../../components/Tests/GardnerTest';
 import MBTITest from '../../components/Tests/MBTITest';
 import CliftonTest from '../../components/Tests/CliftonTest';
@@ -58,12 +58,33 @@ const StarterTestPage = () => {
         
           const foundTest = Test_Cards.find(t => t.id === testId);
           setCurrentTest(foundTest);
-          console.log(currentTest.duration);
+          // console.log(currentTest.duration);
+
+          switch (foundTest.id) {
+            case "MBTI":
+              setQuestions(Mbti_Test);
+              break;
+            case "DISC":
+              setQuestions(Disc_Test);
+              break;
+            case "HOLLAND":
+              setQuestions(Holland_Test);
+              break;
+            case "CLIFTON":
+              setQuestions(Clifton_Test);
+              break;
+            case "GARDNER":
+              setQuestions(Gardner_Test);
+              break;
+            default:
+              setQuestions([]);
+              break;
+          }
 
           // Fill user Tests Data
           const completed  = user?.testsAssigned.private || [];
           setCompletedTests(completed );
-          console.log(testId);
+          // console.log(testId);
 
         
         
@@ -89,9 +110,13 @@ const StarterTestPage = () => {
           <h1>{currentTest.name}</h1>
           <p>{currentTest.description}</p>
           <p>
-            <strong>Duration:</strong>{" "}
+            <strong>تعداد سوالات :</strong>{" "}
+            { questions.length}
+          </p>
+          <p>
+            <strong>زمان تقریبیی :</strong>{" "}
             {currentTest.duration?.from && currentTest.duration?.to
-              ? `${currentTest.duration.from} to ${currentTest.duration.to} minutes`
+              ? `${currentTest.duration.from} الی ${currentTest.duration.to} دقیقه`
               : "Not specified"}
           </p>
           <button className="start-button" onClick={handleStart}>
@@ -105,9 +130,9 @@ const StarterTestPage = () => {
 
                   {testId === 'MBTI' && <MBTITest  />}
                   {testId === 'DISC' && <DiscTest  />}
-                  {testId === 'holland' && <HollandTest  />}
-                  {testId === 'gardner' && <GardnerTest  />}
-                  {testId === 'clifton' && <CliftonTest  />}
+                  {testId === 'HOLLAND' && <HollandTest  />}
+                  {testId === 'GARDNER' && <GardnerTest  />}
+                  {testId === 'CLIFTON' && <CliftonTest  />}
 
                   {/* <button className="submit-button" onClick={finishTest}>Submit Test</button> */}
                 </div>
