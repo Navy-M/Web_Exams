@@ -103,8 +103,8 @@ const StarterTestPage = () => {
                   <h2>{currentTest.name}</h2>
                   {/* <p>{JSON.stringify(questions)}</p> */}
 
-                  {testId === 'mbti' && <MBTITest  />}
-                  {testId === 'disc' && <DiscTest  />}
+                  {testId === 'MBTI' && <MBTITest  />}
+                  {testId === 'DISC' && <DiscTest  />}
                   {testId === 'holland' && <HollandTest  />}
                   {testId === 'gardner' && <GardnerTest  />}
                   {testId === 'clifton' && <CliftonTest  />}

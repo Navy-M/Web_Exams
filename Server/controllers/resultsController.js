@@ -87,6 +87,11 @@ export const getResultsByUser = async (req, res) => {
 export const submitTestResult = async (req, res) => {
   try {
     const { user, testType, answers, score, otherResult, startedAt } = req.body;
+    // console.log({ user, testType, answers, score, otherResult, startedAt });
+
+    if (!user || !testType || !answers) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
 
     const result = new Result({
       user,
@@ -106,23 +111,33 @@ export const submitTestResult = async (req, res) => {
     const miniResult = {
       resultId: savedResult._id,
       testType,
-      completedAt: result.completedAt,
+      completedAt: savedResult.completedAt,
       score,
     };
-
-    // Push to user's private assigned tests
-    await User.findByIdAndUpdate(
+    // Update the user directly
+    const updatedUser = await User.findByIdAndUpdate(
       user,
-      { $push: { "testsAssigned.private": miniResult } },
-      { new: true, useFindAndModify: false } // optional options
-    );
+      {
+        $push: { "testsAssigned.private": miniResult },
+      },
+      { new: true }
+    ).select("-password");
 
-    const message = {
-      status: "success",
-      text: " your test result successfully submited. ",
-    };
+    return res.status(200).json({
+      message: {
+        status: "success",
+        text: " your test result successfully submited. ",
+      },
+      result: savedResult,
+      user: updatedUser,
+    });
 
-    res.status(201).json(message);
+    // const message = {
+    //   status: "success",
+    //   text: " your test result successfully submited. ",
+    // };
+    //
+    // res.status(201).json(message);
   } catch (err) {
     console.error("Error submitting result:", err);
     res.status(500).json({ message: "Server error" });

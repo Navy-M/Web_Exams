@@ -14,7 +14,7 @@ const UsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(false);
-  const [visitingUser, setVisitingUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [userResults, setUserResults] = useState([]);
   const [feedback, setFeedback] = useState('');
   const [selectedResult, setSelectedResult] = useState(null);
@@ -25,8 +25,12 @@ const UsersPage = () => {
       setLoading(true);
       try {
         const usersData = await getUsers();
+        
         const nonAdminUsers = usersData.filter(user => user.role !== 'admin');
         setUsers(nonAdminUsers);
+        console.log(nonAdminUsers);
+
+
         setError('');
       } catch (err) {
         console.error(err);
@@ -40,12 +44,12 @@ const UsersPage = () => {
 
   // Fetch user results when visiting a user
   useEffect(() => {
-    if (visitingUser) {
+    if (selectedUser) {
       const fetchResults = async () => {
         try {
-          // const results = await getUserResults(visitingUser._id);
+          // const results = await getUserResults(selectedUser._id);
           // setUserResults(results);
-          setUserResults(visitingUser.testsAssigned.private);
+          setUserResults(selectedUser.testsAssigned.private);
         } catch (err) {
           console.error(err);
           alert('خطا در دریافت نتایج کاربر');
@@ -53,7 +57,7 @@ const UsersPage = () => {
       };
       fetchResults();
     }
-  }, [visitingUser]);
+  }, [selectedUser]);
 
   const handleDeleteUser = async (id) => {
     const confirmed = window.confirm('آیا از حذف کاربر مطمئن هستید؟');
@@ -74,7 +78,7 @@ const UsersPage = () => {
 
     try {
       await submitTestFeedback({
-        userId: visitingUser._id,
+        userId: selectedUser._id,
         resultId: selectedResult._id,
         feedback
       });
@@ -82,7 +86,7 @@ const UsersPage = () => {
       setFeedback('');
       setSelectedResult(null);
       // Refresh results
-      const results = await getUserResults(visitingUser._id);
+      const results = await getUserResults(selectedUser._id);
       console.log(results);
       
       setUserResults(results);
@@ -93,6 +97,8 @@ const UsersPage = () => {
   };
 
   const formatDate = (dateString) => {
+    console.log("dateString:", dateString );
+    
     return format(new Date(dateString), 'd MMMM yyyy - HH:mm', {
       locale: faIR
     });
@@ -100,19 +106,19 @@ const UsersPage = () => {
 
   return (
     <div className="admin-users-container">
-      {visitingUser ? (
+      {selectedUser ? (
         <div className="user-results-section">
           <div className="user-header">
             <h2>
-              نتایج تست های کاربر: {visitingUser.profile.fullName}
+              نتایج تست های کاربر: {selectedUser.profile.fullName}
               <button 
-                onClick={() => setVisitingUser(null)}
+                onClick={() => setSelectedUser(null)}
                 className="back-button"
               >
                 بازگشت
               </button>
             </h2>
-            <p>ایمیل: {visitingUser.email}</p>
+            <p>ایمیل: {selectedUser.email}</p>
           </div>
 
           <div className="results-container">
@@ -203,7 +209,7 @@ const UsersPage = () => {
                     <td>{user.role}</td>
                     <td>
                       <button 
-                        onClick={() => setVisitingUser(user)}
+                        onClick={() => setSelectedUser(user)}
                         className="view-button"
                       >
                         مشاهده نتایج

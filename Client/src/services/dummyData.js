@@ -1,12 +1,12 @@
 export const Test_Cards = [
   {
-    id: "disc",
+    id: "DISC",
     name: "آزمون DISC",
     description: "شخصیت خود را از طریق مدل DISC بشناسید.",
     type: "personality",
     questionFormat: "multipleChoiceTrait", // Options with associated traits
     createdAt: "2025-05-29T11:11:16.374+00:00",
-    deadline: "2025-06-29T11:11:16.374+00:00",
+    deadline: "2025-07-29T11:11:16.374+00:00",
     duration: { from: 5, to: 8 },
   },
 
@@ -17,7 +17,7 @@ export const Test_Cards = [
     type: "interest",
     questionFormat: "yesNo",
     createdAt: "2025-05-13T04:14:16.374+00:00",
-    deadline: "2025-06-13T04:14:16.374+00:00",
+    deadline: "2025-07-13T04:14:16.374+00:00",
     duration: { from: 40, to: 45 },
   },
 
@@ -28,18 +28,18 @@ export const Test_Cards = [
     type: "intelligence",
     questionFormat: "likert",
     createdAt: "2025-05-05T16:11:16.374+00:00",
-    deadline: "2025-06-05T16:11:16.374+00:00",
+    deadline: "2025-07-15T16:11:16.374+00:00",
     duration: { from: 30, to: 45 },
   },
 
   {
-    id: "mbti",
+    id: "MBTI",
     name: "آزمون MBTI",
     description: "با شاخص تیپ‌های مایرز-بریگز، تیپ شخصیتی خود را بشناسید.",
     type: "personality",
     questionFormat: "eitherOr",
     createdAt: "2025-05-20T23:12:16.374+00:00",
-    deadline: "2025-06-20T12:12:16.374+00:00",
+    deadline: "2025-07-20T12:12:16.374+00:00",
     duration: { from: 20, to: 32 },
   },
 

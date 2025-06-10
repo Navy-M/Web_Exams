@@ -100,8 +100,9 @@ export const getTestResults = async (testId) => (await API.get(`/tests/${testId}
 // --- RESULTS API ---
 export const submitResult = async (resultData) => {
   try {
-    const response = await API.post('/results', resultData);
-    console.log("submitResult response : ",response);
+    // console.log("submitedResult req data : ",resultData);
+    const response = await API.post('/results/submitUInfo', resultData);
+    console.log("submitedResult response : ",response);
     
     return response.data;
   } catch (error) {

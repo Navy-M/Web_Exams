@@ -31,8 +31,8 @@ const UserDashboard = () => {
         setAllTests(data);
 
         // Fill user Tests Data
-        const userData = user?.testsAssigned.public || [];
-        console.log(user);
+        const userData = user?.testsAssigned || [];
+        // console.log(user);
         
         setCompletedTests(userData);
 
@@ -53,7 +53,7 @@ const UserDashboard = () => {
   }
 
   const getTestStatus = (test) => {
-    if (completedTests.some(completed => completed.testType === test.id) ) return 'Completed';
+    if (completedTests.private.some(completed => completed.testType === test.id) ) return 'Completed';
     if (new Date(test.deadline) < new Date()) return 'Expired';
     return 'Pending';
   };
@@ -84,11 +84,11 @@ const UserDashboard = () => {
             <p>کل تست ها</p>
           </div>
           <div className="stat-item">
-            <h3>{completedTests?.length}</h3>
+            <h3>{completedTests.private?.length}</h3>
             <p>انجام شده</p>
           </div>
           <div className="stat-item">
-            <h3>{completedTests.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
+            <h3>{completedTests.public?.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
             <p>مجموع امتیازات</p>
           </div>
         </div>
@@ -105,6 +105,7 @@ const UserDashboard = () => {
           <section className="recommended-tests">
             <h2>تست های پیشنهادی</h2>
             <br/>
+            {/* {JSON.stringify(allTests.length)} */}
             {/* <TestCardGrid onSelectTest={handleStartTest} /> */}
             {allTests.filter(t => getTestStatus(t) === 'Pending').map(test => (
                 <TestCard
@@ -139,11 +140,12 @@ const UserDashboard = () => {
           <br/>
           <hr/>
           <br/>
-
-          {completedTests.length > 0 &&
+          
+          <h2>تست های انجام شده</h2>
+          {completedTests.public?.length > 0 ?
             <>
               <section className="active-tests">
-                <h2>تست های انجام شده</h2>
+                
                 <div className="tests-grid">
                   <TestResultCardGrid onSelectTest={handleStartTest} />
               
@@ -169,7 +171,7 @@ const UserDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {completedTests.map(test => (
+                    {completedTests.public.map(test => (
                       <tr key={test.testName}>
                         <td>{test.testName}</td>
                         <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
@@ -181,6 +183,8 @@ const UserDashboard = () => {
                 </table>
               </section>
             </>
+            : <> 
+            <p> جداول نتایج تست هاه شما پس از برسی در دسترس میباشد ...</p> </>
           }
         </>
       )}
