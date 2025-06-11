@@ -53,6 +53,8 @@ export const loginUser = async (req, res, next) => {
         id: user._id,
         email: user.email,
         role: user.role,
+        profile: user.profile,
+        testsAssigned: user.testsAssigned,
       },
     });
   } catch (err) {
@@ -137,15 +139,15 @@ export const getProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // console.log({
-    //   user: {
-    //     id: user._id,
-    //     email: user.email,
-    //     role: user.role,
-    //     name: user.name || null,
-    //     testsAssigned: user.testsAssigned || [],
-    //   },
-    // });
+    console.log({
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        profile: user.profile || {},
+        testsAssigned: user.testsAssigned || [],
+      },
+    });
 
     // Send user data
     res.json({
@@ -153,7 +155,7 @@ export const getProfile = async (req, res) => {
         id: user._id,
         email: user.email,
         role: user.role,
-        name: user.name || null,
+        profile: user.profile || {},
         testsAssigned: user.testsAssigned || [],
       },
     });

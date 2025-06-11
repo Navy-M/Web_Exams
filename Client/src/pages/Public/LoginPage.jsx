@@ -37,6 +37,7 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
     try {
+      
       const loggedInUser = await login({ email, password }); // Get user immediately
 
       // Redirect based on their role

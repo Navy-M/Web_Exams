@@ -61,9 +61,11 @@ export const login = async (credentials) => {
 };
 
 export const getProfile = async () => {
+    console.log("is trying");
+  
   try {
-    const res = await API.get('/auth/profile');
-    // console.log(res);
+    const res = await API.post('/auth/profile');
+    // console.log(res.data);
     
     return res.data;
   } catch (error) {

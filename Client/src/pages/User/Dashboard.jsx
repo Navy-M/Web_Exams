@@ -96,7 +96,7 @@ const UserDashboard = () => {
           </div>
           : <div className='complete-user-profile'>
            <p> لطفا ابتدا اطلاعات خود را تکمیل نمایید.</p>
-           <button type="submit" className="button-primary complete-user-profile-btn"  onClick={() => alert("start complete information")}>تکمیل اطلاعات</button>
+           <button type="submit" className="button-primary complete-user-profile-btn"  onClick={() => navigate("/users/completeProfile")}>تکمیل اطلاعات</button>
           </div>
         }
 
@@ -151,50 +151,54 @@ const UserDashboard = () => {
           <hr/>
           <br/>
           
-          <h2>تست های انجام شده</h2>
-          {completedTests.public?.length > 0 ?
-            <>
-              <section className="active-tests">
-                
-                <div className="tests-grid">
-                  <TestResultCardGrid onSelectTest={handleStartTest} />
-              
-                  {/* {completedTests.map(test => {
-                    <div key={test.id} className="test-card" onClick={() => onSelectTest(test.id)}>
-                    <h3>{test.name}</h3>
-                    <p>{test.description}</p>
-                    <span className="tag">{test.type}</span>
-                  </div>
-                  })} */}
-                </div>
-              </section>
-           
-              <section className="test-history">
-                <h2>تاریخچه تست ها</h2>
-                <table className="history-table">
-                  <thead>
-                    <tr>
-                      <th>نام تست</th>
-                      <th>تاریخ تکمیل</th>
-                      <th>مدت زمان</th>
-                      <th>امتیاز</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {completedTests.public.map(test => (
-                      <tr key={test.testName}>
-                        <td>{test.testName}</td>
-                        <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
-                        <td className={getTestStatus(test).toLowerCase()}>{test.duration} Min</td>
-                        <td>{test.score || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-            </>
-            : <> 
-            <p> جداول نتایج تست هاه شما پس از برسی در دسترس میباشد ...</p> </>
+            {user.profile?.age && user.profile?.gender &&
+              <>
+              <h2>تست های انجام شده</h2>
+              {completedTests.public?.length > 0 ?
+                <>
+                  <section className="active-tests">
+
+                    <div className="tests-grid">
+                      <TestResultCardGrid onSelectTest={handleStartTest} />
+
+                      {/* {completedTests.map(test => {
+                        <div key={test.id} className="test-card" onClick={() => onSelectTest(test.id)}>
+                        <h3>{test.name}</h3>
+                        <p>{test.description}</p>
+                        <span className="tag">{test.type}</span>
+                      </div>
+                      })} */}
+                    </div>
+                  </section>
+                      
+                  <section className="test-history">
+                    <h2>تاریخچه تست ها</h2>
+                    <table className="history-table">
+                      <thead>
+                        <tr>
+                          <th>نام تست</th>
+                          <th>تاریخ تکمیل</th>
+                          <th>مدت زمان</th>
+                          <th>امتیاز</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {completedTests.public.map(test => (
+                          <tr key={test.testName}>
+                            <td>{test.testName}</td>
+                            <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
+                            <td className={getTestStatus(test).toLowerCase()}>{test.duration} Min</td>
+                            <td>{test.score || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </section>
+                </>
+                : <> 
+                <p> جداول نتایج تست هاه شما پس از برسی در دسترس میباشد ...</p> </>
+              }
+              </>
           }
         </>
       )}

@@ -13,8 +13,8 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       try {
         const res = await api.getProfile();
+        console.log(res.user);
         setUser(res.user);
-        // console.log(res.user);
         
       } catch (err) {
         setUser(null);
@@ -23,10 +23,10 @@ export const AuthProvider = ({ children }) => {
       }
     };
   
-    // if (userToken) {
-    //   checkAuth(); // only if token exists
-    // }
-      checkAuth();
+    if (userToken) {
+      checkAuth(); // only if token exists
+    }
+      // checkAuth();
 
   }, [userToken]);
 
