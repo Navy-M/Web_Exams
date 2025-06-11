@@ -23,12 +23,13 @@ export const AuthProvider = ({ children }) => {
       }
     };
   
-    if (userToken) {
-      checkAuth(); // only if token exists
-    }
-      // checkAuth();
+    // if (userToken) {
+    //   checkAuth(); // only if token exists
+    // }
+      checkAuth();
 
-  }, [userToken]);
+  }, []);
+  // }, [userToken]);
 
   const login = async (credentials) => {
     // test

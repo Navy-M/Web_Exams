@@ -18,11 +18,16 @@ const userSchema = new mongoose.Schema(
     },
     profile: {
       fullName: String,
+      nationalId: String,
       gender: String,
       age: Number,
-      isSingle: Boolean,
-      mobile: String,
-      address: String,
+      single: Boolean,
+      education: String,
+      field: String,
+      phone: String,
+      city: String,
+      province: String,
+      jobPosition: String,
     },
     testsAssigned: {
       public: [

@@ -91,6 +91,15 @@ export const createUser = async (userData) => (await API.post('/users', userData
 export const updateUser = async (userId, updatedData) => (await API.put(`/users/${userId}`, updatedData)).data;
 export const deleteUser = async (userId) => (await API.delete(`/users/${userId}`)).data;
 
+export const completeProfile = async (form) => {
+  try {
+    const response = await API.post("/users/completeProf", form);
+    return response.data; // assume { status: "...", message: "...", data: ... }
+  } catch (error) {
+    console.error("completeProfile error:", error);
+    throw error.response?.data || { message: "خطای ناشناخته هنگام ارسال اطلاعات." };
+  }
+};
 // --- TESTS API ---
 export const getTests = async () => ( Holland_Test);
 

@@ -88,3 +88,65 @@ export const updateTestFeedback = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const completeProfile = async (req, res) => {
+  try {
+    const {
+      userId,
+      name,
+      family,
+      nationalId,
+      age,
+      gender,
+      single,
+      education,
+      field,
+      phone,
+      city,
+      province,
+      jobPosition,
+    } = req.body;
+
+    // Basic validation
+    if (!userId || !name || !family || !nationalId || !age) {
+      return res.status(400).json({
+        message: "برخی از فیلدهای الزامی تکمیل نشده‌اند.",
+      });
+    }
+
+    const info = {
+      userId,
+      fullName: `${name} ${family}`,
+      nationalId,
+      age,
+      gender,
+      single,
+      education,
+      field,
+      phone,
+      city,
+      province,
+      jobPosition,
+    };
+
+    // Update the user profile directly
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: { profile: info },
+      },
+      { new: true }
+    ).select("-password");
+
+    return res.status(200).json({
+      message: {
+        status: "success",
+        text: " your profile information successfully submited. ",
+      },
+      userProfile: updatedUser.profile,
+    });
+  } catch (err) {
+    console.error("Error completing profile to user:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

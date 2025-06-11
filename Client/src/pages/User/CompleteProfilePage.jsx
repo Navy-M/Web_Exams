@@ -2,20 +2,24 @@ import { useState } from "react";
 import * as API from "../../services/api"; // your axios setup
 import { useNavigate } from "react-router-dom";
 import "../../styles/CompleteProfilePage.css";
+import { useAuth } from "../../context/AuthContext";
 
 const CompleteProfilePage = () => {
-  const [formData, setFormData] = useState({
+    const{ user} = useAuth();
+    const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+    userId: user.id,
     name: "",
     family: "",
     nationalId: "",
     age: "",
     gender: "",
+    single: true,
     education: "",
     field: "",
     phone: "",
     city: "",
     province: "",
-    organization: "",
     jobPosition: "",
   });
 
@@ -26,10 +30,33 @@ const CompleteProfilePage = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("اطلاعات ارسال شد:", formData);
-    // اینجا می‌تونی API برای ارسال به سرور بزنی
+
+    const allRequiredFieldsFilled = Object.entries(formData)
+      .filter(([key]) => key !== "jobPosition") // exclude jobPosition
+      .every(([_, value]) => value !== "");
+
+    if (!allRequiredFieldsFilled) {
+      alert("لطفاً همه فیلدهای الزامی را پر کنید.");
+      return;
+    }
+
+    try {
+      const response = await API.completeProfile(formData);
+        
+      if (response?.message?.status === "success") {
+        alert("پروفایل شما با موفقیت تکمیل شد.");
+        console.log("اطلاعات ارسال شد:", response);
+        navigate("/dashboard");
+      } else {
+        alert(response?.message.text || "خطا در ارسال اطلاعات.");
+        console.warn("Server response:", response);
+      }
+    } catch (error) {
+      console.error("خطا در ارسال اطلاعات:", error);
+      alert("مشکلی در برقراری ارتباط با سرور پیش آمده است.");
+    }
   };
 
   return (
@@ -53,6 +80,10 @@ const CompleteProfilePage = () => {
           <input type="number" name="age" value={formData.age} onChange={handleChange} />
         </div>
         <div className="form-group">
+          <label>وضعیت تاهل</label>
+          <input type="boolean" name="single" value={formData.single} onChange={handleChange} />
+        </div>
+        <div className="form-group">
           <label>جنسیت</label>
           <select name="gender" value={formData.gender} onChange={handleChange}>
             <option value="">انتخاب کنید</option>
@@ -61,10 +92,18 @@ const CompleteProfilePage = () => {
             <option value="دیگر">دیگر</option>
           </select>
         </div>
-        <div className="form-group">
+          <div className="form-group">
           <label>تحصیلات</label>
-          <input name="education" value={formData.education} onChange={handleChange} />
+          <select name="education" value={formData.education} onChange={handleChange}>
+            <option value="">انتخاب کنید</option>
+            <option value="دیپلم">دیپلم</option>
+            <option value="کارشناسی">کارشناسی</option>
+            <option value="کارشناسی ارشد">کارشناسی ارشد</option>
+            <option value="دکتری">دکتری</option>
+            <option value="دیگر">دیگر</option>
+          </select>
         </div>
+        
         <div className="form-group">
           <label>رشته تحصیلی</label>
           <input name="field" value={formData.field} onChange={handleChange} />
@@ -80,10 +119,6 @@ const CompleteProfilePage = () => {
         <div className="form-group">
           <label>شهر</label>
           <input name="city" value={formData.city} onChange={handleChange} />
-        </div>
-        <div className="form-group">
-          <label>سازمان/شرکت</label>
-          <input name="organization" value={formData.organization} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>سمت شغلی</label>

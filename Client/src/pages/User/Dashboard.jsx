@@ -79,7 +79,7 @@ const UserDashboard = () => {
           <button onClick={handleLogout} className="logout-button">Logout</button>
         </div>
 
-        {user.profile?.age & user.profile?.gender ? 
+        {user.profile?.age && user.profile?.gender ? 
           <div className="stats">
             <div className="stat-item">
               <h3>{allTests.length}</h3>
@@ -151,7 +151,7 @@ const UserDashboard = () => {
           <hr/>
           <br/>
           
-            {user.profile?.age && user.profile?.gender &&
+            {user.profile?.age && user.profile?.gender && user.profile?.education &&
               <>
               <h2>تست های انجام شده</h2>
               {completedTests.public?.length > 0 ?
