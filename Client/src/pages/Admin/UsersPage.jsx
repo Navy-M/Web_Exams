@@ -8,6 +8,7 @@ import {
   submitTestFeedback
 } from "../../services/api";
 import "./usersPage.css";
+import API from '../../services/api';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -71,6 +72,27 @@ const UsersPage = () => {
       alert('خطا در حذف کاربر');
     }
   };
+
+  const handleCheckTest = async (result) => {
+  try {
+    const { _id, testType, answers } = result;
+
+    const response = await API.post("/results/analyze", {
+      resultId: _id,
+      testType,
+      answers,
+    });
+
+    alert("تحلیل با موفقیت انجام شد ✅");
+    console.log("✅ Analyzed Result:", response.data);
+
+    // Optionally refresh results or update local state
+    // await fetchResults();
+  } catch (err) {
+    console.error("❌ Error analyzing test:", err);
+    alert("خطایی در تحلیل تست رخ داد");
+  }
+};
 
   const handleSubmitFeedback = async () => {
     if (!feedback.trim() || !selectedResult) return;
@@ -151,8 +173,10 @@ const UsersPage = () => {
                         </button>
                         {!result.score && 
                         <button 
-                        onClick={() => {console.log(`this is starting to check ${result.testType} test`);
-                        alert(`this is starting to check ${result.testType} test`);
+                        onClick={() => {
+                          // console.log(`this is starting to check ${result.testType} test`);
+                          handleCheckTest(result);
+                          alert(`this is starting to check ${result.testType} test`);
                       }}
                       disabled={!!selectedResult}
                       className='check_test'

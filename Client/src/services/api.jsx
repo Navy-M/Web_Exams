@@ -59,9 +59,8 @@ export const login = async (credentials) => {
     throw error;
   }
 };
-
 export const getProfile = async () => {
-    console.log("is trying");
+    // console.log("is trying");
   
   try {
     const res = await API.post('/auth/profile');
@@ -73,7 +72,6 @@ export const getProfile = async () => {
     throw error;
   }
 };
-
 export const logout = async () => {
   try {
     await API.post('/auth/logout');
@@ -90,7 +88,6 @@ export const getUserById = async (userId) => (await API.get(`/users/${userId}`))
 export const createUser = async (userData) => (await API.post('/users', userData)).data;
 export const updateUser = async (userId, updatedData) => (await API.put(`/users/${userId}`, updatedData)).data;
 export const deleteUser = async (userId) => (await API.delete(`/users/${userId}`)).data;
-
 export const completeProfile = async (form) => {
   try {
     const response = await API.post("/users/completeProf", form);
@@ -102,10 +99,8 @@ export const completeProfile = async (form) => {
 };
 // --- TESTS API ---
 export const getTests = async () => ( Holland_Test);
-
 export const assignTest = async (testId, userIds, deadline) =>
   (await API.post(`/tests/${testId}/assign`, { userIds, deadline })).data;
-
 export const getTestResults = async (testId) => (await API.get(`/tests/${testId}/results`)).data;
 
 // --- RESULTS API ---

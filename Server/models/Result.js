@@ -31,6 +31,7 @@ const resultSchema = new mongoose.Schema(
     submittedAt: {
       type: Date,
       default: Date.now,
+      required: true,
     },
   },
   { timestamps: true }

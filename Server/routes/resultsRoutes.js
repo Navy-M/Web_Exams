@@ -4,6 +4,7 @@ import {
   getResults,
   getResultsByUser,
   submitTestResult,
+  analyzeResult,
 } from "../controllers/resultsController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -11,6 +12,8 @@ const router = express.Router();
 
 router.post("/", createResult);
 router.post("/submitUInfo", submitTestResult);
+
+router.post("/analyze", analyzeResult);
 
 router.get("/", getResults);
 

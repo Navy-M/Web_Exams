@@ -150,3 +150,27 @@ export const completeProfile = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const analyzeResult = async (req, res) => {
+  try {
+    const { resultId, testType, answers } = req.body;
+
+    // Optional: fetch full result from DB
+    const result = await Result.findById(resultId);
+    if (!result) return res.status(404).json({ message: "نتیجه‌ای یافت نشد" });
+
+    // Call analysis logic
+    const analysis = getTestAnalysis(testType, answers);
+
+    return res.status(200).json({
+      message: {
+        status: "success",
+        text: "تحلیل تست با موفقیت انجام شد",
+      },
+      analysis,
+    });
+  } catch (err) {
+    console.error("❌ تحلیل تست ناموفق:", err);
+    res.status(500).json({ message: "خطای سرور در تحلیل تست" });
+  }
+};
