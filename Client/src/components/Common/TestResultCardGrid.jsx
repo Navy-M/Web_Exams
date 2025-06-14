@@ -12,8 +12,10 @@ const TestResultCardGrid = ({ onSelectTest }) => {
   return (
     <div className="test-card-grid">
       {user.testsAssigned.public.map((test) => (
-        <div key={test.testName} className="test-card" onClick={() => onSelectTest(test.id)}>
-          <h3>{Test_Cards.find(tc => tc.id === test.testName).name}</h3>
+        <div key={test.testName} className="test-card" 
+        // onClick={() => onSelectTest(test.id)}
+        >
+          <h3>{Test_Cards.find(tc => tc.id === test.testType).name}</h3>
           <p>{new Date(test.completedAt).toLocaleString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -21,7 +23,7 @@ const TestResultCardGrid = ({ onSelectTest }) => {
             hour: '2-digit',
             minute: '2-digit'
           })}</p>
-          <span className="tag">{Test_Cards.find(tc => tc.id === test.testName).type}</span>
+          <span className="tag">{Test_Cards.find(tc => tc.id === test.testType).type}</span>
         </div>
       ))}
     </div>

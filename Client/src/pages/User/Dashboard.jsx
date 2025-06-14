@@ -184,8 +184,8 @@ const UserDashboard = () => {
                       </thead>
                       <tbody>
                         {completedTests.public.map(test => (
-                          <tr key={test.testName}>
-                            <td>{test.testName}</td>
+                          <tr key={test.testType}>
+                            <td>{test.testType}</td>
                             <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
                             <td className={getTestStatus(test).toLowerCase()}>{test.duration} Min</td>
                             <td>{test.score || '-'}</td>

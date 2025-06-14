@@ -28,9 +28,9 @@ const MBTITest = () => {
 
   const handleSubmit = async () => {
     // Convert answers object to array format for backend
-    const formattedAnswers = Object.entries(answers).map(([questionId, selectedOption]) => ({
+    const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
       questionId,
-      value: selectedOption,
+      value
     }));
 
     const resultData = {

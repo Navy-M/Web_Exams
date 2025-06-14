@@ -13,13 +13,7 @@ const resultSchema = new mongoose.Schema(
       enum: ["MBTI", "DISC", "HOLLAND", "GARDNER", "CLIFTON"],
       required: true,
     },
-    answers: [
-      {
-        questionId: String,
-        selectedOption: String,
-        score: Number,
-      },
-    ],
+    answers: [],
     score: Number,
     durationInSeconds: Number,
     otherResult: [String],

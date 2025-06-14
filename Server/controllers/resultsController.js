@@ -97,6 +97,10 @@ export const submitTestResult = async (req, res) => {
     } = req.body;
     // console.log({ user, testType, answers, score, otherResult, startedAt });
 
+    // if (Result.find((r) => r.user === user)) {
+    //   return res.status(400).json({ message: "result is already exist." });
+    // }
+
     if (!user || !testType || !answers) {
       return res.status(400).json({ message: "Missing required fields." });
     }
