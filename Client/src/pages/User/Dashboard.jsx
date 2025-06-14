@@ -110,7 +110,7 @@ const UserDashboard = () => {
         <>
           <br/>
 
-          { allTests.filter(t => getTestStatus(t) === 'Pending').length > 0 &&
+          { user.profile?.age && allTests.filter(t => getTestStatus(t) === 'Pending').length > 0 &&
             <section className="recommended-tests">
               <h2>تست های پیشنهادی</h2>
               <br/>

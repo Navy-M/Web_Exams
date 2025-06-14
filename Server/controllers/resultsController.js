@@ -86,7 +86,15 @@ export const getResultsByUser = async (req, res) => {
 // Save Results
 export const submitTestResult = async (req, res) => {
   try {
-    const { user, testType, answers, score, otherResult, startedAt } = req.body;
+    const {
+      user,
+      testType,
+      answers,
+      score,
+      otherResult,
+      startedAt,
+      submittedAt,
+    } = req.body;
     // console.log({ user, testType, answers, score, otherResult, startedAt });
 
     if (!user || !testType || !answers) {
@@ -101,7 +109,7 @@ export const submitTestResult = async (req, res) => {
       other_Result: otherResult,
       adminFeedback: "", // initially empty
       startedAt,
-      completedAt: new Date(),
+      submittedAt,
       durationMinutes: Math.round((Date.now() - new Date(startedAt)) / 60000),
     });
 
@@ -111,7 +119,7 @@ export const submitTestResult = async (req, res) => {
     const miniResult = {
       resultId: savedResult._id,
       testType,
-      completedAt: savedResult.completedAt,
+      completedAt: savedResult.submittedAt,
       score,
     };
     // Update the user directly

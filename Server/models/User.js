@@ -43,7 +43,10 @@ const userSchema = new mongoose.Schema(
         {
           resultId: { type: mongoose.Schema.Types.ObjectId, ref: "Result" },
           testType: String,
-          completedAt: Date,
+          completedAt: {
+            type: Date,
+            require: true,
+          },
           score: Number,
         },
       ],

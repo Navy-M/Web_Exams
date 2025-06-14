@@ -69,7 +69,7 @@ export const loginUser = async (req, res, next) => {
  */
 export const registerUser = async (req, res, next) => {
   try {
-    const { email, password, role } = req.body;
+    const { fullName, email, password, role } = req.body;
     console.log("[Register Attempt]", { email, role });
 
     // Validate input
@@ -87,10 +87,25 @@ export const registerUser = async (req, res, next) => {
 
     // Hash password and create user
     const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, password: hashed, role });
+    const user = await User.create({
+      email,
+      password: hashed,
+      role,
+      profile: { fullName: fullName },
+    });
 
     console.log("[Register Success] User created:", user.email);
-    res.status(201).json({ message: "User registered" });
+    res.status(201).json({
+      message: "User registered",
+      user: {
+        email: user.email,
+        role: user.role,
+        profile: {
+          fullName: user.profile.fullName,
+        },
+        testsAssigned: user.testsAssigned,
+      },
+    });
   } catch (err) {
     console.error("[Register Exception]", err);
     next(err);

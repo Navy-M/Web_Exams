@@ -17,12 +17,117 @@ export const getProfile = (req, res) => {
   }
 };
 
+export const deleteUser = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    // Check if ID exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "کاربر یافت نشد." });
+    }
+
+    // Delete user
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({ message: "کاربر با موفقیت حذف شد." });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ message: "حذف کاربر با خطا مواجه شد." });
+  }
+};
+
 export const getUsers = async (req, res, next) => {
   try {
     const users = await User.find().select("-password");
     res.json(users);
   } catch (err) {
     next(err);
+  }
+};
+
+export const completeProfile = async (req, res) => {
+  try {
+    const {
+      userId,
+      fullName,
+      nationalId,
+      age,
+      gender,
+      single,
+      education,
+      field,
+      phone,
+      city,
+      province,
+      jobPosition,
+    } = req.body;
+
+    // Basic validation
+    if (!userId || !fullName || !phone || !nationalId || !age) {
+      return res.status(400).json({
+        message: "برخی از فیلدهای الزامی تکمیل نشده‌اند.",
+      });
+    }
+
+    const info = {
+      userId,
+      fullName,
+      nationalId,
+      age,
+      gender,
+      single,
+      education,
+      field,
+      phone,
+      city,
+      province,
+      jobPosition,
+    };
+
+    // Update the user profile directly
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: { profile: info },
+      },
+      { new: true }
+    ).select("-password");
+
+    return res.status(200).json({
+      message: {
+        status: "success",
+        text: " your profile information successfully submited. ",
+      },
+      userProfile: updatedUser.profile,
+    });
+  } catch (err) {
+    console.error("Error completing profile to user:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const analyzeResult = async (req, res) => {
+  try {
+    const { resultId, testType, answers } = req.body;
+
+    // Optional: fetch full result from DB
+    const result = await Result.findById(resultId);
+    if (!result) return res.status(404).json({ message: "نتیجه‌ای یافت نشد" });
+
+    // Call analysis logic
+    const analysis = getTestAnalysis(testType, answers);
+
+    return res.status(200).json({
+      message: {
+        status: "success",
+        text: "تحلیل تست با موفقیت انجام شد",
+      },
+      analysis,
+    });
+  } catch (err) {
+    console.error("❌ تحلیل تست ناموفق:", err);
+    res.status(500).json({ message: "خطای سرور در تحلیل تست" });
   }
 };
 
@@ -86,91 +191,5 @@ export const updateTestFeedback = async (req, res) => {
   } catch (error) {
     console.error("Error submitting feedback:", error);
     res.status(500).json({ message: "Server error" });
-  }
-};
-
-export const completeProfile = async (req, res) => {
-  try {
-    const {
-      userId,
-      name,
-      family,
-      nationalId,
-      age,
-      gender,
-      single,
-      education,
-      field,
-      phone,
-      city,
-      province,
-      jobPosition,
-    } = req.body;
-
-    // Basic validation
-    if (!userId || !name || !family || !nationalId || !age) {
-      return res.status(400).json({
-        message: "برخی از فیلدهای الزامی تکمیل نشده‌اند.",
-      });
-    }
-
-    const info = {
-      userId,
-      fullName: `${name} ${family}`,
-      nationalId,
-      age,
-      gender,
-      single,
-      education,
-      field,
-      phone,
-      city,
-      province,
-      jobPosition,
-    };
-
-    // Update the user profile directly
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      {
-        $set: { profile: info },
-      },
-      { new: true }
-    ).select("-password");
-
-    return res.status(200).json({
-      message: {
-        status: "success",
-        text: " your profile information successfully submited. ",
-      },
-      userProfile: updatedUser.profile,
-    });
-  } catch (err) {
-    console.error("Error completing profile to user:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-export const analyzeResult = async (req, res) => {
-  try {
-    const { resultId, testType, answers } = req.body;
-
-    // Optional: fetch full result from DB
-    const result = await Result.findById(resultId);
-    if (!result) return res.status(404).json({ message: "نتیجه‌ای یافت نشد" });
-
-    // Call analysis logic
-    const analysis = getTestAnalysis(testType, answers);
-
-    return res.status(200).json({
-      message: {
-        status: "success",
-        text: "تحلیل تست با موفقیت انجام شد",
-      },
-      analysis,
-    });
-  } catch (err) {
-    console.error("❌ تحلیل تست ناموفق:", err);
-    res.status(500).json({ message: "خطای سرور در تحلیل تست" });
   }
 };

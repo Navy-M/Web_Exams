@@ -45,6 +45,7 @@ export const checkServer = async () => {
 };
 
 // --- AUTH API ---
+export const createUser = async (userData) => (await API.post('/auth/register', userData)).data;
 export const login = async (credentials) => {
   console.log('====== api login function called ======', credentials);
   try {
@@ -85,7 +86,6 @@ export const logout = async () => {
 // --- USERS API ---
 export const getUsers = async () => (await API.get('/users')).data;
 export const getUserById = async (userId) => (await API.get(`/users/${userId}`)).data;
-export const createUser = async (userData) => (await API.post('/users', userData)).data;
 export const updateUser = async (userId, updatedData) => (await API.put(`/users/${userId}`, updatedData)).data;
 export const deleteUser = async (userId) => (await API.delete(`/users/${userId}`)).data;
 export const completeProfile = async (form) => {
@@ -150,5 +150,16 @@ export const submitTestFeedback = async (feedbackData) => {
     throw error;
   }
 };
+
+// --- TEST ANALYZER API ---
+export const analyzeTests = async (Data) => {
+  try {
+    const response = API.post("/results/analyze", Data)
+    return response.data;
+  } catch (error) {
+    console.error('Error Analyzing user results:', error);
+    throw error;
+  }
+}
 
 export default API;

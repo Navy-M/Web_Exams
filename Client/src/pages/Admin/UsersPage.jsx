@@ -5,10 +5,11 @@ import {
   getUsers,
   deleteUser,
   getUserResults,
-  submitTestFeedback
+  submitTestFeedback,
+  createUser,
+  analyzeTests
 } from "../../services/api";
 import "./usersPage.css";
-import API from '../../services/api';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -19,6 +20,13 @@ const UsersPage = () => {
   const [userResults, setUserResults] = useState([]);
   const [feedback, setFeedback] = useState('');
   const [selectedResult, setSelectedResult] = useState(null);
+  const [showAddRow, setShowAddRow] = useState(false);
+const [newUser, setNewUser] = useState({
+  fullName: '',
+  email: '',
+  role: '',
+  password: '',
+});
 
   // Fetch users
   useEffect(() => {
@@ -60,6 +68,28 @@ const UsersPage = () => {
     }
   }, [selectedUser]);
 
+  const handleAddUser = async () => {
+    try {
+      const response = await createUser( {
+        fullName: newUser.fullName,
+        email: newUser.email,
+        password: newUser.password,
+        role: newUser.role
+      });
+
+      alert(response.message);
+      // refresh or append new user to users list
+      setUsers(prev => [...prev, response.user]); // Add to table
+
+      setNewUser({  email: '', role: '', password: '' , fullName: ''});
+      setShowAddRow(false);
+    
+    
+    } catch (err) {
+      alert(err.response?.message || 'خطا در افزودن کاربر');
+    }
+  };
+
   const handleDeleteUser = async (id) => {
     const confirmed = window.confirm('آیا از حذف کاربر مطمئن هستید؟');
     if (!confirmed) return;
@@ -77,7 +107,7 @@ const UsersPage = () => {
   try {
     const { _id, testType, answers } = result;
 
-    const response = await API.post("/results/analyze", {
+    const response = await analyzeTests( {
       resultId: _id,
       testType,
       answers,
@@ -186,6 +216,8 @@ const UsersPage = () => {
                         }
                       </td>
                     </tr>
+
+                    
                   ))}
                 </tbody>
               </table>
@@ -241,7 +273,7 @@ const UsersPage = () => {
                 {users.map((user, index) => (
                   <tr key={user._id}>
                     <td style={{textAlign: 'center'}}>{index + 1}</td>
-                    <td>{user.profile.fullName}</td>
+                    <td>{user.profile?.fullName}</td>
                     <td>{user.email}</td>
                     <td>{user.role}</td>
                     <td>
@@ -260,7 +292,55 @@ const UsersPage = () => {
                     </td>
                   </tr>
                 ))}
+                {showAddRow && (
+                  <tr className="add-user-row">
+                    <td colSpan="5">
+                      <div className="add-user-form">
+                      <p >🟩⬅️</p>
+
+                        <input
+                          type="text"
+                          placeholder="نام و نام خانوادگی"
+                          value={newUser.fullName}
+                          onChange={e => setNewUser({ ...newUser, fullName: e.target.value })}
+                        />
+                        <select
+                          value={newUser.role}
+                          onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                        >
+                          <option value="">انتخاب نقش</option>
+                          <option value="user">کاربر</option>
+                          <option value="admin">ادمین</option>
+                        </select>
+                        <input
+                          type="email"
+                          placeholder="ایمیل"
+                          value={newUser.email}
+                          onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                        />
+                        <input
+                          type="password"
+                          placeholder="رمز عبور"
+                          value={newUser.password}
+                          onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                        />
+                        <button onClick={handleAddUser} className="submit-button">
+                          ثبت
+                        </button>
+                        <button onClick={() => setShowAddRow(false)} className="cancel-button">
+                          لغو
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
+              <button
+                style={{ marginTop: "1rem" }}
+                onClick={() => setShowAddRow(prev => !prev)}
+              >
+                {showAddRow ? "❌ بستن فرم " : "➕ افزودن کاربر جدید"}
+              </button>
             </table>
           )}
         </section>

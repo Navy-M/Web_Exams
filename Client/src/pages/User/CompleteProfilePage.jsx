@@ -9,8 +9,7 @@ const CompleteProfilePage = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
     userId: user.id,
-    name: "",
-    family: "",
+    fullName: user.profile.fullName,
     nationalId: "",
     age: "",
     gender: "",
@@ -34,7 +33,7 @@ const CompleteProfilePage = () => {
     e.preventDefault();
 
     const allRequiredFieldsFilled = Object.entries(formData)
-      .filter(([key]) => key !== "jobPosition") // exclude jobPosition
+      .filter(([key]) => key !== "jobPosition" && key !== "fullName") // exclude jobPosition
       .every(([_, value]) => value !== "");
 
     if (!allRequiredFieldsFilled) {
@@ -64,12 +63,8 @@ const CompleteProfilePage = () => {
       <h2>تکمیل اطلاعات فردی</h2>
       <form className="profile-form" onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>نام</label>
-          <input name="name" value={formData.name} onChange={handleChange} />
-        </div>
-        <div className="form-group">
-          <label>نام خانوادگی</label>
-          <input name="family" value={formData.family} onChange={handleChange} />
+          <label>نام و نام خانوادگی</label>
+          <input name="fullName" value={user.profile.fullName} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>کد ملی</label>
