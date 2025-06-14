@@ -28,8 +28,7 @@ const handleSelect = async (choice) => {
     ...answers,
     {
       questionId: currentQuestion.id,
-      selectedOption: choice,
-      score: scoreMap[choice] || 0,
+      value: scoreMap[choice] || 0,
     },
   ];
   setAnswers(updatedAnswers);

@@ -18,8 +18,7 @@ const DiscTest = () => {
   const handleSelect = async (trait) => {
     const updatedAnswers = [...answers, {
       questionId: currentQuestion.id,
-      selectedOption: trait,
-      score: 1 // You can change this based on trait logic
+      selectedTrait: trait,
     }];
     setAnswers(updatedAnswers);
 

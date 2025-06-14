@@ -30,8 +30,7 @@ const MBTITest = () => {
     // Convert answers object to array format for backend
     const formattedAnswers = Object.entries(answers).map(([questionId, selectedOption]) => ({
       questionId,
-      selectedOption,
-      score: 1, // Optional, use actual logic if needed
+      value: selectedOption,
     }));
 
     const resultData = {

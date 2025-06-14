@@ -25,8 +25,7 @@ const CliftonTest = () => {
       const formattedAnswers = Object.entries(updatedAnswers).map(
         ([questionId, selectedTheme]) => ({
           questionId: parseInt(questionId),
-          selectedOption: selectedTheme,
-          score: 1 // optional, or you can adjust later
+          choice: selectedTheme,
         })
       );
 

@@ -44,6 +44,7 @@ function analyzeMBTI(answers, questions) {
 
   return { mbtiType, scores: traitScores };
 }
+// Output Example:
 
 /**
  * Analyzes DISC test answers.
@@ -76,6 +77,7 @@ function analyzeDISC(answers, questions) {
 
   return { scores, dominantTraits };
 }
+// Output Example:
 
 /**
  * Analyze Holland test answers.
@@ -104,6 +106,11 @@ function analyzeHolland(answers, questions) {
 
   return { scores, dominantTraits };
 }
+// Output Example:
+// {
+//   scores: { R: 2, I: 0, A: 1, S: 1, E: 0, C: 1 },
+//   dominantTraits: ["R"]
+// }
 
 /**
  * Analyze Gardner test answers based on selected option values.
@@ -154,6 +161,13 @@ function analyzeGardner(answers, questions) {
   return { scores, topIntelligences, summary };
 }
 
+// Output Example:
+// {
+//   scores: { L: 5, M: 4, S: 3, B: 2, Mu: 4, I: 5, In: 4, N: 5 },
+//   topIntelligences: ['L', 'I', 'N'],
+//   summary: "کلامی-زبانی (Linguistic) و میان‌فردی (Interpersonal) و طبیعت‌گرا (Naturalistic)"
+// }
+
 /**
  * Analyze CliftonStrengths test answers.
  *
@@ -190,6 +204,21 @@ function analyzeClifton(answers, questions) {
 
   return { scores, topThemes };
 }
+
+// Output Example:
+// {
+//   scores: {
+//     Futuristic: 1,
+//     Context: 0,
+//     Developer: 0,
+//     Positivity: 2,
+//     Relator: 1,
+//     Connectedness: 0,
+//     Consistency: 0,
+//     "Self-Assurance": 2
+//   },
+//   topThemes: ["Positivity", "Self-Assurance"]
+// }
 
 export const getTestAnalysis = (testType, answers) => {
   switch (testType) {

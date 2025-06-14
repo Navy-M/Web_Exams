@@ -20,8 +20,7 @@ const HalandTest = () => {
       ...answers,
       {
         questionId: currentQuestion.id,
-        selectedOption: choice,
-        score: 1, // Customize scoring if needed
+        answer: choice,
       },
     ];
     setAnswers(updatedAnswers);
