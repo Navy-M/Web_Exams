@@ -76,7 +76,7 @@ const MBTITest = () => {
                 }`}
                 onClick={() => handleSelect(Mbti_Test[currentQuestion].id, option.value)}
               >
-                {option}
+                {option.text}
               </button>
             ))}
           </div>

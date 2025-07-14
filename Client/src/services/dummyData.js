@@ -6,7 +6,7 @@ export const Test_Cards = [
     type: "personality",
     questionFormat: "multipleChoiceTrait", // Options with associated traits
     createdAt: "2025-05-29T11:11:16.374+00:00",
-    deadline: "2025-07-29T11:11:16.374+00:00",
+    deadline: "2026-07-29T11:11:16.374+00:00",
     duration: { from: 5, to: 8 },
   },
 
@@ -17,7 +17,7 @@ export const Test_Cards = [
     type: "interest",
     questionFormat: "yesNo",
     createdAt: "2025-05-13T04:14:16.374+00:00",
-    deadline: "2025-07-13T04:14:16.374+00:00",
+    deadline: "2026-07-13T04:14:16.374+00:00",
     duration: { from: 40, to: 45 },
   },
 
@@ -28,7 +28,7 @@ export const Test_Cards = [
     type: "intelligence",
     questionFormat: "likert",
     createdAt: "2025-05-05T16:11:16.374+00:00",
-    deadline: "2025-07-15T16:11:16.374+00:00",
+    deadline: "2026-07-15T16:11:16.374+00:00",
     duration: { from: 30, to: 45 },
   },
 
@@ -39,7 +39,7 @@ export const Test_Cards = [
     type: "personality",
     questionFormat: "eitherOr",
     createdAt: "2025-05-20T23:12:16.374+00:00",
-    deadline: "2025-07-20T12:12:16.374+00:00",
+    deadline: "2026-07-20T12:12:16.374+00:00",
     duration: { from: 20, to: 32 },
   },
 
@@ -51,7 +51,7 @@ export const Test_Cards = [
     type: "strengths",
     questionFormat: "pairedStatementChoice", // Two statements per question, choose one
     createdAt: "2025-06-03T11:11:16.374+00:00",
-    deadline: "2025-07-03T11:11:16.374+00:00",
+    deadline: "2026-07-03T11:11:16.374+00:00",
     duration: { from: 8, to: 12 }, // Typically takes a bit longer than DISC
   },
 ];

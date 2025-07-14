@@ -55,6 +55,7 @@ function analyzeMBTI(answers, questions) {
  */
 function analyzeDISC(answers, questions) {
   const scores = { D: 0, I: 0, S: 0, C: 0 };
+console.log("we are analizing the disc test for now ..,.,.,.,.,.,.,.,.,.,");
 
   answers.forEach(({ questionId, selectedTrait }) => {
     const question = questions.find((q) => q.id === questionId);

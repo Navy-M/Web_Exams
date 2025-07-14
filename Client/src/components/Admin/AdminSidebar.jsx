@@ -1,8 +1,11 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext'; 
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Icon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import DashboardIcon from "../../assets/AdminSidebar/Dashboard_Icon.png"
+import UsersIcon from "../../assets/AdminSidebar/Users_Icon.png"
+import TestsIcon from "../../assets/AdminSidebar/Tests_Icon.png"
 
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {
@@ -21,9 +24,9 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
   };
 
   const menuItems = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'users', label: 'Users' },
-    { key: 'tests', label: 'Tests' },
+    { key: 'dashboard', label: 'Dashboard' , icon: DashboardIcon},
+    { key: 'users', label: 'Users' , icon: UsersIcon},
+    { key: 'tests', label: 'Tests' , icon: TestsIcon},
   ];
 
   return (
@@ -75,12 +78,22 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
                     color: 'white',
                     padding: '0.5rem 0',
                     textAlign: 'left',
+                    alignContent: "center",
+                    alignItems: "center",
+                    display:"flex",
                     cursor: 'pointer',
                     fontWeight: activeTab === item.key ? 'bold' : 'normal',
                     textDecoration: activeTab === item.key ? 'underline' : 'none',
                     width: '100%',
                   }}
                 >
+                  <img src={item.icon} alt='icon' style={{
+                    paddingRight: "0.5rem",
+                    width: '35px',
+                    height: '100%',
+
+                  }}/>
+                  {/* <br/> */}
                   {item.label}
                 </button>
               </li>

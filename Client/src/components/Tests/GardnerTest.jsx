@@ -80,7 +80,7 @@ const handleSelect = async (choice) => {
               className="option-button"
               onClick={() => handleSelect(option)}
             >
-              {option}
+              {option.text}
             </button>
           ))}
         </div>
