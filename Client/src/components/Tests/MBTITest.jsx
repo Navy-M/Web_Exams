@@ -38,7 +38,7 @@ const MBTITest = () => {
       testType: 'MBTI',
       answers: formattedAnswers,
       score:  0,
-      otherResult: [],
+      analysis: {},
       adminFeedback: '',
       startedAt: new Date(startTimeRef.current),
       submittedAt: new Date(),
@@ -76,7 +76,7 @@ const MBTITest = () => {
                 }`}
                 onClick={() => handleSelect(Mbti_Test[currentQuestion].id, option.value)}
               >
-                {option}
+                {option.text}
               </button>
             ))}
           </div>

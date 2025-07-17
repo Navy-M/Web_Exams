@@ -62,7 +62,7 @@ const TestsStatus = () => {
                 {user.testsAssigned?.private?.length > 0 ? (
                   <ul>
                     {user.testsAssigned.private.map(test => (
-                      <li key={test.testName}>
+                      <li key={test._id}>
                         {test.testType} - امتیاز: {test.score ?? 'نامشخص'}
                       </li>
                     ))}

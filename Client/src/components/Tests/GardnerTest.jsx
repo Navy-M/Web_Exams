@@ -41,7 +41,7 @@ const handleSelect = async (choice) => {
       testType: "GARDNER",
       answers: updatedAnswers,
       score:  0,
-      otherResult: [],
+      analysis: {},
       adminFeedback: "",
       startedAt: new Date(startTimeRef.current),
       submittedAt: new Date(),
@@ -80,7 +80,7 @@ const handleSelect = async (choice) => {
               className="option-button"
               onClick={() => handleSelect(option)}
             >
-              {option}
+              {option.text}
             </button>
           ))}
         </div>

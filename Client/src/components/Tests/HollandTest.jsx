@@ -33,7 +33,7 @@ const HalandTest = () => {
         testType: "HOLLAND",
         answers: updatedAnswers,
         score:  0,
-        otherResult: [],
+        analysis: {},
         adminFeedback: "",
         startedAt: new Date(startTimeRef.current),
         submittedAt: new Date(),

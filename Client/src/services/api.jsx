@@ -18,17 +18,44 @@ API.interceptors.request.use((config) => {
 
 // --- RESPONSE INTERCEPTOR ---
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Success: Directly pass through the response
+    return response;
+  },
   (error) => {
     const status = error.response?.status;
-    const message = error.response?.data?.message || 'Unexpected error';
+    const data = error.response?.data;
 
-    if (status === 401) {
-      console.warn('Unauthorized - redirecting to login...');
-      window.location.href = '/login';
+    // Custom error message extraction
+    const message = data?.message || 
+                    data?.error || 
+                    'خطای سرور | Server error';
+
+    // Handle specific status codes
+    switch (status) {
+      case 400:
+        console.error('Bad Request:', data);
+        break;
+      case 401:
+        console.warn('Unauthorized - Redirecting to login...');
+        window.location.href = '/login';
+        break;
+      case 404:
+        console.error('Not Found:', message);
+        break;
+      case 500:
+        console.error('Server Error:', message);
+        break;
+      default:
+        console.error('API Error:', message);
     }
 
-    return Promise.reject(new Error(message));
+    // Reject with a standardized error object
+    return Promise.reject({
+      status,
+      message,
+      data: data || null, // Include full error response if available
+    });
   }
 );
 
@@ -117,6 +144,16 @@ export const submitResult = async (resultData) => {
   }
 };
 
+export const deleteResult = async (resultId) => {
+  try {
+    const response = await API.delete(`/results/${resultId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting result:', error);
+    throw error;
+  }
+};
+
 // export const submitUserResult = async (miniResultData) => {
 //   try {
 //     const response = await API.post(`/results/${miniResultData.}/userResult`, miniResultData);
@@ -154,11 +191,13 @@ export const submitTestFeedback = async (feedbackData) => {
 // --- TEST ANALYZER API ---
 export const analyzeTests = async (Data) => {
   try {
-    const response = API.post("/results/analyze", Data)
-    return response.data;
+    const response = API.post("/results/analyze", Data);
+    // console.log("response : " , (await response).data);
+    
+    return (await response).data;
   } catch (error) {
     console.error('Error Analyzing user results:', error);
-    throw error;
+    throw error.response?.data || error.message; // Better error handling
   }
 }
 

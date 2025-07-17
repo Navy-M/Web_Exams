@@ -7,6 +7,7 @@ import {
   getUserResults,
   submitTestFeedback,
   createUser,
+  deleteResult,
   analyzeTests
 } from "../../services/api";
 import "./usersPage.css";
@@ -21,12 +22,12 @@ const UsersPage = () => {
   const [feedback, setFeedback] = useState('');
   const [selectedResult, setSelectedResult] = useState(null);
   const [showAddRow, setShowAddRow] = useState(false);
-const [newUser, setNewUser] = useState({
-  fullName: '',
-  email: '',
-  role: '',
-  password: '',
-});
+  const [newUser, setNewUser] = useState({
+    fullName: '',
+    email: '',
+    role: '',
+    password: '',
+  });
 
   // Fetch users
   useEffect(() => {
@@ -105,24 +106,27 @@ const [newUser, setNewUser] = useState({
 
   const handleCheckTest = async (result) => {
   try {
-    const { _id, testType, answers } = result;
+    const { resultId, testType } = result;
 
-    const response = await analyzeTests( {
-      resultId: _id,
-      testType,
-      answers,
-    });
+    const response = await analyzeTests({resultId, testType});
+    // console.log("resultId : " , resultId);
 
     alert("تحلیل با موفقیت انجام شد ✅");
+<<<<<<< HEAD
     console.log("✅ Analyzed Result:", response);
+=======
+    // console.log("✅ Analyzed Result:", response);
+    console.log("✅ Analyzed Result:", response.data);
+>>>>>>> fe1e2fd06fc8ddc232c45d1dd065c27432186270
 
+    
     // Optionally refresh results or update local state
     // await fetchResults();
   } catch (err) {
     console.error("❌ Error analyzing test:", err);
     alert("خطایی در تحلیل تست رخ داد");
   }
-};
+  };
 
   const handleSubmitFeedback = async () => {
     if (!feedback.trim() || !selectedResult) return;
@@ -147,6 +151,21 @@ const [newUser, setNewUser] = useState({
       alert('خطا در ثبت بازخورد');
     }
   };
+
+
+  const handleDeleteUserResult = async (id) => {
+       const confirmed = window.confirm('آیا از حذف آزمون مطمئن هستید؟');
+    if (!confirmed) return;
+
+    try {
+      await deleteResult(id);
+      setRefresh(prev => !prev);
+    } catch (err) {
+      console.error(err);
+      alert('خطا در حذف آزمون');
+    }
+    
+  }
 
   const formatDate = (dateString) => {
     // console.log("dateString:", dateString );
@@ -195,24 +214,33 @@ const [newUser, setNewUser] = useState({
                       <td>{result.adminFeedback || 'بدون بازخورد'}</td>
                       <td>
                         <button 
+                          onClick={() => handleDeleteUserResult(result.resultId)}
+                          disabled={!!selectedResult}
+                          className='delete-test'
+                        >
+                          حذف آزمون
+                        </button>
+                        
+                        <button 
                           onClick={() => setSelectedResult(result)}
                           disabled={!!selectedResult}
                           className='submit-feedback'
                         >
                           ثبت بازخورد
                         </button>
+                        
                         {!result.score && 
-                        <button 
-                        onClick={() => {
-                          // console.log(`this is starting to check ${result.testType} test`);
-                          handleCheckTest(result);
-                          alert(`this is starting to check ${result.testType} test`);
-                      }}
-                      disabled={!!selectedResult}
-                      className='check_test'
-                      >
+                          <button 
+                            onClick={() => {
+                              // console.log(`this is starting to check ${result.testType} test`);
+                              handleCheckTest(result);
+                              // alert(`this is starting to check ${result.testType} test`);
+                            }}
+                            disabled={!!selectedResult}
+                            className='check_test'
+                          >
                           تصحیح 
-                        </button>
+                          </button>
                         }
                       </td>
                     </tr>
@@ -308,7 +336,7 @@ const [newUser, setNewUser] = useState({
                           value={newUser.role}
                           onChange={e => setNewUser({ ...newUser, role: e.target.value })}
                         >
-                          <option value="">انتخاب نقش</option>
+                          <option value="user">انتخاب نقش</option>
                           <option value="user">کاربر</option>
                           <option value="admin">ادمین</option>
                         </select>
@@ -327,20 +355,26 @@ const [newUser, setNewUser] = useState({
                         <button onClick={handleAddUser} className="submit-button">
                           ثبت
                         </button>
-                        <button onClick={() => setShowAddRow(false)} className="cancel-button">
+                        {/* <button onClick={() => setShowAddRow(false)} className="cancel-button">
                           لغو
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>
                 )}
               </tbody>
-              <button
-                style={{ marginTop: "1rem" }}
-                onClick={() => setShowAddRow(prev => !prev)}
-              >
-                {showAddRow ? "❌ بستن فرم " : "➕ افزودن کاربر جدید"}
-              </button>
+              <tfoot>
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'rught' }}>
+                    <button
+                      style={{ margin: "0.5rem" }}
+                      onClick={() => setShowAddRow(prev => !prev)}
+                    >
+                      {showAddRow ? "❌ بستن فرم " : "➕ افزودن کاربر جدید"}
+                    </button>
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           )}
         </section>
