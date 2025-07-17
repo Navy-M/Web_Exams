@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       try {
         const res = await api.getProfile();
-        console.log(res.user);
+        // console.log(res.user);
         setUser(res.user);
         
       } catch (err) {

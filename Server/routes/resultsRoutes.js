@@ -5,6 +5,7 @@ import {
   getResultsByUser,
   submitTestResult,
   analyzeResult,
+  deleteResult
 } from "../controllers/resultsController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -12,6 +13,8 @@ const router = express.Router();
 
 router.post("/", createResult);
 router.post("/submitUInfo", submitTestResult);
+
+router.delete('/:resultId',protect, admin, deleteResult);
 
 router.post("/analyze", analyzeResult);
 

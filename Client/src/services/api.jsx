@@ -144,6 +144,16 @@ export const submitResult = async (resultData) => {
   }
 };
 
+export const deleteResult = async (resultId) => {
+  try {
+    const response = await API.delete(`/results/${resultId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting result:', error);
+    throw error;
+  }
+};
+
 // export const submitUserResult = async (miniResultData) => {
 //   try {
 //     const response = await API.post(`/results/${miniResultData.}/userResult`, miniResultData);
@@ -181,8 +191,10 @@ export const submitTestFeedback = async (feedbackData) => {
 // --- TEST ANALYZER API ---
 export const analyzeTests = async (Data) => {
   try {
-    const response = API.post("/results/analyze", Data)
-    return response.data;
+    const response = API.post("/results/analyze", Data);
+    // console.log("response : " , (await response).data);
+    
+    return (await response).data;
   } catch (error) {
     console.error('Error Analyzing user results:', error);
     throw error.response?.data || error.message; // Better error handling

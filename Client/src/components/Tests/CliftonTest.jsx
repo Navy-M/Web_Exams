@@ -34,7 +34,7 @@ const CliftonTest = () => {
         testType: 'CLIFTON',
         answers: formattedAnswers,
         score:  0,
-        otherResult: [],
+        analysis: {},
         adminFeedback: '',
         startedAt: new Date(startTimeRef.current),
         submittedAt: new Date()
