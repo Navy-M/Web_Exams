@@ -114,7 +114,7 @@ const [newUser, setNewUser] = useState({
     });
 
     alert("تحلیل با موفقیت انجام شد ✅");
-    console.log("✅ Analyzed Result:", response.data);
+    console.log("✅ Analyzed Result:", response);
 
     // Optionally refresh results or update local state
     // await fetchResults();
