@@ -1,0 +1,117 @@
+.gardner-analysis-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  direction: rtl;
+  font-family: "Vazir", sans-serif;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #2e86de;
+}
+
+.summary-section {
+  background-color: #e8f0fe;
+  border: 1px solid #2e86de;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  font-size: 1.1rem;
+}
+
+.scores-section h3,
+.profiles-section h3,
+.development-section h3,
+.chart-section h3 {
+  margin-bottom: 12px;
+  color: #2e86de;
+  border-bottom: 2px solid #2e86de;
+  padding-bottom: 6px;
+}
+
+.scores-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 25px;
+}
+
+.scores-table th,
+.scores-table td {
+  border: 1px solid #ccc;
+  padding: 10px 15px;
+  text-align: center;
+}
+
+.top-intelligence {
+  background-color: #cde6fe;
+  font-weight: 600;
+}
+
+.profiles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.profile-card {
+  flex: 1 1 320px;
+  background: #f9fbff;
+  border: 1px solid #a3c4f3;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.07);
+  transition: box-shadow 0.3s ease;
+}
+
+.profile-card.top {
+  border-color: #2e86de;
+  box-shadow: 0 0 15px rgba(46, 134, 222, 0.4);
+}
+
+.profile-card:hover {
+  box-shadow: 0 0 18px rgba(46, 134, 222, 0.6);
+}
+
+.top-label {
+  color: #2e86de;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.development-section .development-card {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f1f8ff;
+  border-radius: 8px;
+  border: 1px solid #aac4f8;
+}
+
+.development-card h4 {
+  margin-bottom: 10px;
+  color: #1b4f72;
+}
+
+.development-card ul {
+  padding-right: 20px;
+  list-style-type: disc;
+  color: #34495e;
+  font-size: 1rem;
+}
+
+.chart-section {
+  max-width: 100%;
+  margin-top: 30px;
+}
+
+@media (max-width: 720px) {
+  .profiles-list {
+    flex-direction: column;
+  }
+}

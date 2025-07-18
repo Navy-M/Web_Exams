@@ -13,21 +13,23 @@ function analyzeMBTI(answers, questions = Dummy.Mbti_Test) {
     EI: { E: 0, I: 0 }, // برون‌گرایی (E) vs درون‌گرایی (I)
     SN: { S: 0, N: 0 }, // حسی (S) vs شهودی (N)
     TF: { T: 0, F: 0 }, // تفکری (T) vs احساسی (F)
-    JP: { J: 0, P: 0 }  // قضاوتی (J) vs ادراکی (P)
+    JP: { J: 0, P: 0 }, // قضاوتی (J) vs ادراکی (P)
   };
 
   // 2. محاسبه امتیازات بر اساس پاسخ‌ها
   answers.forEach(({ questionId, value }) => {
-    const question = questions.find(q => q.id === questionId);
+    const question = questions.find((q) => q.id === questionId);
     if (!question) return;
 
     const { trait, direction } = question;
-    
+
     // امتیاز مستقیم به جهت سوال
     traitScores[trait][direction] += value;
-    
+
     // امتیاز معکوس به جهت مخالف (مقیاس 1-5)
-    const oppositeSide = Object.keys(traitScores[trait]).find(s => s !== direction);
+    const oppositeSide = Object.keys(traitScores[trait]).find(
+      (s) => s !== direction
+    );
     traitScores[trait][oppositeSide] += 6 - value;
   });
 
@@ -42,28 +44,41 @@ function analyzeMBTI(answers, questions = Dummy.Mbti_Test) {
   // 4. محاسبه درصدهای نرمال‌شده برای هر ویژگی
   const totalQuestionsPerTrait = answers.length / 4; // تقسیم مساوی سوالات بین ۴ بعد
   const maxPossibleScore = totalQuestionsPerTrait * 5;
-  
+
   const normalizedScores = Object.fromEntries(
     Object.entries(traitScores).map(([trait, scores]) => [
       trait,
       Object.fromEntries(
         Object.entries(scores).map(([side, score]) => [
           side,
-          Math.round((score / maxPossibleScore) * 100)
-        ]))
+          Math.round((score / maxPossibleScore) * 100),
+        ])
+      ),
     ])
   );
 
   // 5. اطلاعات توصیفی هر تیپ
   const traitDescriptions = {
-    E: { name: "برون‌گرا", description: "انرژی خود را از تعامل با دیگران می‌گیرد" },
-    I: { name: "درون‌گرا", description: "انرژی خود را از تنهایی و تفکر می‌گیرد" },
+    E: {
+      name: "برون‌گرا",
+      description: "انرژی خود را از تعامل با دیگران می‌گیرد",
+    },
+    I: {
+      name: "درون‌گرا",
+      description: "انرژی خود را از تنهایی و تفکر می‌گیرد",
+    },
     S: { name: "حسی", description: "بر واقعیات و اطلاعات ملموس تمرکز دارد" },
     N: { name: "شهودی", description: "بر الهامات و احتمالات آینده تمرکز دارد" },
-    T: { name: "تفکری", description: "در تصمیم‌گیری به منطق و عدالت توجه دارد" },
-    F: { name: "احساسی", description: "در تصمیم‌گیری به ارزش‌ها و هماهنگی توجه دارد" },
+    T: {
+      name: "تفکری",
+      description: "در تصمیم‌گیری به منطق و عدالت توجه دارد",
+    },
+    F: {
+      name: "احساسی",
+      description: "در تصمیم‌گیری به ارزش‌ها و هماهنگی توجه دارد",
+    },
     J: { name: "قضاوتی", description: "ساختارمند و برنامه‌ریز است" },
-    P: { name: "ادراکی", description: "انعطاف‌پذیر و خودانگیخته است" }
+    P: { name: "ادراکی", description: "انعطاف‌پذیر و خودانگیخته است" },
   };
 
   // 6. آماده‌سازی خروجی حرفه‌ای
@@ -71,11 +86,11 @@ function analyzeMBTI(answers, questions = Dummy.Mbti_Test) {
     // اطلاعات پایه
     mbtiType, // تیپ چهارحرفی (مثال: "INTJ")
     typeName: getMBTITypeName(mbtiType), // نام توصیفی تیپ
-    
+
     // داده‌های خام
     rawScores: traitScores,
     normalizedScores, // امتیازات درصدی
-    
+
     // تحلیل هر بعد
     dimensions: Object.entries(traitScores).map(([trait, scores]) => ({
       dimension: trait,
@@ -84,41 +99,53 @@ function analyzeMBTI(answers, questions = Dummy.Mbti_Test) {
         [Object.keys(scores)[0]]: {
           name: traitDescriptions[Object.keys(scores)[0]].name,
           score: scores[Object.keys(scores)[0]],
-          percentage: normalizedScores[trait][Object.keys(scores)[0]]
+          percentage: normalizedScores[trait][Object.keys(scores)[0]],
         },
         [Object.keys(scores)[1]]: {
           name: traitDescriptions[Object.keys(scores)[1]].name,
           score: scores[Object.keys(scores)[1]],
-          percentage: normalizedScores[trait][Object.keys(scores)[1]]
-        }
+          percentage: normalizedScores[trait][Object.keys(scores)[1]],
+        },
       },
-      difference: Math.abs(scores[Object.keys(scores)[0]] - scores[Object.keys(scores)[1]]),
-      description: `شما بیشتر تمایل به ${traitDescriptions[mbtiType[traitIndex(trait)]].name} دارید`
+      difference: Math.abs(
+        scores[Object.keys(scores)[0]] - scores[Object.keys(scores)[1]]
+      ),
+      description: `شما بیشتر تمایل به ${
+        traitDescriptions[mbtiType[traitIndex(trait)]].name
+      } دارید`,
     })),
-    
+
     // داده‌های نمودار
     chartData: {
-      labels: ["برون‌گرایی/درون‌گرایی", "حسی/شهودی", "تفکری/احساسی", "قضاوتی/ادراکی"],
+      labels: [
+        "برون‌گرایی/درون‌گرایی",
+        "حسی/شهودی",
+        "تفکری/احساسی",
+        "قضاوتی/ادراکی",
+      ],
       datasets: [
         {
-          label: 'امتیاز اصلی',
-          data: Object.values(traitScores).map((scores, i) => 
-            scores[mbtiType[i]] / maxPossibleScore * 100
+          label: "امتیاز اصلی",
+          data: Object.values(traitScores).map(
+            (scores, i) => (scores[mbtiType[i]] / maxPossibleScore) * 100
           ),
-          backgroundColor: 'rgba(54, 162, 235, 0.7)'
+          backgroundColor: "rgba(54, 162, 235, 0.7)",
         },
         {
-          label: 'امتیاز مقابل',
-          data: Object.values(traitScores).map((scores, i) => 
-            scores[Object.keys(scores).find(k => k !== mbtiType[i])] / maxPossibleScore * 100
+          label: "امتیاز مقابل",
+          data: Object.values(traitScores).map(
+            (scores, i) =>
+              (scores[Object.keys(scores).find((k) => k !== mbtiType[i])] /
+                maxPossibleScore) *
+              100
           ),
-          backgroundColor: 'rgba(255, 99, 132, 0.7)'
-        }
-      ]
+          backgroundColor: "rgba(255, 99, 132, 0.7)",
+        },
+      ],
     },
-    
+
     // اطلاعات زمانی
-    analyzedAt: new Date().toISOString()
+    analyzedAt: new Date().toISOString(),
   };
 }
 // تابع کمکی برای تبدیل تیپ به نام فارسی
@@ -139,7 +166,7 @@ function getMBTITypeName(type) {
     ISTP: "صنعتگر",
     ISFP: "هنرمند",
     ESTP: "متقاعدگر",
-    ESFP: "سرگرم‌کننده"
+    ESFP: "سرگرم‌کننده",
   };
   return typeNames[type] || "ناشناخته";
 }
@@ -193,26 +220,30 @@ function traitIndex(trait) {
  */
 function analyzeDISC(answers, questions = Dummy.Disc_Test) {
   // 1. Initialize scores with all possible traits
-  const traits = ['D', 'I', 'S', 'C'];
+  const traits = ["D", "I", "S", "C"];
   const scores = traits.reduce((acc, trait) => ({ ...acc, [trait]: 0 }), {});
 
   // 2. Calculate raw scores
   answers.forEach(({ questionId, selectedTrait }) => {
-    const question = questions.find(q => q.id === questionId);
+    const question = questions.find((q) => q.id === questionId);
     if (!question || !traits.includes(selectedTrait)) return;
 
-    scores[selectedTrait] += (question.type === "best" ? 1 : -1);
+    scores[selectedTrait] += question.type === "best" ? 1 : -1;
   });
 
   // 3. Normalize scores to percentage (0-100 scale)
-  const maxPossible = answers.filter(a => questions.some(q => q.id === a.questionId && q.type === "best")).length;
-  const minPossible = -answers.filter(a => questions.some(q => q.id === a.questionId && q.type === "worst")).length;
+  const maxPossible = answers.filter((a) =>
+    questions.some((q) => q.id === a.questionId && q.type === "best")
+  ).length;
+  const minPossible = -answers.filter((a) =>
+    questions.some((q) => q.id === a.questionId && q.type === "worst")
+  ).length;
   const range = maxPossible - minPossible;
 
   const normalizedScores = Object.fromEntries(
     Object.entries(scores).map(([trait, score]) => [
       trait,
-      Math.round(((score - minPossible) / range) * 100)
+      Math.round(((score - minPossible) / range) * 100),
     ])
   );
 
@@ -230,7 +261,10 @@ function analyzeDISC(answers, questions = Dummy.Disc_Test) {
     D: { name: "Dominance", description: "Direct, decisive, problem-solver" },
     I: { name: "Influence", description: "Enthusiastic, social, persuasive" },
     S: { name: "Steadiness", description: "Patient, reliable, team player" },
-    C: { name: "Conscientiousness", description: "Analytical, precise, quality-focused" }
+    C: {
+      name: "Conscientiousness",
+      description: "Analytical, precise, quality-focused",
+    },
   };
 
   // 6. Generate comprehensive result
@@ -238,46 +272,51 @@ function analyzeDISC(answers, questions = Dummy.Disc_Test) {
     // Raw data
     rawScores: scores,
     normalizedScores,
-    
+
     // Dominance analysis
     dominantTraits,
     primaryTrait: dominantTraits[0],
     secondaryTrait: sortedTraits.length > 1 ? sortedTraits[1][0] : null,
-    
+
     // Interpretation
     traits: Object.fromEntries(
-      traits.map(trait => [
-        trait, 
+      traits.map((trait) => [
+        trait,
         {
           ...traitDescriptions[trait],
           score: normalizedScores[trait],
-          percentile: normalizedScores[trait] // Already in percentage
-        }
+          percentile: normalizedScores[trait], // Already in percentage
+        },
       ])
     ),
-    
+
     // Visualization-friendly format
     chartData: {
-      labels: traits.map(t => traitDescriptions[t].name),
-      datasets: [{
-        label: 'DISC Profile',
-        data: traits.map(t => normalizedScores[t]),
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.7)', // D - Red
-          'rgba(54, 162, 235, 0.7)',  // I - Blue
-          'rgba(75, 192, 192, 0.7)', // S - Green
-          'rgba(255, 206, 86, 0.7)'   // C - Yellow
-        ]
-      }]
+      labels: traits.map((t) => traitDescriptions[t].name),
+      datasets: [
+        {
+          label: "DISC Profile",
+          data: traits.map((t) => normalizedScores[t]),
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.7)", // D - Red
+            "rgba(54, 162, 235, 0.7)", // I - Blue
+            "rgba(75, 192, 192, 0.7)", // S - Green
+            "rgba(255, 206, 86, 0.7)", // C - Yellow
+          ],
+        },
+      ],
     },
-    
+
     // Summary
-    summary: dominantTraits.length > 1 
-      ? `Balanced ${dominantTraits.map(t => traitDescriptions[t].name).join('/')} profile`
-      : `Strong ${traitDescriptions[dominantTraits[0]].name} tendency`,
-    
+    summary:
+      dominantTraits.length > 1
+        ? `Balanced ${dominantTraits
+            .map((t) => traitDescriptions[t].name)
+            .join("/")} profile`
+        : `Strong ${traitDescriptions[dominantTraits[0]].name} tendency`,
+
     // Timestamp
-    analyzedAt: new Date().toISOString()
+    analyzedAt: new Date().toISOString(),
   };
 }
 // Output Example:
@@ -365,14 +404,14 @@ function analyzeDISC(answers, questions = Dummy.Disc_Test) {
  */
 function analyzeHolland(answers, questions = Dummy.Holland_Test) {
   // 1. تعریف ویژگی‌های شش‌گانه هالند
-  const traits = ['R', 'I', 'A', 'S', 'E', 'C'];
+  const traits = ["R", "I", "A", "S", "E", "C"];
   const traitNames = {
     R: "واقع‌گرا",
     I: "جستجوگر",
     A: "هنری",
     S: "اجتماعی",
     E: "متهور",
-    C: "قراردادی"
+    C: "قراردادی",
   };
 
   // 2. مقداردهی اولیه امتیازات
@@ -380,7 +419,7 @@ function analyzeHolland(answers, questions = Dummy.Holland_Test) {
 
   // 3. محاسبه امتیازات بر اساس پاسخ‌های "بله"
   answers.forEach(({ questionId, answer }) => {
-    const question = questions.find(q => q.id === questionId);
+    const question = questions.find((q) => q.id === questionId);
     if (question && answer === "بله") {
       scores[question.type] += 1;
     }
@@ -391,7 +430,7 @@ function analyzeHolland(answers, questions = Dummy.Holland_Test) {
   const normalizedScores = Object.fromEntries(
     Object.entries(scores).map(([trait, score]) => [
       trait,
-      Math.round((score / totalQuestions) * 100)
+      Math.round((score / totalQuestions) * 100),
     ])
   );
 
@@ -407,40 +446,40 @@ function analyzeHolland(answers, questions = Dummy.Holland_Test) {
     .filter(([_, score]) => score > 0)
     .slice(0, 3)
     .map(([trait]) => trait)
-    .join('');
+    .join("");
 
   // 7. اطلاعات توصیفی هر ویژگی
   const traitDetails = {
     R: {
       name: "واقع‌گرا",
       description: "علاقه به کارهای فنی، مکانیکی و فعالیت‌های عملی",
-      careers: "مکانیک، برقکار، مهندسی عمران"
+      careers: "مکانیک، برقکار، مهندسی عمران",
     },
     I: {
       name: "جستجوگر",
       description: "علاقه به مشاهده، یادگیری و حل مسائل علمی",
-      careers: "پزشک، پژوهشگر، فیزیکدان"
+      careers: "پزشک، پژوهشگر، فیزیکدان",
     },
     A: {
       name: "هنری",
       description: "علاقه به کارهای خلاقانه و بیان فردی",
-      careers: "هنرمند، موسیقیدان، طراح"
+      careers: "هنرمند، موسیقیدان، طراح",
     },
     S: {
       name: "اجتماعی",
       description: "علاقه به کمک، آموزش و خدمت به دیگران",
-      careers: "معلم، مددکار اجتماعی، مشاور"
+      careers: "معلم، مددکار اجتماعی، مشاور",
     },
     E: {
       name: "متهور",
       description: "علاقه به رهبری، متقاعد کردن و کارهای تجاری",
-      careers: "مدیر، بازاریاب، کارآفرین"
+      careers: "مدیر، بازاریاب، کارآفرین",
     },
     C: {
       name: "قراردادی",
       description: "علاقه به کارهای منظم، ساختاریافته و اداری",
-      careers: "حسابدار، منشی، بانکدار"
-    }
+      careers: "حسابدار، منشی، بانکدار",
+    },
   };
 
   // 8. آماده‌سازی خروجی حرفه‌ای
@@ -448,52 +487,55 @@ function analyzeHolland(answers, questions = Dummy.Holland_Test) {
     // اطلاعات پایه
     hollandCode, // کد سه‌حرفی (مثال: "RIS")
     dominantTraits, // ویژگی‌های غالب
-    
+
     // داده‌های امتیازی
     rawScores: scores, // امتیازات خام
     normalizedScores, // امتیازات درصدی
-    
+
     // اطلاعات هر ویژگی
     traits: Object.fromEntries(
-      traits.map(trait => [
+      traits.map((trait) => [
         trait,
         {
           ...traitDetails[trait],
           score: scores[trait],
           percentage: normalizedScores[trait],
-          isDominant: dominantTraits.includes(trait)
-        }
+          isDominant: dominantTraits.includes(trait),
+        },
       ])
     ),
-    
+
     // پیشنهادات شغلی
-    careerSuggestions: dominantTraits.map(t => traitDetails[t].careers),
-    
+    careerSuggestions: dominantTraits.map((t) => traitDetails[t].careers),
+
     // داده‌های نمودار
     chartData: {
-      labels: traits.map(t => traitDetails[t].name),
-      datasets: [{
-        label: 'پروفایل هالند',
-        data: traits.map(t => normalizedScores[t]),
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.7)', // R
-          'rgba(54, 162, 235, 0.7)',  // I
-          'rgba(255, 206, 86, 0.7)',  // A
-          'rgba(75, 192, 192, 0.7)',  // S
-          'rgba(153, 102, 255, 0.7)', // E
-          'rgba(255, 159, 64, 0.7)'   // C
-        ]
-      }]
+      labels: traits.map((t) => traitDetails[t].name),
+      datasets: [
+        {
+          label: "پروفایل هالند",
+          data: traits.map((t) => normalizedScores[t]),
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.7)", // R
+            "rgba(54, 162, 235, 0.7)", // I
+            "rgba(255, 206, 86, 0.7)", // A
+            "rgba(75, 192, 192, 0.7)", // S
+            "rgba(153, 102, 255, 0.7)", // E
+            "rgba(255, 159, 64, 0.7)", // C
+          ],
+        },
+      ],
     },
-    
+
     // خلاصه تحلیل
-    summary: `تیپ شغلی شما ${hollandCode} (${dominantTraits.map(t => traitDetails[t].name).join('/')}) است`,
-    
+    summary: `تیپ شغلی شما ${hollandCode} (${dominantTraits
+      .map((t) => traitDetails[t].name)
+      .join("/")}) است`,
+
     // زمان تحلیل
-    analyzedAt: new Date().toISOString()
+    analyzedAt: new Date().toISOString(),
   };
 }
-
 // مثال خروجی:
 /*
 {
@@ -536,7 +578,7 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
       englishName: "Linguistic",
       description: "توانایی استفاده مؤثر از کلمات و زبان",
       characteristics: "علاقه به خواندن، نوشتن، داستان‌گویی و حفظ کردن",
-      careers: "نویسنده، شاعر، روزنامه‌نگار، وکیل"
+      careers: "نویسنده، شاعر، روزنامه‌نگار، وکیل",
     },
     M: {
       code: "M",
@@ -544,7 +586,7 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
       englishName: "Logical-Mathematical",
       description: "توانایی استدلال، حل مسئله و تفکر منطقی",
       characteristics: "علاقه به الگوها، روابط، مسائل انتزاعی و محاسبات",
-      careers: "ریاضیدان، دانشمند، برنامه‌نویس، مهندس"
+      careers: "ریاضیدان، دانشمند، برنامه‌نویس، مهندس",
     },
     S: {
       code: "S",
@@ -552,7 +594,7 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
       englishName: "Spatial",
       description: "توانایی درک و تجسم فضایی",
       characteristics: "قوی در تصویرسازی ذهنی، جهتیابی و طراحی",
-      careers: "معمار، نقاش، طراح، عکاس"
+      careers: "معمار، نقاش، طراح، عکاس",
     },
     B: {
       code: "B",
@@ -560,7 +602,7 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
       englishName: "Bodily-Kinesthetic",
       description: "توانایی کنترل حرکات بدن و دستکاری اشیاء",
       characteristics: "هماهنگی عالی بدن، لمس یادگیرنده، مهارت‌های فیزیکی",
-      careers: "ورزشکار، جراح، صنعتگر، رقصنده"
+      careers: "ورزشکار، جراح، صنعتگر، رقصنده",
     },
     Mu: {
       code: "Mu",
@@ -568,7 +610,7 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
       englishName: "Musical",
       description: "حساسیت به ریتم، صداها و موسیقی",
       characteristics: "شنوایی قوی، تشخیص الگوهای صوتی، حساسیت به تن صدا",
-      careers: "موسیقیدان، آهنگساز، خواننده، تنظیم کننده"
+      careers: "موسیقیدان، آهنگساز، خواننده، تنظیم کننده",
     },
     I: {
       code: "I",
@@ -576,7 +618,7 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
       englishName: "Interpersonal",
       description: "توانایی درک و تعامل مؤثر با دیگران",
       characteristics: "مهارت‌های اجتماعی بالا، همدلی، رهبری",
-      careers: "معلم، روانشناس، فروشنده، مدیر"
+      careers: "معلم، روانشناس، فروشنده، مدیر",
     },
     In: {
       code: "In",
@@ -584,7 +626,7 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
       englishName: "Intrapersonal",
       description: "خودآگاهی و درک عمیق از خود",
       characteristics: "درون‌گرا، خوداندیش، آگاه از احساسات و انگیزه‌ها",
-      careers: "فیلسوف، مشاور، نظریه‌پرداز، پژوهشگر"
+      careers: "فیلسوف، مشاور، نظریه‌پرداز، پژوهشگر",
     },
     N: {
       code: "N",
@@ -592,8 +634,8 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
       englishName: "Naturalistic",
       description: "توانایی تشخیص و طبقه‌بندی الگوهای طبیعی",
       characteristics: "علاقه به طبیعت، گیاهان، حیوانات و سیستم‌های طبیعی",
-      careers: "زیست‌شناس، زمین‌شناس، باغبان، محیط‌بان"
-    }
+      careers: "زیست‌شناس، زمین‌شناس، باغبان، محیط‌بان",
+    },
   };
 
   // 2. مقداردهی اولیه امتیازات
@@ -604,7 +646,7 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
 
   // 3. محاسبه امتیازات
   answers.forEach(({ questionId, value }) => {
-    const question = questions.find(q => q.id === questionId);
+    const question = questions.find((q) => q.id === questionId);
     if (question && scores.hasOwnProperty(question.type)) {
       scores[question.type] += value;
     }
@@ -615,7 +657,7 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
   const normalizedScores = Object.fromEntries(
     Object.entries(scores).map(([type, score]) => [
       type,
-      Math.round((score / maxPossibleScore) * 100)
+      Math.round((score / maxPossibleScore) * 100),
     ])
   );
 
@@ -630,11 +672,11 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
     // اطلاعات پایه
     topIntelligences, // کدهای هوش‌های برتر
     primaryIntelligence: topIntelligences[0], // هوش غالب اول
-    
+
     // داده‌های امتیازی
     rawScores: scores, // امتیازات خام
     normalizedScores, // امتیازات درصدی
-    
+
     // اطلاعات هر هوش
     intelligenceProfiles: Object.fromEntries(
       Object.entries(intelligences).map(([type, data]) => [
@@ -644,47 +686,52 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
           score: scores[type],
           percentage: normalizedScores[type],
           isTop: topIntelligences.includes(type),
-          rank: Object.values(scores)
-            .sort((a, b) => b - a)
-            .indexOf(scores[type]) + 1
-        }
+          rank:
+            Object.values(scores)
+              .sort((a, b) => b - a)
+              .indexOf(scores[type]) + 1,
+        },
       ])
     ),
-    
+
     // پیشنهادات توسعه‌ای
-    developmentSuggestions: topIntelligences.map(type => ({
+    developmentSuggestions: topIntelligences.map((type) => ({
       intelligence: intelligences[type].name,
       suggestions: [
         `تمرین‌های تقویت ${intelligences[type].name}`,
-        `مطالعه در مورد ${intelligences[type].careers.split('، ')[0]}`,
-        `شرکت در کارگاه‌های مرتبط با ${intelligences[type].name}`
-      ]
+        `مطالعه در مورد ${intelligences[type].careers.split("، ")[0]}`,
+        `شرکت در کارگاه‌های مرتبط با ${intelligences[type].name}`,
+      ],
     })),
-    
+
     // داده‌های نمودار
     chartData: {
-      labels: Object.values(intelligences).map(i => i.name),
-      datasets: [{
-        label: 'پروفایل هوش‌های چندگانه',
-        data: Object.keys(intelligences).map(key => normalizedScores[key]),
-        backgroundColor: [
-          'rgba(54, 162, 235, 0.7)', // کلامی
-          'rgba(255, 99, 132, 0.7)',  // منطقی
-          'rgba(255, 206, 86, 0.7)',  // فضایی
-          'rgba(75, 192, 192, 0.7)',  // بدنی
-          'rgba(153, 102, 255, 0.7)', // موسیقایی
-          'rgba(255, 159, 64, 0.7)',  // میان‌فردی
-          'rgba(199, 199, 199, 0.7)',  // درون‌فردی
-          'rgba(83, 102, 255, 0.7)'   // طبیعت‌گرا
-        ]
-      }]
+      labels: Object.values(intelligences).map((i) => i.name),
+      datasets: [
+        {
+          label: "پروفایل هوش‌های چندگانه",
+          data: Object.keys(intelligences).map((key) => normalizedScores[key]),
+          backgroundColor: [
+            "rgba(54, 162, 235, 0.7)", // کلامی
+            "rgba(255, 99, 132, 0.7)", // منطقی
+            "rgba(255, 206, 86, 0.7)", // فضایی
+            "rgba(75, 192, 192, 0.7)", // بدنی
+            "rgba(153, 102, 255, 0.7)", // موسیقایی
+            "rgba(255, 159, 64, 0.7)", // میان‌فردی
+            "rgba(199, 199, 199, 0.7)", // درون‌فردی
+            "rgba(83, 102, 255, 0.7)", // طبیعت‌گرا
+          ],
+        },
+      ],
     },
-    
+
     // خلاصه تحلیل
-    summary: `هوش‌های برتر شما: ${topIntelligences.map(t => intelligences[t].name).join('، ')}`,
-    
+    summary: `هوش‌های برتر شما: ${topIntelligences
+      .map((t) => intelligences[t].name)
+      .join("، ")}`,
+
     // زمان تحلیل
-    analyzedAt: new Date().toISOString()
+    analyzedAt: new Date().toISOString(),
   };
 }
 
@@ -738,29 +785,29 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
 function analyzeClifton(answers, questions = Dummy.Clifton_Test) {
   // 1. تعریف تم‌های کلیفتون استرنث
   const themes = {
-    "Achiever": {
+    Achiever: {
       name: "دستاوردگرا",
       description: "دارای نیاز درونی شدید به پیشرفت و موفقیت",
-      characteristics: "پرانرژی، مسئولیت‌پذیر، عاشق چالش‌های جدید"
+      characteristics: "پرانرژی، مسئولیت‌پذیر، عاشق چالش‌های جدید",
     },
-    "Activator": {
+    Activator: {
       name: "فعال‌ساز",
       description: "توانایی تبدیل افکار به اقدامات عملی",
-      characteristics: "بی‌تاب، عملگرا، آغازگر تغییرات"
+      characteristics: "بی‌تاب، عملگرا، آغازگر تغییرات",
     },
     // ... سایر تم‌ها را اینجا اضافه کنید
   };
 
   // 2. مقداردهی اولیه امتیازات
   const scores = {};
-  questions.forEach(q => {
+  questions.forEach((q) => {
     scores[q.theme_a] = 0;
     scores[q.theme_b] = 0;
   });
 
   // 3. محاسبه امتیازات
   answers.forEach(({ questionId, choice }) => {
-    const question = questions.find(q => q.id === questionId);
+    const question = questions.find((q) => q.id === questionId);
     if (!question) return;
 
     if (choice === "A") scores[question.theme_a]++;
@@ -772,7 +819,7 @@ function analyzeClifton(answers, questions = Dummy.Clifton_Test) {
   const normalizedScores = Object.fromEntries(
     Object.entries(scores).map(([theme, score]) => [
       theme,
-      Math.round((score / totalQuestions) * 100)
+      Math.round((score / totalQuestions) * 100),
     ])
   );
 
@@ -788,7 +835,7 @@ function analyzeClifton(answers, questions = Dummy.Clifton_Test) {
     .map(([theme], index) => ({
       theme,
       rank: index + 1,
-      ...themes[theme]
+      ...themes[theme],
     }));
 
   // 7. آماده‌سازی خروجی حرفه‌ای
@@ -796,46 +843,50 @@ function analyzeClifton(answers, questions = Dummy.Clifton_Test) {
     // اطلاعات پایه
     topThemes, // تم‌های برتر
     signatureTheme: topThemes[0], // تم امضای شخصیتی
-    
+
     // داده‌های امتیازی
     rawScores: scores, // امتیازات خام
     normalizedScores, // امتیازات درصدی
-    
+
     // اطلاعات هر تم
-    themeDetails: rankedThemes.map(theme => ({
+    themeDetails: rankedThemes.map((theme) => ({
       ...theme,
       score: scores[theme.theme],
       percentage: normalizedScores[theme.theme],
-      isTop: topThemes.includes(theme.theme)
+      isTop: topThemes.includes(theme.theme),
     })),
-    
+
     // پیشنهادات توسعه‌ای
-    developmentSuggestions: topThemes.map(theme => ({
+    developmentSuggestions: topThemes.map((theme) => ({
       theme: themes[theme].name,
       suggestions: [
         `تمرکز بر پروژه‌هایی که نیاز به ${themes[theme].name} دارند`,
         `همکاری با افرادی که مکمل ${themes[theme].name} هستند`,
-        `ثبت دستاوردهای مرتبط با ${themes[theme].name}`
-      ]
+        `ثبت دستاوردهای مرتبط با ${themes[theme].name}`,
+      ],
     })),
-    
+
     // داده‌های نمودار
     chartData: {
-      labels: rankedThemes.map(t => themes[t.theme]?.name || t.theme),
-      datasets: [{
-        label: 'پروفایل نقاط قوت',
-        data: rankedThemes.map(t => normalizedScores[t.theme]),
-        backgroundColor: rankedThemes.map((_, i) => 
-          `hsl(${(i * 360) / rankedThemes.length}, 70%, 60%)`
-        )
-      }]
+      labels: rankedThemes.map((t) => themes[t.theme]?.name || t.theme),
+      datasets: [
+        {
+          label: "پروفایل نقاط قوت",
+          data: rankedThemes.map((t) => normalizedScores[t.theme]),
+          backgroundColor: rankedThemes.map(
+            (_, i) => `hsl(${(i * 360) / rankedThemes.length}, 70%, 60%)`
+          ),
+        },
+      ],
     },
-    
+
     // خلاصه تحلیل
-    summary: `نقاط قوت برتر شما: ${topThemes.map(t => themes[t]?.name || t).join('، ')}`,
-    
+    summary: `نقاط قوت برتر شما: ${topThemes
+      .map((t) => themes[t]?.name || t)
+      .join("، ")}`,
+
     // اطلاعات زمانی
-    analyzedAt: new Date().toISOString()
+    analyzedAt: new Date().toISOString(),
   };
 }
 

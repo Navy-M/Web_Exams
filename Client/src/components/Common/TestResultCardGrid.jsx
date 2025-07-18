@@ -12,8 +12,8 @@ const TestResultCardGrid = ({ onSelectTest }) => {
   return (
     <div className="test-card-grid">
       {user.testsAssigned.map((test) => (
-        <div key={test.testName} className="test-card" 
-        // onClick={() => onSelectTest(test.id)}
+        <div key={test._id} className="test-card" 
+        onClick={() => onSelectTest(test.resultId)}
         >
           <h3>{Test_Cards.find(tc => tc.id === test.testType).name}</h3>
           <p>{new Date(test.completedAt).toLocaleString('en-US', {

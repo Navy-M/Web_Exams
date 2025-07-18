@@ -12,6 +12,7 @@ import {
   analyzeTests
 } from "../../services/api";
 import "./usersPage.css";
+import ShowAnalysis from '../../components/common/ShowAnalysis';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -284,10 +285,8 @@ const UsersPage = () => {
                 {selectedResult?.analysis && 
                   <div>
                   <h4>نتایج آزمون {selectedResult.testType}</h4>
-                    {JSON.stringify(selectedResult.analysis
-
-                      
-                    )}
+                    {/* {JSON.stringify(selectedResult.analysis)} */}
+                  <ShowAnalysis testType={selectedResult.testType} analysisData={selectedResult.analysis}/> 
                   </div>
 
 

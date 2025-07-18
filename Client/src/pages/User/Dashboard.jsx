@@ -11,8 +11,9 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 
-import TestResultCardGrid from '../../components/Common/TestResultCardGrid';
+import TestResultCardGrid from '../../components/common/TestResultCardGrid';
 import { Test_Cards } from '../../services/dummyData';
+import ShowAnalysis from '../../components/common/ShowAnalysis';
 
 const UserDashboard = () => {
   const { user, logout } = useAuth();
@@ -22,6 +23,7 @@ const UserDashboard = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
+  const [selectedCompletedTest, setSelectedCompletedTest]= useState()
 
   useEffect(() => {
     const fetchTests = async () => {
@@ -64,8 +66,21 @@ const UserDashboard = () => {
     navigate('/login');
   };
 
-  
+  const handleSelectCompletedResult = async (id) => {
+    try {
+        const _result = await getTestResults(id);
+        if (_result) {
+          console.log("Selected Result", _result);
+          setSelectedCompletedTest(_result.data);
 
+            
+        }
+      } catch (error) {
+        console.error("❌ Error Select Result:", error);
+      }
+  }
+
+ 
 
   return (
     <div className="user-dashboard">
@@ -159,7 +174,7 @@ const UserDashboard = () => {
                   <section className="active-tests">
 
                     <div className="tests-grid">
-                      <TestResultCardGrid onSelectTest={handleStartTest} />
+                      <TestResultCardGrid onSelectTest={handleSelectCompletedResult} />
 
                       {/* {completedTests.map(test => {
                         <div key={test.id} className="test-card" onClick={() => onSelectTest(test.id)}>
@@ -171,7 +186,7 @@ const UserDashboard = () => {
                     </div>
                   </section>
                       
-                  <section className="test-history">
+                  {/* <section className="test-history">
                     <h2>تاریخچه تست ها</h2>
                     <table className="history-table">
                       <thead>
@@ -194,7 +209,13 @@ const UserDashboard = () => {
                         ))}
                       </tbody>
                     </table>
-                  </section>
+                  </section> */}
+
+                  {
+                    selectedCompletedTest && 
+                      <ShowAnalysis testType={selectedCompletedTest.testType} analysisData={selectedCompletedTest.analysis}/>
+                  }
+
                 </>
                 : <> 
                 <p> جداول نتایج تست های شما پس از برسی در دسترس میباشد ...</p> </>
