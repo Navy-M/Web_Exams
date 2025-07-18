@@ -59,9 +59,9 @@ const TestsStatus = () => {
               <td>{user.profile.fullName}</td>
               <td>{user.email}</td>
               <td>
-                {user.testsAssigned?.private?.length > 0 ? (
+                {user.testsAssigned?.length > 0 ? (
                   <ul>
-                    {user.testsAssigned.private.map(test => (
+                    {user.testsAssigned.map(test => (
                       <li key={test._id}>
                         {test.testType} - امتیاز: {test.score ?? 'نامشخص'}
                       </li>

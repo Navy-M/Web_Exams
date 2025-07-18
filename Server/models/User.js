@@ -29,30 +29,21 @@ const userSchema = new mongoose.Schema(
       province: String,
       jobPosition: String,
     },
-    testsAssigned: {
-      public: [
-        {
-          resultId: { type: mongoose.Schema.Types.ObjectId, ref: "Result" },
-          testType: String,
-          completedAt: {
-            type: Date,
-            require: true,
-          },
-          score: Number,
-          adminFeedback: String,
+    testsAssigned: [
+      {
+        resultId: { type: mongoose.Schema.Types.ObjectId, ref: "Result" },
+        testType: String,
+        completedAt: {
+          type: Date,
+          require: true,
         },
-      ],
-      private: [
-        {
-          resultId: { type: mongoose.Schema.Types.ObjectId, ref: "Result" },
-          testType: String,
-          completedAt: {
-            type: Date,
-            require: true,
-          },
-        },
-      ],
-    },
+        score: Number,
+        adminFeedback: String,
+        duration: Number,
+        isPublic: Boolean,
+        analyzedAt: Date,
+      },
+    ],
   },
   { timestamps: true }
 );

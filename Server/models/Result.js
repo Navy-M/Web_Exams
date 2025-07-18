@@ -14,11 +14,11 @@ const resultSchema = new mongoose.Schema(
       required: true,
     },
     answers: [],
-    score: { type: Number, default: 0 },  // Explicit default
+    score: { type: Number, default: 0 }, // Explicit default
     durationInSeconds: Number,
     analysis: {
+      type: mongoose.Schema.Types.Mixed, // ← THE KEY!
       default: {},
-      details: Object,
     },
     adminFeedback: String,
     startedAt: {
@@ -30,13 +30,13 @@ const resultSchema = new mongoose.Schema(
       default: Date.now,
       required: true,
     },
+    duration: Number,
   },
   { timestamps: true }
 );
 
 // Middleware to calculate total score and duration
 resultSchema.pre("save", function (next) {
-
   if (this.startedAt && this.submittedAt) {
     const durationMs = this.submittedAt - this.startedAt;
     this.durationInSeconds = Math.floor(durationMs / 1000);

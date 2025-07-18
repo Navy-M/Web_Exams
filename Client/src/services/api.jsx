@@ -128,7 +128,6 @@ export const completeProfile = async (form) => {
 export const getTests = async () => ( Holland_Test);
 export const assignTest = async (testId, userIds, deadline) =>
   (await API.post(`/tests/${testId}/assign`, { userIds, deadline })).data;
-export const getTestResults = async (testId) => (await API.get(`/tests/${testId}/results`)).data;
 
 // --- RESULTS API ---
 export const submitResult = async (resultData) => {
@@ -143,6 +142,7 @@ export const submitResult = async (resultData) => {
     throw error;
   }
 };
+export const getTestResults = async (resultId) => (await API.get(`/results/${resultId}`)).data;
 
 export const deleteResult = async (resultId) => {
   try {
@@ -150,6 +150,26 @@ export const deleteResult = async (resultId) => {
     return response.data;
   } catch (error) {
     console.error('Error deleting result:', error);
+    throw error;
+  }
+};
+
+export const getUserResults = async (userId) => {
+  try {
+    const response = await API.post(`/results/${userId}/list`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user results:', error);
+    throw error;
+  }
+};
+export const submitTestFeedback = async (feedbackData) => {
+    // console.log("submitedFeedBack req data : ",feedbackData);
+  try {
+    const response = await API.post("/results/submitfeedback", {feedbackData});
+    return response.data;
+  } catch (error) {
+    console.error('Error submitting feedback:', error);
     throw error;
   }
 };
@@ -165,28 +185,6 @@ export const deleteResult = async (resultId) => {
 //     throw error;
 //   }
 // }
-
-export const getUserResults = async (userId) => {
-  try {
-    const response = await API.post(`/results/${userId}/list`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching user results:', error);
-    throw error;
-  }
-};
-export const submitTestFeedback = async (feedbackData) => {
-  try {
-    const response = await API.patch(
-      `/users/${feedbackData.userId}/results/${feedbackData.resultId}/evaluate`,
-      { feedback: feedbackData.feedback }
-    );
-    return response.data;
-  } catch (error) {
-    console.error('Error submitting feedback:', error);
-    throw error;
-  }
-};
 
 // --- TEST ANALYZER API ---
 export const analyzeTests = async (Data) => {

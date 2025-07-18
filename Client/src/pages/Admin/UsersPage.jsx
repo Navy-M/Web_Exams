@@ -7,6 +7,7 @@ import {
   getUserResults,
   submitTestFeedback,
   createUser,
+  getTestResults,
   deleteResult,
   analyzeTests
 } from "../../services/api";
@@ -59,7 +60,7 @@ const UsersPage = () => {
         try {
           // const results = await getUserResults(selectedUser._id);
           // setUserResults(results);
-          setUserResults(selectedUser.testsAssigned.private);
+          setUserResults(selectedUser.testsAssigned);
         } catch (err) {
           console.error(err);
           alert('خطا در دریافت نتایج کاربر');
@@ -112,12 +113,9 @@ const UsersPage = () => {
     // console.log("resultId : " , resultId);
 
     alert("تحلیل با موفقیت انجام شد ✅");
-<<<<<<< HEAD
-    console.log("✅ Analyzed Result:", response);
-=======
+
     // console.log("✅ Analyzed Result:", response);
     console.log("✅ Analyzed Result:", response.data);
->>>>>>> fe1e2fd06fc8ddc232c45d1dd065c27432186270
 
     
     // Optionally refresh results or update local state
@@ -128,9 +126,22 @@ const UsersPage = () => {
   }
   };
 
+  const handleSelectResult = async (id) => {
+    try {
+      const _result = await getTestResults(id);
+      if (_result) {
+          setSelectedResult(_result.data);
+          // console.log("Selected Result", _result);
+          
+      }
+    } catch (error) {
+      console.error("❌ Error Select Result:", error);
+    }
+  }
+
   const handleSubmitFeedback = async () => {
     if (!feedback.trim() || !selectedResult) return;
-      console.log(feedback);
+      // console.log("feedback text:", feedback);
 
     try {
       await submitTestFeedback({
@@ -143,7 +154,7 @@ const UsersPage = () => {
       setSelectedResult(null);
       // Refresh results
       const results = await getUserResults(selectedUser._id);
-      console.log(results);
+      // console.log(results);
       
       setUserResults(results);
     } catch (err) {
@@ -151,7 +162,6 @@ const UsersPage = () => {
       alert('خطا در ثبت بازخورد');
     }
   };
-
 
   const handleDeleteUserResult = async (id) => {
        const confirmed = window.confirm('آیا از حذف آزمون مطمئن هستید؟');
@@ -200,7 +210,7 @@ const UsersPage = () => {
                   <tr>
                     <th>نام تست</th>
                     <th>تاریخ انجام</th>
-                    <th>امتیاز</th>
+                    <th>مدت زمان</th>
                     <th>بازخورد</th>
                     <th>اقدامات</th>
                   </tr>
@@ -210,7 +220,7 @@ const UsersPage = () => {
                     <tr key={result._id}>
                       <td>{result.testType}</td>
                       <td>{formatDate(result.completedAt)}</td>
-                      <td>{result.score || '--'}</td>
+                      <td>{result.duration || '--'}</td>
                       <td>{result.adminFeedback || 'بدون بازخورد'}</td>
                       <td>
                         <button 
@@ -221,15 +231,17 @@ const UsersPage = () => {
                           حذف آزمون
                         </button>
                         
+                        {!result?.adminFeedback &&
                         <button 
-                          onClick={() => setSelectedResult(result)}
+                          onClick={() => handleSelectResult(result.resultId)}
                           disabled={!!selectedResult}
                           className='submit-feedback'
                         >
                           ثبت بازخورد
                         </button>
+                        }
                         
-                        {!result.score && 
+                        {!result?.analyzedAt && 
                           <button 
                             onClick={() => {
                               // console.log(`this is starting to check ${result.testType} test`);
@@ -240,6 +252,20 @@ const UsersPage = () => {
                             className='check_test'
                           >
                           تصحیح 
+                          </button>
+                        }
+                        {result?.analyzedAt && 
+                          <button 
+                            onClick={() => {
+                              // console.log(`this is starting to check ${result.testType} test`);
+                              // TODO : show result
+                              handleSelectResult(result.resultId)
+                              // alert(`this is starting to check ${result.testType} test`);
+                            }}
+                            disabled={!!selectedResult}
+                            className='check_test'
+                          >
+                          مشاهده نتایج 
                           </button>
                         }
                       </td>
@@ -255,6 +281,21 @@ const UsersPage = () => {
 
             {selectedResult && (
               <div className="feedback-form">
+                {selectedResult?.analysis && 
+                  <div>
+                  <h4>نتایج آزمون {selectedResult.testType}</h4>
+                    {JSON.stringify(selectedResult.analysis
+
+                      
+                    )}
+                  </div>
+
+
+
+                }
+
+              { !selectedResult.adminFeedback &&
+              <>  
                 <h4>ثبت بازخورد برای تست {selectedResult.testType}</h4>
                 <textarea
                   value={feedback}
@@ -262,8 +303,10 @@ const UsersPage = () => {
                   placeholder="متن بازخورد..."
                   rows={4}
                 />
-                <div className="form-actions">
-                  <button className="form-actions-submit" onClick={handleSubmitFeedback}>ثبت نهایی</button>
+                
+              </>}
+              <div className="form-actions">
+                  { !selectedResult.adminFeedback && <button className="form-actions-submit" onClick={handleSubmitFeedback}>ثبت نهایی</button>}
                   <button 
                     onClick={() => {
                       setSelectedResult(null);

@@ -3,9 +3,11 @@ import {
   createResult,
   getResults,
   getResultsByUser,
+  getResultById,
   submitTestResult,
   analyzeResult,
-  deleteResult
+  deleteResult,
+  updateTestFeedback,
 } from "../controllers/resultsController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -14,11 +16,15 @@ const router = express.Router();
 router.post("/", createResult);
 router.post("/submitUInfo", submitTestResult);
 
-router.delete('/:resultId',protect, admin, deleteResult);
+router.get("/:resultId", getResultById);
+
+router.delete("/:resultId", protect, admin, deleteResult);
 
 router.post("/analyze", analyzeResult);
 
 router.get("/", getResults);
+
+router.post("/submitfeedback", updateTestFeedback);
 
 router.post("/:userId/userResult", getResults);
 

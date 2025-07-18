@@ -6,7 +6,6 @@ import { Test_Cards } from '../../services/dummyData';
 import UsersPage from "./UsersPage";
 import TestsPage from "./TestsPage";
 import TestsStatus from "../../components/Admin/TestsStatus";
-import { AlignCenter } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');

@@ -11,7 +11,7 @@ const TestResultCardGrid = ({ onSelectTest }) => {
 
   return (
     <div className="test-card-grid">
-      {user.testsAssigned.public.map((test) => (
+      {user.testsAssigned.map((test) => (
         <div key={test.testName} className="test-card" 
         // onClick={() => onSelectTest(test.id)}
         >

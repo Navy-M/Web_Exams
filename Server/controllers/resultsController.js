@@ -1,5 +1,5 @@
 // controllers/resultsController.js
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 const { Types } = mongoose;
 import Result from "../models/Result.js";
 import User from "../models/User.js";
@@ -61,7 +61,8 @@ export const createResult = async (req, res) => {
 
 export const getResultById = async (req, res) => {
   try {
-    const { resultId } = req.body;
+    const { resultId } = req.params;
+    // console.log(resultId, resultId);
 
     // 1️⃣ Validate the ID
     if (!resultId) {
@@ -96,7 +97,6 @@ export const getResultById = async (req, res) => {
       status: "success",
       data: result,
     });
-
   } catch (error) {
     console.error("❌ Error fetching result:", error);
     return res.status(500).json({
@@ -135,15 +135,8 @@ export const getResultsByUser = async (req, res) => {
 // Save Results
 export const submitTestResult = async (req, res) => {
   try {
-    const {
-      user,
-      testType,
-      answers,
-      score,
-      analysis,
-      startedAt,
-      submittedAt,
-    } = req.body;
+    const { user, testType, answers, score, analysis, startedAt, submittedAt } =
+      req.body;
     // console.log({ user, testType, answers, score, otherResult, startedAt });
 
     // if (Result.find((r) => r.user === user)) {
@@ -163,7 +156,7 @@ export const submitTestResult = async (req, res) => {
       adminFeedback: "", // initially empty
       startedAt,
       submittedAt,
-      durationMinutes: Math.round((Date.now() - new Date(startedAt)) / 60000),
+      duration: Math.round(Date.now() - new Date(startedAt)), // x / 60000 for convert to minutes
     });
 
     const savedResult = await result.save();
@@ -173,13 +166,13 @@ export const submitTestResult = async (req, res) => {
       resultId: savedResult._id,
       testType,
       completedAt: savedResult.submittedAt,
-      score,
+      isPublic: false,
     };
     // Update the user directly
     const updatedUser = await User.findByIdAndUpdate(
       user,
       {
-        $push: { "testsAssigned.private": miniResult },
+        $push: { testsAssigned: miniResult },
       },
       { new: true }
     ).select("-password");
@@ -211,7 +204,7 @@ export const deleteResult = async (req, res) => {
     const { resultId } = req.params;
 
     // console.log("delete resultId : ", resultId);
-    
+
     // Validate resultId format
     if (!resultId || !mongoose.Types.ObjectId.isValid(resultId)) {
       return res.status(400).json({
@@ -221,7 +214,7 @@ export const deleteResult = async (req, res) => {
     }
 
     // Find and delete the result
-    const result = await Result.findOneAndDelete({ _id: resultId});
+    const result = await Result.findOneAndDelete({ _id: resultId });
 
     // console.log("delete result : ", result);
 
@@ -234,18 +227,10 @@ export const deleteResult = async (req, res) => {
 
     // Remove the result from the user's testsAssigned.private array
     const privateUpdateResult = await User.updateOne(
-      { _id: result.user, "testsAssigned.private.resultId": resultId },
-      { $pull: { "testsAssigned.private": { resultId: resultId } } }
+      { _id: result.user, "testsAssigned.resultId": resultId },
+      { $pull: { testsAssigned: { resultId: resultId } } }
     );
     // console.log("Private array update result:", privateUpdateResult); // Debug: Log update result
-
-    // Optionally, remove from testsAssigned.public if it exists
-    const publicUpdateResult = await User.updateOne(
-      { _id: result.user, "testsAssigned.public.resultId": resultId },
-      { $pull: { "testsAssigned.public": { resultId: resultId } } }
-    );
-    // console.log("Public array update result:", publicUpdateResult); // Debug: Log update result
-
 
     return res.status(200).json({
       status: "success",
@@ -256,114 +241,39 @@ export const deleteResult = async (req, res) => {
     res.status(500).json({
       status: "error",
       message: "❌خطای سرور در حذف نتیجه",
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
-  }
-};
-
-// Update admin feedback and result details
-export const updateResultEvaluation = async (req, res) => {
-  try {
-    const { resultId } = req.params;
-    const { adminFeedback, otherResult, score, publishToUser } = req.body;
-    const { userId: adminId, role } = req.user; // From your auth middleware
-
-    // Verify admin privileges
-    if (role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
-    }
-
-    // Prepare update object
-    const updateData = {
-      adminFeedback,
-      evaluatedAt: new Date(),
-      evaluatedBy: adminId,
-      ...(otherResult && { otherResult }), // Only update if provided
-      ...(score && { score }), // Only update if provided
-    };
-
-    // 1. Update the main Result document
-    const updatedResult = await Result.findByIdAndUpdate(
-      resultId,
-      { $set: updateData },
-      { new: true }
-    ).populate("user", "name email");
-
-    if (!updatedResult) {
-      return res.status(404).json({ message: "Result not found" });
-    }
-
-    // 2. Update the private copy in User collection (if exists)
-    await User.updateOne(
-      {
-        _id: updatedResult.user._id,
-        "testsAssigned.private.resultId": resultId,
-      },
-      {
-        $set: {
-          "testsAssigned.private.$.adminFeedback": adminFeedback,
-          "testsAssigned.private.$.score": score || updatedResult.score,
-          "testsAssigned.private.$.evaluatedAt": new Date(),
-        },
-      }
-    );
-
-    // 3. Optionally publish to user's public results
-    if (publishToUser) {
-      const publicSummary = {
-        resultId: updatedResult._id,
-        testType: updatedResult.testType,
-        completedAt: updatedResult.completedAt,
-        score: score || updatedResult.score,
-        adminFeedback,
-        evaluatedAt: new Date(),
-      };
-
-      await User.findByIdAndUpdate(updatedResult.user._id, {
-        $addToSet: { "testsAssigned.public": publicSummary },
-      });
-    }
-
-    res.status(200).json({
-      message: "Evaluation updated successfully",
-      result: updatedResult,
-      published: publishToUser,
-    });
-  } catch (error) {
-    console.error("Error updating evaluation:", error);
-    res.status(500).json({ message: "Server error" });
   }
 };
 
 export const analyzeResult = async (req, res) => {
   try {
     const { resultId, testType } = req.body;
-     // More robust validation
-    if (!resultId || typeof resultId !== 'string') {
-      return res.status(400).json({ 
+    // More robust validation
+    if (!resultId || typeof resultId !== "string") {
+      return res.status(400).json({
         status: "error",
-        message: "شناسه نتیجه نامعتبر است" 
+        message: "شناسه نتیجه نامعتبر است",
       });
     }
 
     if (!testType) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         status: "error",
-        message: "نوع تست نامعتبر است" 
+        message: "نوع تست نامعتبر است",
       });
     }
 
     // console.log("Searching for resultId:", resultId);
     // console.log("Searching for testType:", testType);
 
-    const result = await Result.findOne({_id: resultId, testType: testType});
-    // console.log("Found result:", result); 
-
+    const result = await Result.findOne({ _id: resultId, testType: testType });
+    // console.log("Found result:", result);
 
     if (!result) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         status: "error",
-        message: "نتیجه آزمایش یافت نشد" 
+        message: "نتیجه آزمایش یافت نشد",
       });
     }
 
@@ -371,54 +281,151 @@ export const analyzeResult = async (req, res) => {
     if (!result.testType || !result.answers) {
       return res.status(400).json({
         status: "error",
-        message: "داده‌های نتیجه ناقص هستند"
+        message: "داده‌های نتیجه ناقص هستند",
       });
     }
 
     const analysis = getTestAnalysis(testType, result.answers);
 
     if (!analysis) {
-      console.log(`No analysis generated for testType: ${testType}, resultId: ${resultId}`);
+      console.log(
+        `No analysis generated for testType: ${testType}, resultId: ${resultId}`
+      );
       return res.status(400).json({
         status: "error",
         message: "تحلیل برای این نوع تست تولید نشد",
       });
     }
 
-    // console.log("analysis : ", analysis);
-    
+    console.log("🔍 analysis generated: ", analysis);
 
     // Update the result document
     try {
-      result.analysis = await analysis;
-      // await result.save(); // Option 1: Save the document
-      // Alternative (Option 2): Use updateOne for efficiency
-      await Result.updateOne(
-        { _id: resultId },
-        { $set: { analysis: analysis } }
+      result.analysis = analysis;
+      await result.save(); // Option 1: Save the document
+
+      const user = await User.findById(result.user);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      const updatedSummary = {
+        resultId: result._id,
+        adminFeedback: result.adminFeedback,
+        completedAt: result.createdAt,
+        score: result.score,
+        duration: result.duration,
+        testType: result.testType,
+        analyzedAt: analysis.analyzedAt || "",
+        isPublic: true,
+      };
+
+      // Find index in array
+      const index = user.testsAssigned.findIndex(
+        (entry) => entry.resultId.toString() === result._id.toString()
       );
+
+      if (index !== -1) {
+        // ✅ Already exists: update it
+        user.testsAssigned[index] = {
+          ...user.testsAssigned[index],
+          ...updatedSummary, // overwrite fields with new values
+        };
+      } else {
+        // ✅ Doesn't exist: add new
+        user.testsAssigned.push(updatedSummary);
+      }
+
+      await user.save();
+
       // console.log(`Analysis saved for resultId: ${resultId}`);
     } catch (saveError) {
-      console.error(`Error saving analysis for resultId: ${resultId}`, saveError);
+      console.error(
+        `Error saving analysis for resultId: ${resultId}`,
+        saveError
+      );
       return res.status(500).json({
         status: "error",
         message: "❌خطای سرور در ذخیره تحلیل",
-        error: process.env.NODE_ENV === 'development' ? saveError.message : undefined,
+        error:
+          process.env.NODE_ENV === "development"
+            ? saveError.message
+            : undefined,
       });
     }
 
     return res.status(200).json({
       status: "success",
       message: "تحلیل با موفقیت انجام شد",
-      data: analysis  // Consistent response structure
+      data: analysis, // Consistent response structure
     });
-
   } catch (err) {
     console.error("Error analyzing result:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       status: "error",
       message: "❌خطای سرور در تحلیل تست",
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
+  }
+};
+
+// Admin submits evaluation and manages test visibility
+export const updateTestFeedback = async (req, res) => {
+  const { feedbackData } = req.body;
+  try {
+    console.log(
+      "userId : ",
+      feedbackData.userId,
+      ".....  resultsID : ",
+      feedbackData.resultId,
+      ".....  feedback : ",
+      feedbackData.feedback
+    );
+
+    // Step 1: Update the Result document
+    const result = await Result.findById(feedbackData.resultId);
+    if (!result)
+      return res.status(404).json({ message: "Test result not found" });
+
+    result.adminFeedback = feedbackData.feedback;
+    await result.save();
+
+    // Step 2: Update the User document
+    const user = await User.findById(feedbackData.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const updatedSummary = {
+      resultId: result._id,
+      adminFeedback: result.adminFeedback,
+      completedAt: result.createdAt,
+      score: result.score,
+      duration: result.durationInSeconds,
+      testType: result.testType,
+      analyzedAt: result.analysis?.analyzedAt || null,
+      isPublic: true,
+    };
+
+    // Find index in array
+    const index = user.testsAssigned.findIndex(
+      (entry) => entry.resultId.toString() === result._id.toString()
+    );
+
+    if (index !== -1) {
+      // ✅ Already exists: update it
+      user.testsAssigned[index] = {
+        ...user.testsAssigned[index],
+        ...updatedSummary, // overwrite fields with new values
+      };
+    } else {
+      // ✅ Doesn't exist: add new
+      user.testsAssigned.push(updatedSummary);
+    }
+
+    await user.save();
+
+    res
+      .status(200)
+      .json({ message: "Feedback submitted successfully", result });
+  } catch (error) {
+    console.error("Error submitting feedback:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

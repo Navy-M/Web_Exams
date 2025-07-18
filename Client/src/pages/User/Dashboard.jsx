@@ -11,7 +11,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 
-import TestResultCardGrid from '../../components/Common/TestResultCardGrid'; // ✅ added
+import TestResultCardGrid from '../../components/Common/TestResultCardGrid';
 import { Test_Cards } from '../../services/dummyData';
 
 const UserDashboard = () => {
@@ -54,7 +54,7 @@ const UserDashboard = () => {
 
   const getTestStatus = (test) => {
     // console.log("completedTests : " , completedTests);
-    if (completedTests.private.some(completed => completed.testType === test.id) ) return 'Completed';
+    if (completedTests.some(completed => completed.testType === test.id) ) return 'Completed';
     if (new Date(test.deadline) < new Date()) return 'Expired';
     return 'Pending';
   };
@@ -86,11 +86,11 @@ const UserDashboard = () => {
               <p>کل تست ها</p>
             </div>
             <div className="stat-item">
-              <h3>{completedTests.private?.length}</h3>
+              <h3>{completedTests?.length}</h3>
               <p>انجام شده</p>
             </div>
             <div className="stat-item">
-              <h3>{completedTests.public?.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
+              <h3>{completedTests?.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
               <p>مجموع امتیازات</p>
             </div>
           </div>
@@ -154,7 +154,7 @@ const UserDashboard = () => {
             {user.profile?.age && user.profile?.gender && user.profile?.education &&
               <>
               <h2>تست های انجام شده</h2>
-              {completedTests.public?.length > 0 ?
+              {completedTests?.length > 0 ?
                 <>
                   <section className="active-tests">
 
@@ -183,20 +183,21 @@ const UserDashboard = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {completedTests.public.map(test => (
-                          <tr key={test.testType}>
-                            <td>{test.testType}</td>
-                            <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
-                            <td className={getTestStatus(test).toLowerCase()}>{test.duration} Min</td>
-                            <td>{test.score || '-'}</td>
-                          </tr>
+                        {completedTests.map(test => (
+                          test.isPublic && 
+                            <tr key={test.testType}>
+                              <td>{test.testType}</td>
+                              <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
+                              <td className={getTestStatus(test).toLowerCase()}>{test.duration} Sec</td>
+                              <td>{test.score || '--'}</td>
+                            </tr>
                         ))}
                       </tbody>
                     </table>
                   </section>
                 </>
                 : <> 
-                <p> جداول نتایج تست هاه شما پس از برسی در دسترس میباشد ...</p> </>
+                <p> جداول نتایج تست های شما پس از برسی در دسترس میباشد ...</p> </>
               }
               </>
           }
