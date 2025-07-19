@@ -191,16 +191,30 @@ const UsersPage = () => {
       {selectedUser ? (
         <div className="user-results-section">
           <div className="user-header">
-            <h2>
-              نتایج تست های کاربر: {selectedUser.profile.fullName}
+            <div className="user-header-head">
+              <h2>نتایج تست های کاربر: </h2>
+              <h2>{selectedUser.profile.fullName}</h2>
               <button 
                 onClick={() => setSelectedUser(null)}
                 className="back-button"
               >
                 بازگشت
               </button>
-            </h2>
-            <p>ایمیل: {selectedUser.email}</p>
+            </div>
+            <div className='user-profile-card'>
+              <h3>🧾 اطلاعات فردی</h3>
+              <ul>
+                <li><strong>📧 ایمیل:</strong> {selectedUser.email}</li>
+                <li><strong>🎂 سن:</strong> {selectedUser.profile.age}</li>
+                <li><strong>💍 وضعیت تاهل:</strong> {selectedUser.profile.single}</li>
+                <li><strong>🎓 تحصیلات:</strong> {selectedUser.profile.education}</li>
+                <li><strong>📚 رشته:</strong> {selectedUser.profile.field}</li>
+                <li><strong>📞 تلفن:</strong> {selectedUser.profile.phone}</li>
+                <li><strong>🏙️ شهر:</strong> {selectedUser.profile.city}</li>
+                <li><strong>🗺️ استان:</strong> {selectedUser.profile.province}</li>
+                <li><strong>💼 شغل:</strong> {selectedUser.profile.jobPosition}</li>
+              </ul>
+            </div>
           </div>
 
           <div className="results-container">

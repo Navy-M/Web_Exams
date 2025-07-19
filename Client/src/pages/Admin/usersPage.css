@@ -44,6 +44,66 @@
   padding: 20px;
   border-radius: 8px;
 }
+.user-header {
+  background-color: #6d8fb0;
+  border-radius: 6px;
+  padding: 1rem 0.5rem;
+  margin-bottom: 2rem;
+  display: block;
+}
+.user-header-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.user-header-head h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.back-button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+.back-button:hover {
+  background-color: #388e3c;
+}
+
+.user-profile-card {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid #e0e0e0;
+}
+
+.user-profile-card h3 {
+  margin-bottom: 1rem;
+  color: #2e7d32;
+  font-size: 1.2rem;
+}
+
+.user-profile-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.user-profile-card li {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.user-profile-card strong {
+  color: #444;
+}
 
 .results-table {
   width: 100%;
