@@ -179,7 +179,18 @@ h2 {
   color: var(--text-light);
   padding: 0.5rem;
   border-radius: 40px 5px 5px 40px;
+  margin-right: 0.5rem;
+}
+
+.print-button{
+  background: rgb(233, 230, 59);
+
+  color: black;
+  font-weight: 600;
+  padding: 0.5rem;
+  border-radius: 8px;
   margin-right: 3rem;
+  margin-left: 0;
 }
 
 .view-button {

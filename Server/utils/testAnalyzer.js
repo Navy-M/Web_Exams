@@ -938,6 +938,189 @@ function analyzeClifton(answers, questions = Dummy.Clifton_Test) {
 */
 //#endregion
 
+//#region GHQ
+/**
+ * Analyzes GHQ test answers and returns detailed psychological health profile
+ * @param {Array<number>} answers - Array of numeric answers (1-5) for GHQ questions
+ * @param {Array} [questions] - Optional questions array (uses Ghq_Test if not provided)
+ * @returns {Object} - Detailed GHQ profile with scores, traits, risk level, and visualization data
+ */
+function analyzeGHQ(answers, questions = Dummy.Ghq_Test) {
+  // 1. Initialize scores for each trait
+  const traits = ["Stress", "Mood", "Function", "Social"];
+  const scores = traits.reduce((acc, trait) => ({ ...acc, [trait]: 0 }), {});
+
+  // 2. Calculate raw scores, adjusting for direction
+  answers.forEach((answer, idx) => {
+    const question = questions.find((q) => q.id === idx + 5);
+    if (!question || answer < 1 || answer > 5) return;
+
+    // Reverse score for Negative direction (1->5, 2->4, etc.)
+    const score = question.direction === "Positive" ? answer : 6 - answer;
+    scores[question.trait] += score;
+  });
+
+  // 3. Normalize scores to percentage (0-100 scale)
+  // Each trait has 3 questions, max score per trait = 3 * 5 = 15, min = 3 * 1 = 3
+  const maxPossible = 15;
+  const minPossible = 3;
+  const range = maxPossible - minPossible;
+
+  const normalizedScores = Object.fromEntries(
+    Object.entries(scores).map(([trait, score]) => [
+      trait,
+      Math.round(((score - minPossible) / range) * 100),
+    ])
+  );
+
+  // 4. Calculate total score for risk assessment
+  const totalScore = Object.values(scores).reduce((sum, s) => sum + s, 0);
+  const normalizedTotal = Math.round(((totalScore - 4 * minPossible) / (4 * range)) * 100);
+
+  // 5. Determine risk level
+  const riskLevel = totalScore > 20 ? "High" : totalScore > 15 ? "Moderate" : "Low";
+
+  // 6. Prepare detailed interpretation
+  const traitDescriptions = {
+    Stress: { name: "استرس", description: "سطح استرس و اضطراب روانی" },
+    Mood: { name: "خلق", description: "وضعیت خلقی و احساس رضایت" },
+    Function: { name: "عملکرد", description: "توانایی تمرکز و تصمیم‌گیری" },
+    Social: { name: "اجتماعی", description: "تعاملات اجتماعی و مشارکت" },
+  };
+
+  // 7. Generate comprehensive result
+  return {
+    // Raw data
+    rawScores: scores,
+    normalizedScores,
+
+    // Risk assessment
+    totalScore,
+    normalizedTotal,
+    riskLevel,
+
+    // Interpretation
+    traits: Object.fromEntries(
+      traits.map((trait) => [
+        trait,
+        {
+          ...traitDescriptions[trait],
+          score: normalizedScores[trait],
+          percentile: normalizedScores[trait],
+        },
+      ])
+    ),
+
+    // Visualization-friendly format
+    chartData: {
+      labels: traits.map((t) => traitDescriptions[t].name),
+      datasets: [
+        {
+          label: "پروفایل سلامت روانی",
+          data: traits.map((t) => normalizedScores[t]),
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.7)", // Stress - Red
+            "rgba(54, 162, 235, 0.7)", // Mood - Blue
+            "rgba(75, 192, 192, 0.7)", // Function - Green
+            "rgba(255, 206, 86, 0.7)", // Social - Yellow
+          ],
+        },
+      ],
+    },
+
+    // Summary
+    summary: `سطح سلامت روانی: ${riskLevel === "High" ? "نیاز به توجه" : riskLevel === "Moderate" ? "متوسط" : "خوب"}`,
+
+    // Timestamp
+    analyzedAt: new Date().toISOString(),
+  };
+}
+//#endregion
+
+//#region Personal Favorites
+/**
+ * Analyzes Personal Favorites test answers and returns detailed preference profile
+ * @param {Array<string>} answers - Array of selected option values (e.g., "Reading", "TeamOffice")
+ * @param {Array} [questions] - Optional questions array (uses PersonalFavorites_Test if not provided)
+ * @returns {Object} - Detailed preference profile with frequencies, top preferences, and visualization data
+ */
+function analyzePersonalFavorites(answers, questions = Dummy.PersonalFavorites_Test) {
+  // 1. Initialize frequency counts for each trait
+  const traits = ["Hobby", "Work", "Social", "Lifestyle"];
+  const frequencies = traits.reduce((acc, trait) => ({ ...acc, [trait]: {} }), {});
+
+  // 2. Count frequency of selected options per trait
+  answers.forEach((answer, idx) => {
+    const question = questions.find((q) => q.id === idx + 17);
+    if (!question || !question.options.some((opt) => opt.value === answer)) return;
+
+    frequencies[question.trait][answer] = (frequencies[question.trait][answer] || 0) + 1;
+  });
+
+  // 3. Determine top preference per trait
+  const topPreferences = Object.fromEntries(
+    traits.map((trait) => {
+      const prefs = frequencies[trait];
+      const top = Object.entries(prefs).sort((a, b) => b[1] - a[1])[0];
+      return [trait, top ? { value: top[0], count: top[1] } : null];
+    })
+  );
+
+  // 4. Prepare detailed interpretation
+  const traitDescriptions = {
+    Hobby: { name: "سرگرمی", description: "فعالیت‌های مورد علاقه در اوقات فراغت" },
+    Work: { name: "کار", description: "ترجیحات محیط و نقش‌های کاری" },
+    Social: { name: "اجتماعی", description: "فعالیت‌های اجتماعی مورد علاقه" },
+    Lifestyle: { name: "سبک زندگی", description: "ترجیحات روزانه و سبک زندگی" },
+  };
+
+  // 5. Generate comprehensive result
+  return {
+    // Raw data
+    frequencies,
+
+    // Top preferences
+    topPreferences,
+
+    // Interpretation
+    traits: Object.fromEntries(
+      traits.map((trait) => [
+        trait,
+        {
+          ...traitDescriptions[trait],
+          topPreference: topPreferences[trait]?.value || "هیچ",
+          frequency: frequencies[trait],
+        },
+      ])
+    ),
+
+    // Visualization-friendly format
+    chartData: {
+      labels: traits.map((t) => traitDescriptions[t].name),
+      datasets: traits.map((trait) => ({
+        label: traitDescriptions[trait].name,
+        data: Object.values(frequencies[trait]),
+        backgroundColor: [
+          "rgba(255, 99, 132, 0.7)", // Red
+          "rgba(54, 162, 235, 0.7)", // Blue
+          "rgba(75, 192, 192, 0.7)", // Green
+          "rgba(255, 206, 86, 0.7)", // Yellow
+        ].slice(0, Object.keys(frequencies[trait]).length),
+      })),
+    },
+
+    // Summary
+    summary: `ترجیحات برتر: ${traits
+      .map((t) => `${traitDescriptions[t].name}: ${topPreferences[t]?.value || "هیچ"}`)
+      .join(", ")}`,
+
+    // Timestamp
+    analyzedAt: new Date().toISOString(),
+  };
+}
+//#endregion
+
+
 export const getTestAnalysis = (testType, answers) => {
   switch (testType) {
     case "MBTI":
@@ -950,6 +1133,10 @@ export const getTestAnalysis = (testType, answers) => {
       return analyzeGardner(answers);
     case "CLIFTON":
       return analyzeClifton(answers);
+      case "GHQ":
+      return analyzeGHQ(answers);
+    case "PERSONAL_FAVORITES":
+      return analyzePersonalFavorites(answers);
     default:
       return { summary: "نوع تست نامعتبر است" };
   }

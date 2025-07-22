@@ -178,6 +178,20 @@ const UsersPage = () => {
     
   }
 
+  const handlePrintUserResume = async () => {
+    const confirmed = window.confirm('آیا از چاپ کارنامه کاربر مطمئن هستید؟');
+    if (!confirmed) return;
+
+    try {
+      //  TODO: get all information about This user and print on A4 Papers
+      setRefresh(prev => !prev);
+    } catch (err) {
+      console.error(err);
+      alert('خطا در چاپ کارنامه کاربر');
+    }
+
+  }
+
   const formatDate = (dateString) => {
     // console.log("dateString:", dateString );
     
@@ -194,6 +208,13 @@ const UsersPage = () => {
             <div className="user-header-head">
               <h2>نتایج تست های کاربر: </h2>
               <h2>{selectedUser.profile.fullName}</h2>
+              <button 
+                onClick={() => handlePrintUserResume()}
+                disabled={!!selectedUser}
+                className="print-button"
+              >
+                چاپ کارنامه
+              </button>
               <button 
                 onClick={() => setSelectedUser(null)}
                 className="back-button"
@@ -235,7 +256,7 @@ const UsersPage = () => {
                     <tr key={result._id}>
                       <td>{result.testType}</td>
                       <td>{formatDate(result.completedAt)}</td>
-                      <td>{result.duration || '--'}</td>
+                      <td>{result.duration || '--'} ثانیه</td>
                       <td>{result.adminFeedback || 'بدون بازخورد'}</td>
                       <td>
                         <button 

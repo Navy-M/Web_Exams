@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react'
-import {  Test_Cards } from '../../services/dummyData';
+import {  Ghq_Test, PersonalFavorites_Test, Test_Cards } from '../../services/dummyData';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {Disc_Test, Clifton_Test, Mbti_Test, Holland_Test, Gardner_Test} from '../../services/dummyData';
@@ -9,6 +9,8 @@ import HollandTest from '../../components/Tests/HollandTest';
 import GardnerTest from '../../components/Tests/GardnerTest';
 import MBTITest from '../../components/Tests/MBTITest';
 import CliftonTest from '../../components/Tests/CliftonTest';
+import GHQTest from '../../components/Tests/GHQTest';
+import PersonalFavoritesTest from '../../components/Tests/PersonalFavoritesTest';
 
 const StarterTestPage = () => {
     const { user } = useAuth();
@@ -76,6 +78,12 @@ const StarterTestPage = () => {
             case "GARDNER":
               setQuestions(Gardner_Test);
               break;
+            case "GHQ":
+              setQuestions(Ghq_Test);
+              break;
+            case "PERSONAL_FAVORITES":
+              setQuestions(PersonalFavorites_Test);
+              break;
             default:
               setQuestions([]);
               break;
@@ -133,6 +141,8 @@ const StarterTestPage = () => {
                   {testId === 'HOLLAND' && <HollandTest  />}
                   {testId === 'GARDNER' && <GardnerTest  />}
                   {testId === 'CLIFTON' && <CliftonTest  />}
+                  {testId === 'GHQ' && <GHQTest/>}
+                  {testId === 'PERSONAL_FAVORITES' && <PersonalFavoritesTest/>}
 
                   {/* <button className="submit-button" onClick={finishTest}>Submit Test</button> */}
                 </div>
