@@ -54,6 +54,26 @@ export const Test_Cards = [
     deadline: "2026-07-03T11:11:16.374+00:00",
     duration: { from: 8, to: 12 }, // Typically takes a bit longer than DISC
   },
+  {
+    id: "GHQ",
+    name: "آزمون سلامت عمومی (GHQ)",
+    description: "سلامت روان و عمومی خود را با پرسشنامه سلامت عمومی ارزیابی کنید.",
+    type: "psychological",
+    questionFormat: "likert", // Likert-scale questions for health assessment
+    createdAt: "2025-07-01T10:00:00.000+00:00",
+    deadline: "2026-07-01T10:00:00.000+00:00",
+    duration: { from: 10, to: 15 },
+  },
+  {
+    id: "PERSONAL_FAVORITES",
+    name: "آزمون اولویت‌های شخصی",
+    description: "علایق و اولویت‌های شخصی خود را شناسایی کنید.",
+    type: "interest",
+    questionFormat: "multipleChoice", // Choose from a list of preferences
+    createdAt: "2025-07-10T14:30:00.000+00:00",
+    deadline: "2026-07-10T14:30:00.000+00:00",
+    duration: { from: 5, to: 10 },
+  },
 ];
 
 // export const Mbti_Test = [
@@ -3647,6 +3667,351 @@ export const Clifton_Test = [
     theme_b: "Self-Assurance",
   },
 ];
+
+export const Ghq_Test = [
+  // ===============================
+  // Trait: Stress (Stress/Anxiety)
+  // 3 questions, alternating Positive/Negative
+  // ===============================
+  {
+    id: 5,
+    text: "اخیراً احساس کرده‌اید که تحت فشار روانی زیادی هستید؟",
+    trait: "Stress",
+    direction: "Negative", // Higher agreement indicates more stress
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+  {
+    id: 6,
+    text: "اخیراً توانسته‌اید با آرامش به کارهای روزمره خود بپردازید؟",
+    trait: "Stress",
+    direction: "Positive", // Higher agreement indicates less stress
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+  {
+    id: 7,
+    text: "اخیراً به دلیل نگرانی، خواب راحتی نداشته‌اید؟",
+    trait: "Stress",
+    direction: "Negative",
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+
+  // ===============================
+  // Trait: Mood (Depression/Low Mood)
+  // 3 questions, alternating Positive/Negative
+  // ===============================
+  {
+    id: 8,
+    text: "اخیراً احساس شادی و رضایت از زندگی داشته‌اید؟",
+    trait: "Mood",
+    direction: "Positive",
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+  {
+    id: 9,
+    text: "اخیراً احساس کرده‌اید که زندگی شما بی‌ارزش است؟",
+    trait: "Mood",
+    direction: "Negative",
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+  {
+    id: 10,
+    text: "اخیراً از فعالیت‌های روزمره خود لذت برده‌اید؟",
+    trait: "Mood",
+    direction: "Positive",
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+
+  // ===============================
+  // Trait: Function (Daily Functioning)
+  // 3 questions, alternating Positive/Negative
+  // ===============================
+  {
+    id: 11,
+    text: "اخیراً توانسته‌اید روی وظایف خود تمرکز کنید؟",
+    trait: "Function",
+    direction: "Positive",
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+  {
+    id: 12,
+    text: "اخیراً احساس کرده‌اید که نمی‌توانید مشکلات خود را حل کنید؟",
+    trait: "Function",
+    direction: "Negative",
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+  {
+    id: 13,
+    text: "اخیراً تصمیم‌گیری برایتان آسان بوده است؟",
+    trait: "Function",
+    direction: "Positive",
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+
+  // ===============================
+  // Trait: Social (Social Interaction)
+  // 3 questions, alternating Positive/Negative
+  // ===============================
+  {
+    id: 14,
+    text: "اخیراً از معاشرت با دیگران لذت برده‌اید؟",
+    trait: "Social",
+    direction: "Positive",
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+  {
+    id: 15,
+    text: "اخیراً احساس کرده‌اید که دیگران از شما دوری می‌کنند؟",
+    trait: "Social",
+    direction: "Negative",
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+  {
+    id: 16,
+    text: "اخیراً در فعالیت‌های اجتماعی فعال بوده‌اید؟",
+    trait: "Social",
+    direction: "Positive",
+    options: [
+      { text: "کاملاً مخالفم", value: 1 },
+      { text: "مخالفم", value: 2 },
+      { text: "تاحدی", value: 3 },
+      { text: "موافقم", value: 4 },
+      { text: "کاملاً موافقم", value: 5 },
+    ],
+  },
+];
+
+export const PersonalFavorites_Test = [
+  // ===============================
+  // Trait: Hobby (Leisure Activities)
+  // 3 questions
+  // ===============================
+  {
+    id: 17,
+    text: "کدام فعالیت اوقات فراغت را بیشتر ترجیح می‌دهید؟",
+    trait: "Hobby",
+    direction: "Preference", // No specific direction, tracks preference
+    options: [
+      { text: "خواندن کتاب", value: "Reading" },
+      { text: "ورزش کردن", value: "Sports" },
+      { text: "تماشای فیلم", value: "Movies" },
+      { text: "سفر و طبیعت‌گردی", value: "Travel" },
+    ],
+  },
+  {
+    id: 18,
+    text: "برای سرگرمی، کدام را انتخاب می‌کنید؟",
+    trait: "Hobby",
+    direction: "Preference",
+    options: [
+      { text: "بازی‌های ویدئویی", value: "Gaming" },
+      { text: "نقاشی یا طراحی", value: "Art" },
+      { text: "موسیقی نواختن", value: "Music" },
+      { text: "آشپزی", value: "Cooking" },
+    ],
+  },
+  {
+    id: 19,
+    text: "کدام فعالیت خلاقانه را بیشتر دوست دارید؟",
+    trait: "Hobby",
+    direction: "Preference",
+    options: [
+      { text: "نوشتن داستان یا شعر", value: "Writing" },
+      { text: "عکاسی", value: "Photography" },
+      { text: "ساخت صنایع دستی", value: "Crafts" },
+      { text: "باغبانی", value: "Gardening" },
+    ],
+  },
+
+  // ===============================
+  // Trait: Work (Work-Related Preferences)
+  // 3 questions
+  // ===============================
+  {
+    id: 20,
+    text: "کدام محیط کاری را ترجیح می‌دهید؟",
+    trait: "Work",
+    direction: "Preference",
+    options: [
+      { text: "کار تیمی در دفتر", value: "TeamOffice" },
+      { text: "کار انفرادی در خانه", value: "RemoteSolo" },
+      { text: "کار در فضای باز", value: "Outdoor" },
+      { text: "کار در آزمایشگاه یا کارگاه", value: "Lab" },
+    ],
+  },
+  {
+    id: 21,
+    text: "کدام نوع پروژه کاری را ترجیح می‌دهید؟",
+    trait: "Work",
+    direction: "Preference",
+    options: [
+      { text: "پروژه‌های خلاقانه", value: "Creative" },
+      { text: "پروژه‌های تحلیلی", value: "Analytical" },
+      { text: "پروژه‌های اجرایی", value: "Operational" },
+      { text: "پروژه‌های تحقیقاتی", value: "Research" },
+    ],
+  },
+  {
+    id: 22,
+    text: "کدام نقش کاری را بیشتر دوست دارید؟",
+    trait: "Work",
+    direction: "Preference",
+    options: [
+      { text: "رهبری تیم", value: "Leadership" },
+      { text: "کار فنی تخصصی", value: "Technical" },
+      { text: "پشتیبانی و خدمات", value: "Support" },
+      { text: "مشاوره", value: "Consulting" },
+    ],
+  },
+
+  // ===============================
+  // Trait: Social (Social Activities)
+  // 3 questions
+  // ===============================
+  {
+    id: 23,
+    text: "کدام فعالیت اجتماعی را بیشتر ترجیح می‌دهید؟",
+    trait: "Social",
+    direction: "Preference",
+    options: [
+      { text: "مهمانی با دوستان", value: "Parties" },
+      { text: "گفتگوهای خانوادگی", value: "Family" },
+      { text: "فعالیت‌های گروهی داوطلبانه", value: "Volunteering" },
+      { text: "تنهایی و آرامش", value: "Solitude" },
+    ],
+  },
+  {
+    id: 24,
+    text: "برای گذراندن وقت با دیگران، کدام را انتخاب می‌کنید؟",
+    trait: "Social",
+    direction: "Preference",
+    options: [
+      { text: "کافه‌نشینی", value: "Cafe" },
+      { text: "پیک‌نیک در طبیعت", value: "Picnic" },
+      { text: "بازی‌های گروهی", value: "GroupGames" },
+      { text: "تماشای تئاتر یا کنسرت", value: "Events" },
+    ],
+  },
+  {
+    id: 25,
+    text: "کدام نوع تعامل اجتماعی را دوست دارید؟",
+    trait: "Social",
+    direction: "Preference",
+    options: [
+      { text: "بحث‌های عمیق و فکری", value: "DeepTalk" },
+      { text: "گپ‌های سبک و طنز", value: "CasualTalk" },
+      { text: "فعالیت‌های ورزشی گروهی", value: "SportsGroup" },
+      { text: "کارگاه‌های آموزشی گروهی", value: "Workshops" },
+    ],
+  },
+
+  // ===============================
+  // Trait: Lifestyle (Daily Life Preferences)
+  // 3 questions
+  // ===============================
+  {
+    id: 26,
+    text: "کدام سبک زندگی را ترجیح می‌دهید؟",
+    trait: "Lifestyle",
+    direction: "Preference",
+    options: [
+      { text: "زندگی شهری شلوغ", value: "Urban" },
+      { text: "زندگی آرام روستایی", value: "Rural" },
+      { text: "زندگی ماجراجویانه", value: "Adventurous" },
+      { text: "زندگی مینیمال", value: "Minimalist" },
+    ],
+  },
+  {
+    id: 27,
+    text: "برای استراحت، کدام را انتخاب می‌کنید؟",
+    trait: "Lifestyle",
+    direction: "Preference",
+    options: [
+      { text: "خواب و استراحت کامل", value: "Rest" },
+      { text: "مدیتیشن یا یوگا", value: "Meditation" },
+      { text: "فعالیت بدنی سبک", value: "LightExercise" },
+      { text: "مطالعه یا تماشای محتوا", value: "Media" },
+    ],
+  },
+  {
+    id: 28,
+    text: "کدام نوع غذا را بیشتر دوست دارید؟",
+    trait: "Lifestyle",
+    direction: "Preference",
+    options: [
+      { text: "غذاهای سنتی ایرانی", value: "Traditional" },
+      { text: "غذاهای بین‌المللی", value: "International" },
+      { text: "غذاهای گیاهی", value: "Vegetarian" },
+      { text: "فست‌فود", value: "FastFood" },
+    ],
+  },
+];
+
 
 // const testSchema = new mongoose.Schema({
 //   name: { type: String, required: true },

@@ -10,7 +10,7 @@ const resultSchema = new mongoose.Schema(
     },
     testType: {
       type: String,
-      enum: ["MBTI", "DISC", "HOLLAND", "GARDNER", "CLIFTON"],
+      enum: ["MBTI", "DISC", "HOLLAND", "GARDNER", "CLIFTON", "GHQ", "PERSONAL_FAVORITES"],
       required: true,
     },
     answers: [],
