@@ -3,6 +3,7 @@
   border-collapse: collapse;
   margin-top: 1rem;
   border: 0.1px solid var(--border-light);
+  /* border-radius: 5px; */
 }
 
 .admin-users-table th {
@@ -14,6 +15,8 @@
 .admin-users-table td {
   padding: 0.75rem;
   text-align: right;
+  color: var(--text-dark);
+  background: var(--background-dark);
 }
 
 .admin-users-table th {
@@ -33,6 +36,72 @@
   opacity: 0.9;
 }
 
+.admin-search-container {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  /* margin: 1rem 0; */
+  padding: 1.2rem;
+  /* background: linear-gradient(135deg, #f9fbff, #eaf0f8); */
+  border-radius: 0.2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  font-family: "Vazirmatn", "IRANSans", sans-serif;
+
+  .admin-search-input {
+    flex: 1;
+    max-width: 480px;
+    padding: 0.85rem 1.4rem;
+    font-size: 1rem;
+    border-radius: 0.4rem;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 1px #d1d5db;
+    transition: all 0.3s ease;
+    color: #333;
+
+    &::placeholder {
+      color: #aaa;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px #6e9eff;
+      background-color: #fefefe;
+    }
+  }
+  @media (max-width: 768px) {
+    .admin-search-container {
+      display: block;
+    }
+
+    /* .admin-users-table {
+      margin-left: 9rem;
+    } */
+  }
+
+  .admin-search-select {
+    padding: 0.85rem 1.2rem;
+    font-size: 0.95rem;
+    background-color: #ffffff;
+    color: #333;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 0 1px #d1d5db;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg fill='gray' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 12px;
+    cursor: pointer;
+
+    &:focus {
+      box-shadow: 0 0 0 2px #6e9eff;
+    }
+
+    option {
+      color: #333;
+    }
+  }
+}
+
 .admin-users-container {
   direction: rtl;
   padding: 20px;
@@ -40,10 +109,22 @@
 }
 
 .user-results-section {
-  background: #f9f9f9;
+  background: #b4b4b4;
   padding: 20px;
   border-radius: 8px;
 }
+
+.admin-users-section-BG {
+  background-color: #cdcdcd;
+  border-radius: 5px;
+  padding: 1rem 0.5rem;
+}
+/* @media (max-width: 768px) {
+  .admin-users-section-BG {
+    margin-left: 0%;
+  }
+} */
+
 .user-header {
   background-color: #6d8fb0;
   border-radius: 6px;
@@ -122,11 +203,6 @@
   background-color: var(--background-light);
   font-weight: bold;
   color: var(--text-light);
-}
-
-.admin-users-table td {
-  color: var(--text-light);
-  background: var(--background-dark);
 }
 
 h2 {

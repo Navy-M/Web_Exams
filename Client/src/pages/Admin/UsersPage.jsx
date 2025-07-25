@@ -30,6 +30,9 @@ const UsersPage = () => {
     role: '',
     password: '',
   });
+  const [search, setSearch] = useState('');
+const [searchFilter, setSearchFilter] = useState('');
+
 
   // Fetch users
   useEffect(() => {
@@ -68,6 +71,10 @@ const UsersPage = () => {
         }
       };
       fetchResults();
+    }
+    else{
+      setSearch('');
+      setSearchFilter('');
     }
   }, [selectedUser]);
 
@@ -186,6 +193,32 @@ const UsersPage = () => {
     });
   };
 
+  const filteredUsers = users.filter(user => {
+  const query = search.toLowerCase();
+
+  switch (searchFilter) {
+    case 'name':
+      return user.profile?.fullName?.toLowerCase().includes(query);
+    case 'email':
+      return user.email?.toLowerCase().includes(query);
+    case 'role':
+      return user.role?.toLowerCase().includes(query);
+    case 'job':
+      return user.profile?.jobPosition?.toLowerCase().includes(query);
+    case 'province':
+      return user.profile?.province?.toLowerCase().includes(query);
+    default:
+      return (
+        user.profile?.fullName?.toLowerCase().includes(query) ||
+        user.email?.toLowerCase().includes(query) ||
+        user.role?.toLowerCase().includes(query) ||
+        user.profile?.jobPosition?.toLowerCase().includes(query) ||
+        user.profile?.province?.toLowerCase().includes(query)
+      );
+  }
+});
+
+
   return (
     <div className="admin-users-container">
       {selectedUser ? (
@@ -206,7 +239,7 @@ const UsersPage = () => {
               <ul>
                 <li><strong>📧 ایمیل:</strong> {selectedUser.email}</li>
                 <li><strong>🎂 سن:</strong> {selectedUser.profile.age}</li>
-                <li><strong>💍 وضعیت تاهل:</strong> {selectedUser.profile.single}</li>
+                <li><strong>💍 وضعیت تاهل:</strong> {selectedUser.profile.single ? "مجرد" : "متاهل"}</li>
                 <li><strong>🎓 تحصیلات:</strong> {selectedUser.profile.education}</li>
                 <li><strong>📚 رشته:</strong> {selectedUser.profile.field}</li>
                 <li><strong>📞 تلفن:</strong> {selectedUser.profile.phone}</li>
@@ -338,101 +371,130 @@ const UsersPage = () => {
         <section className="admin-users-section">
           <h2>مدیریت کاربران</h2>
 
-          {loading ? (
-            <p>در حال بارگذاری...</p>
-          ) : error ? (
-            <p style={{ color: 'red' }}>{error}</p>
-          ) : (
-            <table className="admin-users-table">
-              <thead>
-                <tr>
-                  <th>ردیف</th>
-                  <th>نام و نام خانوادگی</th>
-                  <th>ایمیل</th>
-                  <th>نقش</th>
-                  <th>اقدامات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user, index) => (
-                  <tr key={user._id}>
-                    <td style={{textAlign: 'center'}}>{index + 1}</td>
-                    <td>{user.profile?.fullName}</td>
-                    <td>{user.email}</td>
-                    <td>{user.role}</td>
-                    <td>
-                      <button 
-                        onClick={() => setSelectedUser(user)}
-                        className="view-button"
-                      >
-                        مشاهده نتایج
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteUser(user._id)}
-                        className="delete-button"
-                      >
-                        حذف
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {showAddRow && (
-                  <tr className="add-user-row">
-                    <td colSpan="5">
-                      <div className="add-user-form">
-                      <p >🟩⬅️</p>
+          <section className="admin-users-section-BG">
 
-                        <input
-                          type="text"
-                          placeholder="نام و نام خانوادگی"
-                          value={newUser.fullName}
-                          onChange={e => setNewUser({ ...newUser, fullName: e.target.value })}
-                        />
-                        <select
-                          value={newUser.role}
-                          onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+
+
+            {loading ? (
+              <p>در حال بارگذاری...</p>
+            ) : error ? (
+              <p style={{ color: 'red' }}>{error}</p>
+            ) : (
+            <>
+              <div className="admin-search-container">
+                <input 
+                  type="text" 
+                  placeholder="جستجو..." 
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)} 
+                  className="admin-search-input"
+                />
+                <select
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                  className="admin-search-select"
+                >
+                  <option value="">فیلتر بر اساس</option>
+                  <option value="name">نام</option>
+                  <option value="email">ایمیل</option>
+                  <option value="role">نقش</option>
+                  <option value="job">شغل</option>
+                  <option value="province">استان</option>
+                </select>
+              </div>
+
+              <table className="admin-users-table">
+                <thead>
+                  <tr>
+                    <th>ردیف</th>
+                    <th>نام و نام خانوادگی</th>
+                    <th>ایمیل</th>
+                    <th>نقش</th>
+                    <th>اقدامات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((user, index) => (
+                    <tr key={user._id}>
+                      <td style={{textAlign: 'center'}}>{index + 1}</td>
+                      <td>{user.profile?.fullName}</td>
+                      <td>{user.email}</td>
+                      <td>{user.role}</td>
+                      <td>
+                        <button 
+                          onClick={() => setSelectedUser(user)}
+                          className="view-button"
                         >
-                          <option value="user">انتخاب نقش</option>
-                          <option value="user">کاربر</option>
-                          <option value="admin">ادمین</option>
-                        </select>
-                        <input
-                          type="email"
-                          placeholder="ایمیل"
-                          value={newUser.email}
-                          onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                        />
-                        <input
-                          type="password"
-                          placeholder="رمز عبور"
-                          value={newUser.password}
-                          onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                        />
-                        <button onClick={handleAddUser} className="submit-button">
-                          ثبت
+                          مشاهده نتایج
                         </button>
-                        {/* <button onClick={() => setShowAddRow(false)} className="cancel-button">
-                          لغو
-                        </button> */}
-                      </div>
+                        <button 
+                          onClick={() => handleDeleteUser(user._id)}
+                          className="delete-button"
+                        >
+                          حذف
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {showAddRow && (
+                    <tr className="add-user-row">
+                      <td colSpan="5">
+                        <div className="add-user-form">
+                        <p >🟩⬅️</p>
+
+                          <input
+                            type="text"
+                            placeholder="نام و نام خانوادگی"
+                            value={newUser.fullName}
+                            onChange={e => setNewUser({ ...newUser, fullName: e.target.value })}
+                          />
+                          <select
+                            value={newUser.role}
+                            onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                          >
+                            <option value="user">انتخاب نقش</option>
+                            <option value="user">کاربر</option>
+                            <option value="admin">ادمین</option>
+                          </select>
+                          <input
+                            type="email"
+                            placeholder="ایمیل"
+                            value={newUser.email}
+                            onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                          />
+                          <input
+                            type="password"
+                            placeholder="رمز عبور"
+                            value={newUser.password}
+                            onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                          />
+                          <button onClick={handleAddUser} className="submit-button">
+                            ثبت
+                          </button>
+                          {/* <button onClick={() => setShowAddRow(false)} className="cancel-button">
+                            لغو
+                          </button> */}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan="5" style={{ textAlign: 'rught' }}>
+                      <button
+                        style={{ margin: "0.5rem" }}
+                        onClick={() => setShowAddRow(prev => !prev)}
+                      >
+                        {showAddRow ? "❌ بستن فرم " : "➕ افزودن کاربر جدید"}
+                      </button>
                     </td>
                   </tr>
-                )}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan="5" style={{ textAlign: 'rught' }}>
-                    <button
-                      style={{ margin: "0.5rem" }}
-                      onClick={() => setShowAddRow(prev => !prev)}
-                    >
-                      {showAddRow ? "❌ بستن فرم " : "➕ افزودن کاربر جدید"}
-                    </button>
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          )}
+                </tfoot>
+              </table>
+              </>
+            )}
+          </section>
         </section>
       )}
     </div>

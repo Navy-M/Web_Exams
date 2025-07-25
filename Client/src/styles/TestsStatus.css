@@ -1,3 +1,6 @@
+.admin-user-tests-section {
+  background-color: #ececec44;
+}
 .admin-search-input {
   padding: 0.5rem;
   margin-bottom: 1rem;
@@ -18,8 +21,15 @@
   direction: rtl;
 }
 
+.admin-user-tests-table th {
+  background-color: rgba(255, 166, 0, 0.889);
+}
 .admin-user-tests-table ul {
   direction: ltr;
   text-align: left;
   padding-left: 1rem;
+}
+
+.selected-row {
+  background-color: #f0f8ff;
 }

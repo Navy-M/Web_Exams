@@ -10,19 +10,7 @@ import TestsStatus from "../../components/Admin/TestsStatus";
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');
   const{user} = useAuth();
-
-  const handleEditUser = (id) => {
-    console.log('Edit user with ID:', id);
-    // Navigate to edit page or open a modal
-  };
-
-  const handleDeleteUser = (id) => {
-    const confirmed = window.confirm('آیا از حذف کاربر مطمئن هستید؟');
-    if (confirmed) {
-      setUsers(prev => prev.filter(user => user.id !== id));
-    }
-  };
-
+  
   return (
     <div className="admin-dashboard">
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />

@@ -4,14 +4,16 @@
 
   h1 {
     color: var(--userName-color);
+    transition: all 0.3s ease;
   }
 }
 
 .admin-main {
   flex: 1;
+  margin-left: 200px;
   padding: 2rem;
   background: var(--background-light);
-  margin-left: 250px;
+  transition: margin-left 0.3s ease;
 }
 
 [data-theme="dark"] .admin-main {
@@ -21,6 +23,15 @@
 @media (max-width: 768px) {
   .admin-dashboard {
     flex-direction: column;
+  }
+
+  .admin-main {
+    margin-left: 70px;
+    margin-right: 0rem;
+    padding-right: 0rem;
+    padding-left: 0rem;
+    /* background: blueviolet; */
+    /* margin-right: 4rem; */
   }
 }
 
