@@ -785,37 +785,62 @@ function analyzeGardner(answers, questions = Dummy.Gardner_Test) {
 function analyzeClifton(answers, questions = Dummy.Clifton_Test) {
   // 1. تعریف تم‌های کلیفتون استرنث
   const themes = {
-    Achiever: {
-      name: "دستاوردگرا",
-      description: "دارای نیاز درونی شدید به پیشرفت و موفقیت",
-      characteristics: "پرانرژی، مسئولیت‌پذیر، عاشق چالش‌های جدید",
+    Futuristic: {
+      name: "آینده‌نگر",
+      description: "الهام‌گرفته از چشم‌اندازهای آینده و امکانات پیش‌رو",
+      characteristics: "خلاق، الهام‌بخش، متمرکز بر آینده",
     },
-    Activator: {
-      name: "فعال‌ساز",
-      description: "توانایی تبدیل افکار به اقدامات عملی",
-      characteristics: "بی‌تاب، عملگرا، آغازگر تغییرات",
+    Context: {
+      name: "زمینه‌گرا",
+      description: "یادگیری از گذشته برای درک بهتر حال و آینده",
+      characteristics: "تحلیل‌گر، کنجکاو، تاریخ‌شناس",
     },
-    // ... سایر تم‌ها را اینجا اضافه کنید
+    Developer: {
+      name: "توسعه‌دهنده",
+      description: "لذت بردن از کمک به رشد و پیشرفت دیگران",
+      characteristics: "حمایتگر، مربی، متمرکز بر پتانسیل",
+    },
+    Positivity: {
+      name: "مثبت‌اندیش",
+      description: "نگرش خوش‌بینانه‌ای که به دیگران انرژی می‌دهد",
+      characteristics: "پرانرژی، انگیزه‌بخش، خوش‌بین",
+    },
+    Relator: {
+      name: "رابطه‌ساز",
+      description: "ارزش قائل شدن برای روابط نزدیک و قابل اعتماد",
+      characteristics: "صمیمی، همدل، اعتمادساز",
+    },
+    Connectedness: {
+      name: "پیوندگرا",
+      description: "باور به ارتباط و معنای عمیق در رویدادهای زندگی",
+      characteristics: "فلسفی، معنوی، کل‌نگر",
+    },
+    Consistency: {
+      name: "منصف",
+      description: "رفتار برابر با همه و ارزش قائل شدن برای عدالت",
+      characteristics: "عادل، منظم، قابل پیش‌بینی",
+    },
+    SelfAssurance: {
+      name: "خودباور",
+      description: "اعتماد به غرایز و توانایی‌های خود",
+      characteristics: "مطمئن، قاطع، مستقل",
+    },
   };
-
+  
   // 2. مقداردهی اولیه امتیازات
-  const scores = {};
-  questions.forEach((q) => {
-    scores[q.theme_a] = 0;
-    scores[q.theme_b] = 0;
-  });
+  const scores = Object.keys(themes).reduce((acc, theme) => ({ ...acc, [theme]: 0 }), {});
 
   // 3. محاسبه امتیازات
   answers.forEach(({ questionId, choice }) => {
     const question = questions.find((q) => q.id === questionId);
-    if (!question) return;
+    if (!question || !["A", "B"].includes(choice)) return;
 
     if (choice === "A") scores[question.theme_a]++;
     if (choice === "B") scores[question.theme_b]++;
   });
 
   // 4. محاسبه درصدهای نرمال‌شده
-  const totalQuestions = answers.length;
+  const totalQuestions = questions.length;
   const normalizedScores = Object.fromEntries(
     Object.entries(scores).map(([theme, score]) => [
       theme,
@@ -841,12 +866,12 @@ function analyzeClifton(answers, questions = Dummy.Clifton_Test) {
   // 7. آماده‌سازی خروجی حرفه‌ای
   return {
     // اطلاعات پایه
-    topThemes, // تم‌های برتر
-    signatureTheme: topThemes[0], // تم امضای شخصیتی
+    topThemes,
+    signatureTheme: topThemes[0] || null,
 
     // داده‌های امتیازی
-    rawScores: scores, // امتیازات خام
-    normalizedScores, // امتیازات درصدی
+    rawScores: scores,
+    normalizedScores,
 
     // اطلاعات هر تم
     themeDetails: rankedThemes.map((theme) => ({
@@ -860,9 +885,9 @@ function analyzeClifton(answers, questions = Dummy.Clifton_Test) {
     developmentSuggestions: topThemes.map((theme) => ({
       theme: themes[theme].name,
       suggestions: [
-        `تمرکز بر پروژه‌هایی که نیاز به ${themes[theme].name} دارند`,
+        `تمرکز بر پروژه‌هایی که از ${themes[theme].name} بهره می‌برند`,
         `همکاری با افرادی که مکمل ${themes[theme].name} هستند`,
-        `ثبت دستاوردهای مرتبط با ${themes[theme].name}`,
+        `توسعه مهارت‌های مرتبط با ${themes[theme].name} از طریق آموزش`,
       ],
     })),
 
@@ -871,7 +896,7 @@ function analyzeClifton(answers, questions = Dummy.Clifton_Test) {
       labels: rankedThemes.map((t) => themes[t.theme]?.name || t.theme),
       datasets: [
         {
-          label: "پروفایل نقاط قوت",
+          label: "پروفایل نقاط قوت کلیفتون",
           data: rankedThemes.map((t) => normalizedScores[t.theme]),
           backgroundColor: rankedThemes.map(
             (_, i) => `hsl(${(i * 360) / rankedThemes.length}, 70%, 60%)`

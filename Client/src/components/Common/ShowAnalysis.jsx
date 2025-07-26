@@ -5,6 +5,8 @@ import DiscAnalysis from './analysis/DiscAnalysis';
 import HollandAnalysis from './analysis/HollandAnalysis';
 import GardnerAnalysis from './analysis/GardnerAnalysis';
 import CliftonStrengthsAnalysis from './analysis/CliftonStrengthsAnalysis';
+import GHQAnalysis from './analysis/GHQAnalysis';
+import PersonalFavoritesAnalysis  from './analysis/PersonalFavoritesAnalysis';
 
 const ShowAnalysis = ({ testType, analysisData }) => {
   const renderAnalysisComponent = (type, data) => {
@@ -19,6 +21,10 @@ const ShowAnalysis = ({ testType, analysisData }) => {
         return <GardnerAnalysis data={data} />;
       case 'CLIFTON':
         return <CliftonStrengthsAnalysis data={data} />;
+      case 'GHQ':
+        return <GHQAnalysis data={data} />;
+      case 'PERSONAL_FAVORITES':
+        return <PersonalFavoritesAnalysis data={data} />;
       default:
         return <div>نوع تحلیل مشخص نیست</div>;
     }
