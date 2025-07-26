@@ -185,19 +185,241 @@ const [searchFilter, setSearchFilter] = useState('');
     
   }
 
+  const generatePrintContent = () => {
+    const user = selectedUser;
+    const results = userResults;
+
+    if (!user || !results) return '';
+
+    // Map test types to Persian names
+    const testTypeMap = {
+      PERSONAL_FAVORITES: 'اولویت‌های شخصی',
+      GHQ: 'سلامت عمومی',
+      CLIFTON: 'نقاط قوت کلیفتون',
+      GARDNER: 'هوش‌های چندگانه گاردنر'
+    };
+
+    let html = `
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>کارنامه کاربر - ${user.profile?.fullName || 'نامشخص'}</title>
+          <style>
+            @font-face {
+              font-family: 'Vazir';
+              src: url('https://cdn.fontcdn.ir/Font/Persian/Vazir/Vazir.woff2') format('woff2');
+            }
+            body {
+              font-family: 'Vazir', Arial, sans-serif;
+              direction: rtl;
+              margin: 20mm;
+              font-size: 12pt;
+              line-height: 1.6;
+              color: #333;
+            }
+            @page {
+              size: A4;
+              margin: 20mm;
+            }
+            h1 {
+              text-align: center;
+              font-size: 18pt;
+              color: #2c3e50;
+              margin-bottom: 20px;
+              border-bottom: 2px solid #4CAF50;
+              padding-bottom: 10px;
+            }
+            h2 {
+              font-size: 14pt;
+              color: #34495e;
+              margin: 20px 0 10px;
+              border-right: 4px solid #4CAF50;
+              padding-right: 10px;
+            }
+            h3 {
+              font-size: 12pt;
+              color: #555;
+              margin: 15px 0 8px;
+            }
+            .section {
+              margin-bottom: 20px;
+              padding: 15px;
+              background: #f9f9f9;
+              border-radius: 8px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .profile-table, .results-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 10px 0;
+            }
+            .profile-table td, .results-table th, .results-table td {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: right;
+            }
+            .profile-table td:first-child {
+              font-weight: bold;
+              width: 30%;
+              background: #f0faff;
+            }
+            .results-table th {
+              background: #4CAF50;
+              color: white;
+              font-weight: bold;
+            }
+            .results-table tr:nth-child(even) {
+              background: #f9f9f9;
+            }
+            .no-data {
+              text-align: center;
+              color: #e74c3c;
+              font-style: italic;
+            }
+            .footer {
+              text-align: center;
+              font-size: 10pt;
+              color: #777;
+              margin-top: 30px;
+              border-top: 1px solid #ddd;
+              padding-top: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>کارنامه کاربر: ${user.profile?.fullName || 'نامشخص'}</h1>
+          
+          <div class="section">
+            <h2>اطلاعات فردی</h2>
+            <table class="profile-table">
+              <tr><td>نام و نام خانوادگی</td><td>${user.profile?.fullName || 'نامشخص'}</td></tr>
+              <tr><td>ایمیل</td><td>${user.email || 'نامشخص'}</td></tr>
+              <tr><td>سن</td><td>${user.profile?.age || 'نامشخص'}</td></tr>
+              <tr><td>وضعیت تاهل</td><td>${user.profile?.single ? 'مجرد' : 'متاهل'}</td></tr>
+              <tr><td>تحصیلات</td><td>${user.profile?.education || 'نامشخص'}</td></tr>
+              <tr><td>رشته</td><td>${user.profile?.field || 'نامشخص'}</td></tr>
+              <tr><td>تلفن</td><td>${user.profile?.phone || 'نامشخص'}</td></tr>
+              <tr><td>شهر</td><td>${user.profile?.city || 'نامشخص'}</td></tr>
+              <tr><td>استان</td><td>${user.profile?.province || 'نامشخص'}</td></tr>
+              <tr><td>شغل</td><td>${user.profile?.jobPosition || 'نامشخص'}</td></tr>
+            </table>
+          </div>
+          
+          <div class="section">
+            <h2>نتایج آزمون‌ها</h2>
+            ${results.length > 0 ? results.map(result => `
+              <div class="section">
+                <h3>آزمون: ${testTypeMap[result.testType] || result.testType}</h3>
+                <p><strong>تاریخ انجام:</strong> ${formatDate(result.completedAt)}</p>
+                <p><strong>مدت زمان:</strong> ${result.duration ? `${result.duration} ثانیه` : 'نامشخص'}</p>
+                <p><strong>بازخورد ادمین:</strong> ${result.adminFeedback || 'بدون بازخورد'}</p>
+                ${result.analysis ? `
+                  <h3>تحلیل آزمون</h3>
+                  ${result.testType === 'PERSONAL_FAVORITES' ? `
+                    <p><strong>خلاصه:</strong> ${result.analysis.summary || 'نامشخص'}</p>
+                    <p><strong>زمان تحلیل:</strong> ${formatDate(result.analysis.analyzedAt)}</p>
+                    <table class="results-table">
+                      <thead>
+                        <tr>
+                          <th>ویژگی</th>
+                          <th>ترجیح برتر</th>
+                          <th>تکرار انتخاب‌ها</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${Object.entries(result.analysis.traits || {}).map(([traitKey, trait]) => `
+                          <tr>
+                            <td>${trait.name || traitKey}</td>
+                            <td>${trait.topPreference || 'هیچ'}</td>
+                            <td>
+                              ${Object.entries(trait.frequency || {}).map(([opt, count]) => `${opt}: ${count} بار`).join('<br>') || 'هیچ'}
+                            </td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                    <h3>پیشنهادات</h3>
+                    <ul>
+                      ${Object.entries(result.analysis.topPreferences || {})
+                        .filter(([_, pref]) => pref !== null)
+                        .map(([trait, { value }]) => `
+                          <li>افزایش مشارکت در فعالیت‌های مرتبط با ${value} برای تقویت ${result.analysis.traits[trait]?.name || trait}</li>
+                        `).join('') || '<li>هیچ پیشنهادی موجود نیست</li>'}
+                    </ul>
+                  ` : result.testType === 'GHQ' ? `
+                    <p><strong>سطح خطر:</strong> ${result.analysis.riskLevel === 'High' ? 'بالا (نیاز به توجه)' : result.analysis.riskLevel === 'Moderate' ? 'متوسط' : 'پایین (خوب)'}</p>
+                    <p><strong>امتیاز کل:</strong> ${result.analysis.totalScore || 0} (${result.analysis.normalizedTotal || 0}%)</p>
+                    <p><strong>خلاصه:</strong> ${result.analysis.summary || 'نامشخص'}</p>
+                    <p><strong>زمان تحلیل:</strong> ${formatDate(result.analysis.analyzedAt)}</p>
+                    <table class="results-table">
+                      <thead>
+                        <tr>
+                          <th>ویژگی</th>
+                          <th>امتیاز</th>
+                          <th>توضیح</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${Object.entries(result.analysis.traits || {}).map(([traitKey, trait]) => `
+                          <tr>
+                            <td>${trait.name || traitKey}</td>
+                            <td>${trait.score || 0}%</td>
+                            <td>${trait.description || 'نامشخص'}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  ` : `
+                    <p>تحلیل برای ${testTypeMap[result.testType] || result.testType} در دسترس نیست.</p>
+                  `}
+                ` : `
+                  <p class="no-data">تحلیل برای این آزمون انجام نشده است.</p>
+                `}
+              </div>
+            `).join('') : `
+              <p class="no-data">هیچ نتیجه‌ای برای این کاربر وجود ندارد.</p>
+            `}
+          </div>
+          
+          <div class="footer">
+            <p>تولید شده در تاریخ: ${formatDate(new Date())}</p>
+            <p>سامانه استعدادیابی دانشجویی</p>
+            <p>دانشگاه علوم دریایی امام خمینی (ره)</p>
+          </div>
+        </body>
+      </html>
+    `;
+    return html;
+  };
   const handlePrintUserResume = async () => {
     const confirmed = window.confirm('آیا از چاپ کارنامه کاربر مطمئن هستید؟');
     if (!confirmed) return;
 
     try {
-      //  TODO: get all information about This user and print on A4 Papers
-      setRefresh(prev => !prev);
-    } catch (err) {
-      console.error(err);
-      alert('خطا در چاپ کارنامه کاربر');
-    }
+      if (!selectedUser || !userResults) {
+        throw new Error('اطلاعات کاربر یا نتایج آزمون در دسترس نیست.');
+      }
 
-  }
+      const printContent = generatePrintContent();
+      if (!printContent) {
+        throw new Error('خطا در تولید محتوای چاپ');
+      }
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        throw new Error('خطا در باز کردن پنجره چاپ');
+      }
+
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      // printWindow.close();
+    } catch (err) {
+      console.error('Error printing resume:', err);
+      alert(`خطا در چاپ کارنامه کاربر: ${err.message}`);
+    }
+  };
 
   const formatDate = (dateString) => {
     // console.log("dateString:", dateString );
@@ -205,6 +427,8 @@ const [searchFilter, setSearchFilter] = useState('');
     return format(new Date(dateString), 'd MMMM yyyy - HH:mm', {
       locale: faIR
     });
+
+    
   };
 
   const filteredUsers = users.filter(user => {
@@ -243,7 +467,7 @@ const [searchFilter, setSearchFilter] = useState('');
               <h2>{selectedUser.profile.fullName}</h2>
               <button 
                 onClick={() => handlePrintUserResume()}
-                disabled={!!selectedUser}
+                // disabled={!!selectedUser}
                 className="print-button"
               >
                 چاپ کارنامه
