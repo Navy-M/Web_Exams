@@ -199,4 +199,14 @@ export const analyzeTests = async (Data) => {
   }
 }
 
+export const prioritizeUsers = async (people, quotas) => {
+  try {
+    const response = await API.post("/results/prioritize", { people, quotas });
+    return response.data; // This will be { job1: [...], job2: [...] }
+  } catch (error) {
+    console.error("Error prioritizing users:", error);
+    throw error.response?.data || error.message;
+  }
+};
+
 export default API;

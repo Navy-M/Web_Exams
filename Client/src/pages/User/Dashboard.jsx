@@ -90,24 +90,30 @@ const UserDashboard = () => {
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
             {isDark ? 'Light Mode' : 'Dark Mode'}
           </button>
-          <h1 className="user-email">{user.email}</h1>
           <button onClick={handleLogout} className="logout-button">Logout</button>
+
+
         </div>
 
+
         {user.profile?.age && user.profile?.gender ? 
-          <div className="stats">
-            <div className="stat-item">
-              <h3>{allTests.length}</h3>
-              <p>کل تست ها</p>
+          <div className='User_Header_Info'>
+            <div className="stats">
+              <div className="stat-item">
+                <h3>{allTests.length}</h3>
+                <p>کل تست ها</p>
+              </div>
+              <div className="stat-item">
+                <h3>{completedTests?.length}</h3>
+                <p>انجام شده</p>
+              </div>
+              <div className="stat-item">
+                <h3>{completedTests?.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
+                <p>مجموع امتیازات</p>
+              </div>
+              <br/>
             </div>
-            <div className="stat-item">
-              <h3>{completedTests?.length}</h3>
-              <p>انجام شده</p>
-            </div>
-            <div className="stat-item">
-              <h3>{completedTests?.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
-              <p>مجموع امتیازات</p>
-            </div>
+              <h1 className="user-email">{user.email}  |  {user.profile.fullName}</h1>
           </div>
           : <div className='complete-user-profile'>
            <p> لطفا ابتدا اطلاعات خود را تکمیل نمایید.</p>

@@ -19,9 +19,9 @@ const TestCard = ({ test, onStart }) => {
         >
           شروع آزمون
         </button>
-        <Link to={`/test/instructions/${test._id}`} className="view-details">
+        {/* <Link to={`/test/instructions/${test._id}`} className="view-details">
           مشاهده جزیات
-        </Link>
+        </Link> */}
       </div>
     </div>
   );

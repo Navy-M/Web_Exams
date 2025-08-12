@@ -429,3 +429,51 @@ export const updateTestFeedback = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const allocateJobs = async (req, res) => {
+  try {
+    const { people, quotas } = req.body;
+    /**
+     * people: array of objects [{ id, name, score, jobPreference }, ...]
+     * quotas: object { "Engineer": 5, "Designer": 3, "Manager": 2 }
+     */
+
+    console.log("people: ", people);
+    console.log("quotas: ", quotas);
+
+    if (!people || !quotas) {
+      return res.status(400).json({ message: "Missing required data" });
+    }
+
+    // Sort people by score descending
+    const sortedPeople = [...people].sort((a, b) => b.score - a.score);
+
+    // Prepare result allocations
+    const allocations = {};
+    Object.keys(quotas).forEach((job) => {
+      allocations[job] = [];
+    });
+
+    // Allocate people to jobs based on preferences & limits
+    for (let person of sortedPeople) {
+      const preferredJob = person.jobPreference;
+      if (quotas[preferredJob] > 0) {
+        allocations[preferredJob].push(person);
+        quotas[preferredJob] -= 1;
+      } else {
+        // If preferred job full, put them in a "waiting" list
+        if (!allocations["Unassigned"]) allocations["Unassigned"] = [];
+        allocations["Unassigned"].push(person);
+      }
+    }
+    console.log(allocations);
+
+    res.status(200).json({
+      success: true,
+      allocations,
+    });
+  } catch (error) {
+    console.error("Job allocation error:", error);
+    res.status(500).json({ message: "Server error in allocation" });
+  }
+};

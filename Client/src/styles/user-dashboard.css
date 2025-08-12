@@ -7,7 +7,7 @@
 }
 
 .dashboard-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .header-top {
@@ -15,6 +15,25 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+}
+
+.User_Header_Info {
+  display: block;
+  align-items: center;
+  /* background-color: #ef4444; */
+}
+
+.User_Header_Info h1 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* background-color: #e8c7c7; */
+  margin-top: 1rem;
+  border-radius: 5px;
+}
+
+.user-email {
+  font-size: 1.2rem;
 }
 
 .theme-toggle {
@@ -27,10 +46,6 @@
   padding: 0.5rem 1rem;
   border-radius: 6px;
   cursor: pointer;
-}
-
-.user-email {
-  font-size: 1.2rem;
 }
 
 .logout-button {

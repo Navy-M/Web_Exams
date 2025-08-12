@@ -8,6 +8,7 @@ import {
   analyzeResult,
   deleteResult,
   updateTestFeedback,
+  allocateJobs,
 } from "../controllers/resultsController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -21,6 +22,8 @@ router.get("/:resultId", getResultById);
 router.delete("/:resultId", protect, admin, deleteResult);
 
 router.post("/analyze", analyzeResult);
+
+router.post("/prioritize", protect, admin, allocateJobs);
 
 router.get("/", getResults);
 

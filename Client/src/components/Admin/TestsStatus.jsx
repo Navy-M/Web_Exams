@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getUsers } from '../../services/api';
+import { getUsers, prioritizeUsers } from '../../services/api';
 import "../../styles/TestsStatus.css"
 
 const TestsStatus = () => {
@@ -10,6 +10,62 @@ const TestsStatus = () => {
   const [visibleCount, setVisibleCount] = useState(10);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [showPrioritizationModal, setShowPrioritizationModal] = useState(false);
+  const [jobQuotas, setJobQuotas] = useState({
+    job1: 0,
+    job2: 0,
+    job3: 0,
+    job4: 0,
+    job5: 0,
+  });
+
+  const tableActions = [
+    {
+      icon: "start process",
+      text: "شروع اولویت بندی",
+      action: ()=> {handleStartPrioritization() }
+    },
+    {
+      icon: "delete from table",
+      text: "حذف از لیست",
+      action: ()=> {console.log("heeeeellllooosaodxoasoxasoxoasx") }
+
+
+    },
+    {
+      icon: "create a group",
+      text: "دسته بندی",
+      action: ()=> {console.log("heeeeellllooosaodxoasoxasoxoasx") }
+
+
+    }
+  ]
+
+// 1) Add state for modal
+
+
+// 2) Update the prioritization action
+const handleStartPrioritization = () => {
+  if (selectedUsers.length === 0) {
+    alert("ابتدا چند کاربر را انتخاب کنید");
+    return;
+  }
+  setShowPrioritizationModal(true);
+};
+
+// 3) Send to server
+const submitPrioritization = async () => {
+  try {
+    const res = await prioritizeUsers(selectedUsers, jobQuotas);
+    const data = await res.json();
+    console.log("Sorted users:", data);
+    setShowPrioritizationModal(false);
+    // Show results to admin
+    setFiltered(data.sortedUsers);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
 
   useEffect(() => {
@@ -82,9 +138,9 @@ const TestsStatus = () => {
           onChange={e => setVisibleCount(parseInt(e.target.value))}
           className="admin-search-select"
         >
-          <option value="10">نمایش ۱۰ نفر</option>
-          <option value="50">نمایش ۵۰ نفر</option>
-          <option value="100">نمایش ۱۰۰ نفر</option>
+          <option value="10">تعداد نمایش ۱۰ نفر</option>
+          <option value="50">تعداد نمایش ۵۰ نفر</option>
+          <option value="100">تعداد نمایش ۱۰۰ نفر</option>
         </select>
       </div>
 
@@ -132,8 +188,56 @@ const TestsStatus = () => {
               </td>
             </tr>
           ))}
+            
         </tbody>
+        
       </table>
+      
+{selectedUsers.length > 0 && (
+  <div className="admin-user-tests-table-actions-BG">
+    {showPrioritizationModal ? (
+      <div className="modal">
+        <h3>تعداد افراد مورد نیاز برای هر شغل</h3>
+
+        {jobQuotas && Object.keys(jobQuotas).length > 0 ? (
+          Object.keys(jobQuotas).map((job, i) => (
+            <div key={job}>
+              <label>{`Job ${i + 1}`}</label>
+              <input
+                type="number"
+                value={jobQuotas[job]}
+                onChange={(e) =>
+                  setJobQuotas({
+                    ...jobQuotas,
+                    [job]: parseInt(e.target.value, 10) || 0,
+                  })
+                }
+              />
+            </div>
+          ))
+        ) : (
+          <p>هیچ شغلی تعریف نشده است</p>
+        )}
+
+        <div className="modal-actions">
+          <button onClick={submitPrioritization}>شروع</button>
+          <button onClick={() => setShowPrioritizationModal(false)}>انصراف</button>
+        </div>
+      </div>
+    ) : (
+      tableActions.map((A) => (
+        <div
+          key={A.text}
+          onClick={A.action}
+          className="admin-user-tests-table-actions-btn"
+        >
+          {A.text}
+        </div>
+      ))
+    )}
+  </div>
+)}
+      
     </section>
   );
 };
