@@ -805,7 +805,7 @@ export const prioritizeJobs = async (req, res) => {
     }
 
     // console.log("peopleData : ", peopleData);
-    console.log("allocations : ", allocations);
+    console.log("allocations : ", JSON.stringify(allocations, null, 2));
 
     return res.status(200).json({ success: true, allocations });
   } catch (err) {

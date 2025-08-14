@@ -2,7 +2,7 @@ import { useState } from 'react';
 import AdminSidebar from '../../components/Admin/AdminSidebar';
 import '../../styles/admin.css';
 import { useAuth } from '../../context/AuthContext';
-import { Test_Cards } from '../../services/dummyData';
+import { Test_Cards, jobRequirements  } from '../../services/dummyData';
 import UsersPage from "./UsersPage";
 import TestsPage from "./TestsPage";
 import TestsStatus from "../../components/Admin/TestsStatus";
@@ -48,6 +48,31 @@ const AdminDashboard = () => {
                 </tbody>
               </table>
             </section>
+          <br/>
+          <br/>
+          {/* Job Requirements */}
+    {Object.keys(jobRequirements).length > 0 && (
+      <section className="job-requirements-section">
+        <h3>ویژگی‌ها و مهارت‌های مورد نیاز برای هر شغل</h3>
+        <br/>
+        {Object.entries(jobRequirements).map(([jobName, requirements]) => (
+          <div key={jobName} className="job-requirements">
+            <h4>{jobName}</h4>
+            <ul>
+              {Object.entries(requirements).map(([key, values]) => (
+                <li key={key}>
+                  <strong>{key.toUpperCase()}:</strong> {values.join(', ')}
+                </li>
+              ))}
+            </ul>
+        <hr/>
+        <br/>
+
+          </div>
+        ))}
+      </section>
+    )}
+
             <br/>
             <br/>
             <TestsPage/>
