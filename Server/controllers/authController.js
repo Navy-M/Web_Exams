@@ -7,13 +7,13 @@ import jwt from "jsonwebtoken";
  * @route   POST /api/auth/login
  */
 export const loginUser = async (req, res, next) => {
-  console.log("====== Controller loginUser function called ======");
+  // console.log("====== Controller loginUser function called ======");
 
   try {
     const { email, password } = req.body;
 
-    console.log("📧 Email:", email);
-    console.log("🔒 Password:", password);
+    // console.log("📧 Email:", email);
+    // console.log("🔒 Password:", password);
 
     if (!email || !password) {
       console.log("❌ Missing email or password");
@@ -70,7 +70,7 @@ export const loginUser = async (req, res, next) => {
 export const registerUser = async (req, res, next) => {
   try {
     const { fullName, email, password, role } = req.body;
-    console.log("[Register Attempt]", { email, role });
+    // console.log("[Register Attempt]", { email, role });
 
     // Validate input
     if (!email || !password) {
@@ -94,7 +94,7 @@ export const registerUser = async (req, res, next) => {
       profile: { fullName: fullName },
     });
 
-    console.log("[Register Success] User created:", user.email);
+    console.log(" ✅ [Register Success] User created:", user.email);
     res.status(201).json({
       message: "User registered",
       user: {
@@ -154,15 +154,15 @@ export const getProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log({
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        profile: user.profile || {},
-        testsAssigned: user.testsAssigned || [],
-      },
-    });
+    // console.log({
+    //   user: {
+    //     id: user._id,
+    //     email: user.email,
+    //     role: user.role,
+    //     profile: user.profile || {},
+    //     testsAssigned: user.testsAssigned || [],
+    //   },
+    // });
 
     // Send user data
     res.json({

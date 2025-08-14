@@ -25,7 +25,8 @@ export const deleteUser = async (req, res, next) => {
 export const getUsers = async (req, res, next) => {
   try {
     const users = await User.find().select("-password");
-    res.json(users);
+    const students = users.filter((s) => s.role === "user");
+    res.json(students);
   } catch (err) {
     next(err);
   }

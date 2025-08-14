@@ -199,9 +199,9 @@ export const analyzeTests = async (Data) => {
   }
 }
 
-export const prioritizeUsers = async (people, quotas) => {
+export const prioritizeUsers = async (people, quotas, weights) => {
   try {
-    const response = await API.post("/results/prioritize", { people, quotas });
+    const response = await API.post("/results/prioritize",  people, quotas, weights );
     return response.data; // This will be { job1: [...], job2: [...] }
   } catch (error) {
     console.error("Error prioritizing users:", error);

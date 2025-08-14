@@ -826,9 +826,12 @@ function analyzeClifton(answers, questions = Dummy.Clifton_Test) {
       characteristics: "مطمئن، قاطع، مستقل",
     },
   };
-  
+
   // 2. مقداردهی اولیه امتیازات
-  const scores = Object.keys(themes).reduce((acc, theme) => ({ ...acc, [theme]: 0 }), {});
+  const scores = Object.keys(themes).reduce(
+    (acc, theme) => ({ ...acc, [theme]: 0 }),
+    {}
+  );
 
   // 3. محاسبه امتیازات
   answers.forEach(({ questionId, choice }) => {
@@ -1000,10 +1003,13 @@ function analyzeGHQ(answers, questions = Dummy.Ghq_Test) {
 
   // 4. Calculate total score for risk assessment
   const totalScore = Object.values(scores).reduce((sum, s) => sum + s, 0);
-  const normalizedTotal = Math.round(((totalScore - 4 * minPossible) / (4 * range)) * 100);
+  const normalizedTotal = Math.round(
+    ((totalScore - 4 * minPossible) / (4 * range)) * 100
+  );
 
   // 5. Determine risk level
-  const riskLevel = totalScore > 20 ? "High" : totalScore > 15 ? "Moderate" : "Low";
+  const riskLevel =
+    totalScore > 20 ? "High" : totalScore > 15 ? "Moderate" : "Low";
 
   // 6. Prepare detailed interpretation
   const traitDescriptions = {
@@ -1054,7 +1060,13 @@ function analyzeGHQ(answers, questions = Dummy.Ghq_Test) {
     },
 
     // Summary
-    summary: `سطح سلامت روانی: ${riskLevel === "High" ? "نیاز به توجه" : riskLevel === "Moderate" ? "متوسط" : "خوب"}`,
+    summary: `سطح سلامت روانی: ${
+      riskLevel === "High"
+        ? "نیاز به توجه"
+        : riskLevel === "Moderate"
+        ? "متوسط"
+        : "خوب"
+    }`,
 
     // Timestamp
     analyzedAt: new Date().toISOString(),
@@ -1069,17 +1081,25 @@ function analyzeGHQ(answers, questions = Dummy.Ghq_Test) {
  * @param {Array} [questions] - Optional questions array (uses PersonalFavorites_Test if not provided)
  * @returns {Object} - Detailed preference profile with frequencies, top preferences, and visualization data
  */
-function analyzePersonalFavorites(answers, questions = Dummy.PersonalFavorites_Test) {
+function analyzePersonalFavorites(
+  answers,
+  questions = Dummy.PersonalFavorites_Test
+) {
   // 1. Initialize frequency counts for each trait
   const traits = ["Hobby", "Work", "Social", "Lifestyle"];
-  const frequencies = traits.reduce((acc, trait) => ({ ...acc, [trait]: {} }), {});
+  const frequencies = traits.reduce(
+    (acc, trait) => ({ ...acc, [trait]: {} }),
+    {}
+  );
 
   // 2. Count frequency of selected options per trait
   answers.forEach((answer, idx) => {
     const question = questions.find((q) => q.id === idx + 17);
-    if (!question || !question.options.some((opt) => opt.value === answer)) return;
+    if (!question || !question.options.some((opt) => opt.value === answer))
+      return;
 
-    frequencies[question.trait][answer] = (frequencies[question.trait][answer] || 0) + 1;
+    frequencies[question.trait][answer] =
+      (frequencies[question.trait][answer] || 0) + 1;
   });
 
   // 3. Determine top preference per trait
@@ -1093,7 +1113,10 @@ function analyzePersonalFavorites(answers, questions = Dummy.PersonalFavorites_T
 
   // 4. Prepare detailed interpretation
   const traitDescriptions = {
-    Hobby: { name: "سرگرمی", description: "فعالیت‌های مورد علاقه در اوقات فراغت" },
+    Hobby: {
+      name: "سرگرمی",
+      description: "فعالیت‌های مورد علاقه در اوقات فراغت",
+    },
     Work: { name: "کار", description: "ترجیحات محیط و نقش‌های کاری" },
     Social: { name: "اجتماعی", description: "فعالیت‌های اجتماعی مورد علاقه" },
     Lifestyle: { name: "سبک زندگی", description: "ترجیحات روزانه و سبک زندگی" },
@@ -1136,7 +1159,10 @@ function analyzePersonalFavorites(answers, questions = Dummy.PersonalFavorites_T
 
     // Summary
     summary: `ترجیحات برتر: ${traits
-      .map((t) => `${traitDescriptions[t].name}: ${topPreferences[t]?.value || "هیچ"}`)
+      .map(
+        (t) =>
+          `${traitDescriptions[t].name}: ${topPreferences[t]?.value || "هیچ"}`
+      )
       .join(", ")}`,
 
     // Timestamp
@@ -1144,7 +1170,6 @@ function analyzePersonalFavorites(answers, questions = Dummy.PersonalFavorites_T
   };
 }
 //#endregion
-
 
 export const getTestAnalysis = (testType, answers) => {
   switch (testType) {
@@ -1158,7 +1183,7 @@ export const getTestAnalysis = (testType, answers) => {
       return analyzeGardner(answers);
     case "CLIFTON":
       return analyzeClifton(answers);
-      case "GHQ":
+    case "GHQ":
       return analyzeGHQ(answers);
     case "PERSONAL_FAVORITES":
       return analyzePersonalFavorites(answers);

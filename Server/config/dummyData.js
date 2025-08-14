@@ -54,10 +54,11 @@ export const Test_Cards = [
     deadline: "2026-07-03T11:11:16.374+00:00",
     duration: { from: 8, to: 12 }, // Typically takes a bit longer than DISC
   },
-   {
+  {
     id: "GHQ",
     name: "آزمون سلامت عمومی (GHQ)",
-    description: "سلامت روان و عمومی خود را با پرسشنامه سلامت عمومی ارزیابی کنید.",
+    description:
+      "سلامت روان و عمومی خود را با پرسشنامه سلامت عمومی ارزیابی کنید.",
     type: "psychological",
     questionFormat: "likert", // Likert-scale questions for health assessment
     createdAt: "2025-07-01T10:00:00.000+00:00",
@@ -4049,3 +4050,41 @@ export const PersonalFavorites_Test = [
 //     updatedAt: "2025-05-29T11:11:16.374+00:00",
 //   },
 // ];
+
+export const jobRequirements = {
+  "ناوبری و فرماندهی کشتی": {
+    disc: ["High D", "High C"],
+    mbti: ["INTJ", "ENTJ", "ISTJ"],
+    holland: ["I", "C", "E"],
+    gardner: ["S", "M", "L"],
+    clifton: ["Responsibility", "Command", "Analytical", "Context"],
+  },
+  "مهندسی مکانیک و موتور دریایی": {
+    disc: ["High C", "High S"],
+    mbti: ["ISTP", "ESTJ", "INTJ"],
+    holland: ["R", "I"],
+    gardner: ["M", "B"],
+    clifton: ["Executing", "Restorative", "Deliberative", "Thinking"],
+  },
+  "مهندسی برق و الکترونیک دریایی": {
+    disc: ["High C", "High D"],
+    mbti: ["INTP", "ENTJ"],
+    holland: ["C", "I"],
+    gardner: ["S", "M"],
+    clifton: ["Executing", "Discpline", "Ideation", "Thinking"],
+  },
+  "تفنگدار دریایی": {
+    disc: ["High D", "High I"],
+    mbti: ["ISTP", "ESTP"],
+    holland: ["R", "E"],
+    gardner: ["I", "B"],
+    clifton: ["Executing", "Achiever", "Consistency"],
+  },
+  "کمیسر دریایی": {
+    disc: ["High I", "High S"],
+    mbti: ["ESFJ", "ESTJ"],
+    holland: ["E", "C"],
+    gardner: ["L", "I"],
+    clifton: ["Influencing", "Relator", "Connectedness", "Adaptability"],
+  },
+};

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getUsers, prioritizeUsers } from '../../services/api';
 import "../../styles/TestsStatus.css"
+import AllocationReport from './AllocationReport';
 
 const TestsStatus = () => {
   const [users, setUsers] = useState([]);
@@ -12,12 +13,13 @@ const TestsStatus = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [showPrioritizationModal, setShowPrioritizationModal] = useState(false);
   const [jobQuotas, setJobQuotas] = useState({
-    job1: 0,
-    job2: 0,
-    job3: 0,
-    job4: 0,
-    job5: 0,
+    job1:{ name: "ناوبری و فرماندهی کشتی" , tableCount: 0},
+    job2:{ name: "مهندسی مکانیک و موتور دریایی" , tableCount: 0},
+    job3:{ name: "مهندسی برق و الکترونیک دریایی" , tableCount: 0},
+    job4:{ name: "تفنگدار دریایی" , tableCount: 0},
+    job5:{ name: "کمیسر دریایی" , tableCount: 0},
   });
+  const [assignmentResult, setAssignmentResult] = useState(null);
 
   const tableActions = [
     {
@@ -28,14 +30,14 @@ const TestsStatus = () => {
     {
       icon: "delete from table",
       text: "حذف از لیست",
-      action: ()=> {console.log("heeeeellllooosaodxoasoxasoxoasx") }
+      action: ()=> {console.log("Delete these user Ids : ", selectedUsers) }
 
 
     },
     {
       icon: "create a group",
       text: "دسته بندی",
-      action: ()=> {console.log("heeeeellllooosaodxoasoxasoxoasx") }
+      action: ()=> {console.log("Make Group Of These Ids : ", selectedUsers) }
 
 
     }
@@ -55,15 +57,27 @@ const handleStartPrioritization = () => {
 
 // 3) Send to server
 const submitPrioritization = async () => {
-  try {
-    const res = await prioritizeUsers(selectedUsers, jobQuotas);
-    const data = await res.json();
-    console.log("Sorted users:", data);
+ try {
+    const data = {
+      people: selectedUsers,
+      quotas: jobQuotas,
+      weights: {
+        DISC: 1,
+        CLIFTON: 1,
+        HOLLAND: 1,
+        MBTI: 1,
+        GARDNER: 1,
+        GHQ: 1
+      },
+    };
+
+    const res = await prioritizeUsers(data); // your API call
+    setAssignmentResult(res); // store server response
+    // console.log(res);
+    
     setShowPrioritizationModal(false);
-    // Show results to admin
-    setFiltered(data.sortedUsers);
   } catch (err) {
-    console.error(err);
+    console.error("Error submitting prioritization:", err);
   }
 };
 
@@ -109,7 +123,13 @@ const submitPrioritization = async () => {
 
  return (
     <section className="admin-user-tests-section">
-      <h2>وضعیت آزمون‌های کاربران</h2>
+      
+
+      {assignmentResult ? <>
+          <AllocationReport selectedUsers={filtered.filter(_user => selectedUsers.some(f => f === _user._id))} assignmentResult={assignmentResult}/>
+          <button className='back-testResults-button' onClick={() => {setAssignmentResult(null)}}>بازگشت</button>
+        </> : <>
+        <h2>وضعیت آزمون‌های کاربران</h2>
 
       <div className="admin-search-container">
         <input
@@ -193,51 +213,51 @@ const submitPrioritization = async () => {
         
       </table>
       
-{selectedUsers.length > 0 && (
-  <div className="admin-user-tests-table-actions-BG">
-    {showPrioritizationModal ? (
-      <div className="modal">
-        <h3>تعداد افراد مورد نیاز برای هر شغل</h3>
+      {selectedUsers.length > 0 && (
+        <div className="admin-user-tests-table-actions-BG">
+          {showPrioritizationModal ? (
+            <div className="modal">
+              <h3>تعداد افراد مورد نیاز برای هر رسته</h3>
+          
+              {jobQuotas && Object.keys(jobQuotas).length > 0 ? (
+                Object.keys(jobQuotas).map((job, i) => (
+                  <div key={i}>
+                    <label>{jobQuotas[job].name}</label>
+                    <input
+                      type="number"
+                      value={jobQuotas[job].tableCount}
+                      onChange={(e) =>
+                        setJobQuotas({
+                          ...jobQuotas,
+                          [job]: { name: jobQuotas[job].name, tableCount:parseInt(e.target.value, 10) || 0},
+                        })
+                      }
+                    />
+                  </div>
+                ))
+              ) : (
+                <p>هیچ شغلی تعریف نشده است</p>
+              )}
 
-        {jobQuotas && Object.keys(jobQuotas).length > 0 ? (
-          Object.keys(jobQuotas).map((job, i) => (
-            <div key={job}>
-              <label>{`Job ${i + 1}`}</label>
-              <input
-                type="number"
-                value={jobQuotas[job]}
-                onChange={(e) =>
-                  setJobQuotas({
-                    ...jobQuotas,
-                    [job]: parseInt(e.target.value, 10) || 0,
-                  })
-                }
-              />
+              <div className="modal-actions">
+                <button onClick={submitPrioritization}>شروع</button>
+                <button onClick={() => setShowPrioritizationModal(false)}>انصراف</button>
+              </div>
             </div>
-          ))
-        ) : (
-          <p>هیچ شغلی تعریف نشده است</p>
-        )}
-
-        <div className="modal-actions">
-          <button onClick={submitPrioritization}>شروع</button>
-          <button onClick={() => setShowPrioritizationModal(false)}>انصراف</button>
+          ) : (
+            tableActions.map((A) => (
+              <div
+                key={A.text}
+                onClick={A.action}
+                className="admin-user-tests-table-actions-btn"
+              >
+                {A.text}
+              </div>
+            ))
+          )}
         </div>
-      </div>
-    ) : (
-      tableActions.map((A) => (
-        <div
-          key={A.text}
-          onClick={A.action}
-          className="admin-user-tests-table-actions-btn"
-        >
-          {A.text}
-        </div>
-      ))
-    )}
-  </div>
-)}
-      
+      )}
+      </>}
     </section>
   );
 };
