@@ -25,7 +25,8 @@
 [data-theme="dark"] {
   --background-light: var(--background-dark);
   --text-light: var(--text-dark);
-  --border-light: var(--border-dark);
+  /* --border-light: var(--border-dark); */
+  --border-dark: var(--border-light);
 }
 
 @media (prefers-color-scheme: light) {

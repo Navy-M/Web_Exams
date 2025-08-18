@@ -1,37 +1,53 @@
 .start-test-container {
   max-width: 800px;
-  margin: 40px auto;
-  padding: 2rem;
-  background-color: #f9f9fc;
+  margin: 20% auto;
+  padding: 3rem;
+  /* background-color: #f9f9fc; */
+  background-color: var(--background-light);
   border-radius: 16px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
   font-family: "Segoe UI", sans-serif;
-  color: #333;
+  color: var(--secondary-color);
+  /* display: flex; */
+  align-content: center;
+  justify-content: center;
 
-  h1,
-  h2 {
+  h1 {
     font-size: 2rem;
-    color: #2c3e50;
+    color: var(--text-light);
     margin-bottom: 1rem;
+    text-align: center;
+  }
+  h3 {
+    font-size: 1.5rem;
+    color: var(--text-light);
+    margin-bottom: 3rem;
     text-align: center;
   }
 
   p {
     font-size: 1.1rem;
     line-height: 1.6;
-    margin-bottom: 1rem;
-    text-align: center;
+    margin: 0.5rem 2rem;
+    text-align: right;
+    /* background-color: #3752c6; */
+  }
+
+  .button-container {
+    /* background-color: aquamarine; */
+    display: flex;
   }
 
   .start-button,
+  .back-button,
   .submit-button {
     display: block;
-    margin: 2rem auto 0;
+    margin: 4rem auto 0;
     padding: 0.75rem 2rem;
     font-size: 1rem;
     font-weight: bold;
-    background-color: #4e73df;
-    color: #fff;
+    background-color: var(--userName-color);
+    color: var(--text-light);
     border: none;
     border-radius: 8px;
     transition: background-color 0.3s ease, transform 0.2s ease;

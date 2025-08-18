@@ -392,6 +392,11 @@ const [searchFilter, setSearchFilter] = useState('');
     return html;
   };
   const handlePrintUserResume = async () => {
+    
+    if(!selectedUser.profile.age){
+      alert(`کاربر ${selectedUser.profile.fullName} هنوز اطلاعات فردی خود را وارد نکرده است!`);
+      return;
+    }
     const confirmed = window.confirm('آیا از چاپ کارنامه کاربر مطمئن هستید؟');
     if (!confirmed) return;
 
@@ -432,29 +437,29 @@ const [searchFilter, setSearchFilter] = useState('');
   };
 
   const filteredUsers = users.filter(user => {
-  const query = search.toLowerCase();
+    const query = search.toLowerCase();
 
-  switch (searchFilter) {
-    case 'name':
-      return user.profile?.fullName?.toLowerCase().includes(query);
-    case 'email':
-      return user.email?.toLowerCase().includes(query);
-    case 'role':
-      return user.role?.toLowerCase().includes(query);
-    case 'job':
-      return user.profile?.jobPosition?.toLowerCase().includes(query);
-    case 'province':
-      return user.profile?.province?.toLowerCase().includes(query);
-    default:
-      return (
-        user.profile?.fullName?.toLowerCase().includes(query) ||
-        user.email?.toLowerCase().includes(query) ||
-        user.role?.toLowerCase().includes(query) ||
-        user.profile?.jobPosition?.toLowerCase().includes(query) ||
-        user.profile?.province?.toLowerCase().includes(query)
-      );
-  }
-});
+    switch (searchFilter) {
+      case 'name':
+        return user.profile?.fullName?.toLowerCase().includes(query);
+      case 'email':
+        return user.email?.toLowerCase().includes(query);
+      case 'role':
+        return user.role?.toLowerCase().includes(query);
+      case 'job':
+        return user.profile?.jobPosition?.toLowerCase().includes(query);
+      case 'province':
+        return user.profile?.province?.toLowerCase().includes(query);
+      default:
+        return (
+          user.profile?.fullName?.toLowerCase().includes(query) ||
+          user.email?.toLowerCase().includes(query) ||
+          user.role?.toLowerCase().includes(query) ||
+          user.profile?.jobPosition?.toLowerCase().includes(query) ||
+          user.profile?.province?.toLowerCase().includes(query)
+        );
+    }
+  });
 
 
   return (
@@ -484,7 +489,7 @@ const [searchFilter, setSearchFilter] = useState('');
               <ul>
                 <li><strong>📧 ایمیل:</strong> {selectedUser.email}</li>
                 <li><strong>🎂 سن:</strong> {selectedUser.profile.age}</li>
-                <li><strong>💍 وضعیت تاهل:</strong> {selectedUser.profile.single ? "مجرد" : "متاهل"}</li>
+                <li><strong>💍 وضعیت تاهل:</strong> {selectedUser.profile.age ? (selectedUser.profile.single ? "مجرد" : "متاهل") : "نامشخص"}</li>
                 <li><strong>🎓 تحصیلات:</strong> {selectedUser.profile.education}</li>
                 <li><strong>📚 رشته:</strong> {selectedUser.profile.field}</li>
                 <li><strong>📞 تلفن:</strong> {selectedUser.profile.phone}</li>
@@ -697,7 +702,7 @@ const [searchFilter, setSearchFilter] = useState('');
                             value={newUser.role}
                             onChange={e => setNewUser({ ...newUser, role: e.target.value })}
                           >
-                            <option value="user">انتخاب نقش</option>
+                            <option value="" disabled>انتخاب نقش</option>
                             <option value="user">کاربر</option>
                             <option value="admin">ادمین</option>
                           </select>

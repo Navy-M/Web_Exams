@@ -76,12 +76,20 @@ const CompleteProfilePage = () => {
         </div>
         <div className="form-group">
           <label>وضعیت تاهل</label>
-          <input type="boolean" name="single" value={formData.single} onChange={handleChange} />
+            <select
+              type="boolean" 
+              name="single"
+              value={formData.single}
+              onChange={handleChange}
+            >
+              <option value={true} >مجرد</option>
+              <option value={false}>متاهل</option>
+            </select>
         </div>
         <div className="form-group">
           <label>جنسیت</label>
           <select name="gender" value={formData.gender} onChange={handleChange}>
-            <option value="">انتخاب کنید</option>
+            <option value="" disabled>انتخاب کنید</option>
             <option value="مرد">مرد</option>
             <option value="زن">زن</option>
             <option value="دیگر">دیگر</option>
@@ -90,7 +98,7 @@ const CompleteProfilePage = () => {
           <div className="form-group">
           <label>تحصیلات</label>
           <select name="education" value={formData.education} onChange={handleChange}>
-            <option value="">انتخاب کنید</option>
+            <option value="" disabled>انتخاب کنید</option>
             <option value="دیپلم">دیپلم</option>
             <option value="کارشناسی">کارشناسی</option>
             <option value="کارشناسی ارشد">کارشناسی ارشد</option>
@@ -101,7 +109,13 @@ const CompleteProfilePage = () => {
         
         <div className="form-group">
           <label>رشته تحصیلی</label>
-          <input name="field" value={formData.field} onChange={handleChange} />
+          <select name="field" value={formData.field} onChange={handleChange}>
+            <option value="" disabled>انتخاب کنید</option>
+            <option value="ریاضی فیزیک">ریاضی فیزیک</option>
+            <option value="علوم تجربی">علوم تجربی</option>
+            <option value="انسانی">انسانی</option>
+            <option value="دیگر">دیگر</option>
+          </select>
         </div>
         <div className="form-group">
           <label>شماره تماس</label>
@@ -116,7 +130,7 @@ const CompleteProfilePage = () => {
           <input name="city" value={formData.city} onChange={handleChange} />
         </div>
         <div className="form-group">
-          <label>سمت شغلی</label>
+          <label>شماره دانشجویی</label>
           <input name="jobPosition" value={formData.jobPosition} onChange={handleChange} />
         </div>
         <button type="submit" className="submit-button">ثبت اطلاعات</button>

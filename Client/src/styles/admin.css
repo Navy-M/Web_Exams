@@ -95,12 +95,14 @@
     text-align: left;
     border-bottom: 1px solid #eee;
     color: var(--text-light);
+    background-color: var(--background-light);
     direction: rtl;
   }
 
   th {
-    background: var(--header-bg);
+    background: #ffd580;
     font-weight: bold;
+    color: #333;
   }
 
   tr:hover {

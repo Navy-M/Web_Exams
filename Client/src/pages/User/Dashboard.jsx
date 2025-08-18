@@ -104,7 +104,8 @@ const UserDashboard = () => {
                 <p>کل تست ها</p>
               </div>
               <div className="stat-item">
-                <h3>{completedTests?.length}</h3>
+                <h3>{completedTests.length < 7 ? completedTests?.length : "7"}</h3>
+                {/* <h3>{completedTests?.length}</h3>  ><><><><><><><><   FOR DEBUGING    ><><><><><><><>< */}
                 <p>انجام شده</p>
               </div>
               <div className="stat-item">
@@ -113,6 +114,9 @@ const UserDashboard = () => {
               </div>
               <br/>
             </div>
+              <br/>
+              <hr/>
+              <hr/>
               <h1 className="user-email">{user.email}  |  {user.profile.fullName}</h1>
           </div>
           : <div className='complete-user-profile'>
@@ -130,7 +134,10 @@ const UserDashboard = () => {
       ) : (
         <>
           <br/>
-
+          {user.testsAssigned && user.testsAssigned.length > 6 && (
+            <h2>.تمام آزمایش‌ها انجام شد. لطفا منتظر پاسخ‌ها باشید</h2>
+          )}
+          <br/>
           { user.profile?.age && allTests.filter(t => getTestStatus(t) === 'Pending').length > 0 &&
             <section className="recommended-tests">
               <h2>تست های پیشنهادی</h2>
@@ -227,7 +234,7 @@ const UserDashboard = () => {
                 <p> جداول نتایج تست های شما پس از برسی در دسترس میباشد ...</p> </>
               }
               </>
-          }
+            }
         </>
       )}
     </div>

@@ -3,8 +3,13 @@
   margin: 2rem auto;
   padding: 2rem;
   background: var(--background-light);
+  /* color: #a3c1f7; */
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.test-container h2 {
+  color: var(--primary-color);
 }
 
 [data-theme="dark"] .test-container {
@@ -42,6 +47,7 @@
 [data-theme="dark"] .test-container .option-button {
   background: var(--background-dark);
   border-color: var(--border-dark);
+  color: var(--text-light);
 }
 
 [data-theme="dark"] .test-container .option-button.selected {

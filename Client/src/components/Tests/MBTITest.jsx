@@ -60,11 +60,12 @@ const MBTITest = () => {
 
   return (
     <div className="test-container">
-      <h2>MBTI Personality Test</h2>
+      <h2>
+            تست MBTI - تست شخصیت شناسی مایرز بریگز
+        </h2>
 
       {currentQuestion < Mbti_Test.length ? (
         <div className="question-container">
-          <p>سوال {currentQuestion + 1} از {Mbti_Test.length}</p>
           <h3>{Mbti_Test[currentQuestion].text}</h3>
 
           <div className="options-grid">
@@ -80,6 +81,9 @@ const MBTITest = () => {
               </button>
             ))}
           </div>
+
+          <p>سوال {currentQuestion + 1} از {Mbti_Test.length}</p>
+
         </div>
       ) : (
         <p className="completion-message">در حال ارسال نتیجه...</p>

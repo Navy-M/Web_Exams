@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react'
 import {  Ghq_Test, PersonalFavorites_Test, Test_Cards } from '../../services/dummyData';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {Disc_Test, Clifton_Test, Mbti_Test, Holland_Test, Gardner_Test} from '../../services/dummyData';
 import "../../styles/starterTestPage.css";
@@ -29,6 +29,11 @@ const StarterTestPage = () => {
       // fetch_Questions(testId);  
       setStarted(true);
     };
+
+    const handleBackDash = () => {
+      // alert("back home");
+      navigate('/users/dashboard'); 
+    }
 
     // const fetch_Questions = (id) => {
     //   // Fill Questions Data 
@@ -116,10 +121,10 @@ const StarterTestPage = () => {
       {!started ? (
         <>
           <h1>{currentTest.name}</h1>
-          <p>{currentTest.description}</p>
+          <h3>{currentTest.description}</h3>
           <p>
             <strong>تعداد سوالات :</strong>{" "}
-            { questions.length}
+            { questions.length} سوال
           </p>
           <p>
             <strong>زمان تقریبیی :</strong>{" "}
@@ -127,13 +132,19 @@ const StarterTestPage = () => {
               ? `${currentTest.duration.from} الی ${currentTest.duration.to} دقیقه`
               : "Not specified"}
           </p>
-          <button className="start-button" onClick={handleStart}>
-            Start Test
-          </button>
+          <div className='button-container'>
+            <button className="back-button" onClick={handleBackDash}>
+              بازگشت
+            </button>
+            <button className="start-button" onClick={handleStart}>
+              Start Test
+            </button>
+            
+          </div>
         </>
       ) : (
           <div className="test-interface">
-                  <h2>{currentTest.name}</h2>
+                  {/* <h2>{currentTest.name}</h2> */}
                   {/* <p>{JSON.stringify(questions)}</p> */}
 
                   {testId === 'MBTI' && <MBTITest  />}
