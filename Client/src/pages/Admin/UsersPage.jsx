@@ -489,13 +489,15 @@ const [searchFilter, setSearchFilter] = useState('');
               <ul>
                 <li><strong>📧 ایمیل:</strong> {selectedUser.email}</li>
                 <li><strong>🎂 سن:</strong> {selectedUser.profile.age}</li>
+                <li><strong>👨‍💼 شغل پدر:</strong> {selectedUser.profile.fathersJob}</li>
                 <li><strong>💍 وضعیت تاهل:</strong> {selectedUser.profile.age ? (selectedUser.profile.single ? "مجرد" : "متاهل") : "نامشخص"}</li>
                 <li><strong>🎓 تحصیلات:</strong> {selectedUser.profile.education}</li>
+                <li><strong>🅰️ معدل دیپلم:</strong> {selectedUser.profile.diplomaAverage}</li>
                 <li><strong>📚 رشته:</strong> {selectedUser.profile.field}</li>
                 <li><strong>📞 تلفن:</strong> {selectedUser.profile.phone}</li>
                 <li><strong>🏙️ شهر:</strong> {selectedUser.profile.city}</li>
                 <li><strong>🗺️ استان:</strong> {selectedUser.profile.province}</li>
-                <li><strong>💼 شغل:</strong> {selectedUser.profile.jobPosition}</li>
+                <li><strong>💼 شماره دانشجویی:</strong> {selectedUser.profile.jobPosition}</li>
               </ul>
             </div>
           </div>
@@ -648,7 +650,7 @@ const [searchFilter, setSearchFilter] = useState('');
                   <option value="name">نام</option>
                   <option value="email">ایمیل</option>
                   <option value="role">نقش</option>
-                  <option value="job">شغل</option>
+                  <option value="job">شماره پرسنلی</option>
                   <option value="province">استان</option>
                 </select>
               </div>

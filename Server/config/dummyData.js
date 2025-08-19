@@ -4058,6 +4058,7 @@ export const jobRequirements = {
     holland: ["I", "C", "E"],
     gardner: ["S", "M", "L"],
     clifton: ["Responsibility", "Command", "Analytical", "Context"],
+    PF: [3, 4, 12]
   },
   "مهندسی مکانیک و موتور دریایی": {
     disc: ["High C", "High S"],

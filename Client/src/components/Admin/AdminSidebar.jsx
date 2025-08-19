@@ -32,9 +32,9 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
   };
 
   const menuItems = [
-    { key: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
-    { key: 'users', label: 'Users', icon: UsersIcon },
-    { key: 'tests', label: 'Tests', icon: TestsIcon },
+    { key: 'dashboard', label: 'داشبورد مدیریت', icon: DashboardIcon },
+    { key: 'users', label: 'کاربران', icon: UsersIcon },
+    { key: 'tests', label: 'آزمون ها', icon: TestsIcon },
   ];
 
   return (
@@ -55,7 +55,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
           <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
         </button>
 
-        {!isCollapsed  && <h2 className="sidebar-title">Admin Menu</h2>}
+        {!isCollapsed  && <h2 className="sidebar-title"><br/> Admin Menu <br/><hr/></h2>}
 
         <nav className="sidebar-nav">
           <ul>

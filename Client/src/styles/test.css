@@ -33,6 +33,7 @@
   background: var(--background-light);
   cursor: pointer;
   transition: all 0.2s;
+  color: #252525;
 }
 
 .test-container .option-button:hover {

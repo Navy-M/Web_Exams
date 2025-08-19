@@ -12,9 +12,11 @@ const CompleteProfilePage = () => {
     fullName: user.profile.fullName,
     nationalId: "",
     age: "",
+    fathersJob: "",
     gender: "",
     single: true,
     education: "",
+    diplomaAverage: "",
     field: "",
     phone: "",
     city: "",
@@ -75,6 +77,10 @@ const CompleteProfilePage = () => {
           <input type="number" name="age" value={formData.age} onChange={handleChange} />
         </div>
         <div className="form-group">
+          <label>شغل پدر</label>
+          <input type="fathersJob" name="fathersJob" value={formData.fathersJob} onChange={handleChange} />
+        </div>
+        <div className="form-group">
           <label>وضعیت تاهل</label>
             <select
               type="boolean" 
@@ -96,7 +102,7 @@ const CompleteProfilePage = () => {
           </select>
         </div>
           <div className="form-group">
-          <label>تحصیلات</label>
+          <label>نوع دیپلم</label>
           <select name="education" value={formData.education} onChange={handleChange}>
             <option value="" disabled>انتخاب کنید</option>
             <option value="دیپلم">دیپلم</option>
@@ -116,6 +122,10 @@ const CompleteProfilePage = () => {
             <option value="انسانی">انسانی</option>
             <option value="دیگر">دیگر</option>
           </select>
+        </div>
+        <div className="form-group">
+          <label>معدل دیپلم</label>
+          <input type="diplomaAverage" name="diplomaAverage" value={formData.diplomaAverage} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>شماره تماس</label>
