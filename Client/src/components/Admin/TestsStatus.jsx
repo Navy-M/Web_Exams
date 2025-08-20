@@ -131,19 +131,20 @@ const submitPrioritization = async () => {
         </> : <>
         <h2>وضعیت آزمون‌های کاربران</h2>
 
-      <div className="admin-search-container">
+      <div className="admin-status-search-container">
         <input
           type="text"
           placeholder="جستجو..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="admin-search-input"
+          className="admin-status-search-input"
         />
-
+        <br/>
+       
         <select
           value={searchFilter}
           onChange={e => setSearchFilter(e.target.value)}
-          className="admin-search-select"
+          className="admin-status-search-select"
         >
           <option value="">فیلتر بر اساس</option>
           <option value="name">نام</option>
@@ -156,7 +157,7 @@ const submitPrioritization = async () => {
         <select
           value={visibleCount}
           onChange={e => setVisibleCount(parseInt(e.target.value))}
-          className="admin-search-select"
+          className="admin-status-search-select"
         >
           <option value="10">تعداد نمایش ۱۰ نفر</option>
           <option value="50">تعداد نمایش ۵۰ نفر</option>

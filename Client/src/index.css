@@ -20,11 +20,14 @@
   --text-dark: #f0f0f0;
   --border-light: #e0e0e0;
   --border-dark: #404040;
+  --shadow-light: 0px 0px 70px rgba(0, 0, 0, 0.477);
+  --shadow-dark: 0px 0px 70px rgba(255, 255, 255, 0.106);
 }
 
 [data-theme="dark"] {
   --background-light: var(--background-dark);
   --text-light: var(--text-dark);
+  --shadow-light: var(--shadow-dark);
   /* --border-light: var(--border-dark); */
   --border-dark: var(--border-light);
 }

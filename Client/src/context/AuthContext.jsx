@@ -1,71 +1,77 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import * as api from '../services/api';
+import { createContext, useContext, useState, useEffect } from "react";
+import * as api from "../services/api";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [userToken, setUserToken] = useState(null);
+  const [userToken, setUserToken] = useState(localStorage.getItem("token")); // persist token
   const [loading, setLoading] = useState(true);
-
+  const [error, setError] = useState(null); // <-- track auth errors
 
   useEffect(() => {
     const checkAuth = async () => {
+      if (!userToken) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const res = await api.getProfile();
-        // console.log(res.user);
+        // test
         setUser(res.user);
-        
       } catch (err) {
+        console.error("Profile error:", err);
         setUser(null);
+        setUserToken(null);
+        localStorage.removeItem("token");
+        setError("Session expired. Please log in again."); // optional message
       } finally {
         setLoading(false);
       }
     };
-  
-    // if (userToken) {
-    //   checkAuth(); // only if token exists
-    // }
-      checkAuth();
 
-  }, []);
-  // }, [userToken]);
+    checkAuth();
+  }, [userToken]);
 
   const login = async (credentials) => {
-    // test
     // console.log('====== AuthContext login function called ======', credentials);
-    try 
-    {
+    try {
       const response = await api.login(credentials);
       const { token, user } = response;
-      localStorage.setItem('token', token);
+
+      localStorage.setItem("token", token);
       setUser(user);
       setUserToken(token);
-    return user;
-    } 
-    catch (err) {
-        throw err;
+      setError(null);
+
+      return user;
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Invalid credentials"); // optional
+      throw err; // rethrow so caller can also handle it
     }
   };
 
- 
   const logout = async () => {
-    await api.logout();
-    localStorage.removeItem('token');
+    try {
+      await api.logout();
+    } catch (err) {
+      console.warn("Logout failed, but clearing local state anyway.");
+    }
+    localStorage.removeItem("token");
     setUser(null);
     setUserToken(null);
+    setError(null);
   };
 
-  
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, loading, error }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
-
-
-
-

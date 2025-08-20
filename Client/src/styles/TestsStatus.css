@@ -52,7 +52,8 @@
 
 /* Container */
 .admin-user-tests-section {
-  background-color: #f7f8fa;
+  background-color: #8d8d8d9f;
+  box-shadow: var(--shadow-light);
   padding: 2rem;
   min-height: 100vh;
   font-family: "IRANSans", Tahoma, sans-serif;
@@ -62,33 +63,43 @@
 .admin-user-tests-section h2 {
   margin-bottom: 1.5rem;
   font-size: 1.8rem;
-  color: #333;
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  /* color: var(--primary-color); */
+  color: rgb(0, 0, 147);
+  /* color: rgb(214, 26, 26); */
+  text-shadow: 1px 1px 1px var(--text-light), 0 0 1em var(--primary-color),
+    0 0 0.2em blue;
   text-align: center;
 }
 
 /* Search Container */
-.admin-search-container {
+.admin-status-search-container {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+  padding: 1rem;
   margin-bottom: 1.5rem;
   justify-content: center;
+  background-color: var(--primary-color);
+  box-shadow: var(--shadow-light);
 }
 
-.admin-search-input,
-.admin-search-select {
+.admin-status-search-input,
+.admin-status-search-select {
   padding: 0.5rem 1rem;
   border: 1px solid #ccc;
-  border-radius: 8px;
+  border-radius: 7px;
   font-size: 1rem;
   min-width: 180px;
 }
 
-.admin-search-input:focus,
-.admin-search-select:focus {
+.admin-status-search-input:focus,
+.admin-status-search-select:focus {
   outline: none;
   border-color: #ffa600;
   box-shadow: 0 0 6px rgba(255, 166, 0, 0.5);
+  width: 50%;
+  padding: 0.9rem 2rem;
 }
 
 /* Table Styling */
@@ -96,7 +107,7 @@
   width: 100%;
   border-collapse: collapse;
   background: #fff;
-  border-radius: 10px;
+  border-radius: 5px;
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }

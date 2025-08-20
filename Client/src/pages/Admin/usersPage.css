@@ -3,6 +3,8 @@
   border-collapse: collapse;
   margin-top: 1rem;
   border: 0.1px solid var(--border-light);
+  box-shadow: var(--shadow-light);
+
   /* border-radius: 5px; */
 }
 
@@ -22,6 +24,12 @@
 .admin-users-table th {
   background-color: #f0f0f0;
   font-weight: bold;
+  border: 2px solid #176bbe;
+  box-shadow: 0 0 1rem inset #176abe78;
+  font-weight: bolder;
+  font-size: 21px;
+  border-radius: 6px;
+  padding-right: 1rem;
 }
 
 .admin-users-table button {
@@ -40,11 +48,13 @@
   display: flex;
   align-items: center;
   gap: 1.2rem;
-  /* margin: 1rem 0; */
+  margin: 1rem 0;
   padding: 1.2rem;
   /* background: linear-gradient(135deg, #f9fbff, #eaf0f8); */
+  background-color: var(--secondary-color);
+  box-shadow: var(--shadow-light);
   border-radius: 0.2rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  /* box-shadow: var(--shadow-light); */
   font-family: "Vazirmatn", "IRANSans", sans-serif;
 
   .admin-search-input {
@@ -53,18 +63,20 @@
     padding: 0.85rem 1.4rem;
     font-size: 1rem;
     border-radius: 0.4rem;
-    background-color: #ffffff;
+    background-color: var(--background-light);
     box-shadow: 0 0 0 1px #d1d5db;
     transition: all 0.3s ease;
-    color: #333;
+    color: var(--text-light);
 
     &::placeholder {
-      color: #aaa;
+      color: var(--text-light);
     }
 
     &:focus {
-      box-shadow: 0 0 0 2px #6e9eff;
-      background-color: #fefefe;
+      box-shadow: 0 0 0 2px #2f58a9;
+      background-color: #d1c952e4;
+      color: var(--secondary-color);
+      font-size: medium;
     }
   }
   @media (max-width: 768px) {
@@ -80,8 +92,8 @@
   .admin-search-select {
     padding: 0.85rem 1.2rem;
     font-size: 0.95rem;
-    background-color: #ffffff;
-    color: #333;
+    background-color: var(--background-light);
+    color: var(--text-light);
     border-radius: 0.5rem;
     box-shadow: 0 0 0 1px #d1d5db;
     transition: all 0.3s ease;
@@ -94,10 +106,11 @@
 
     &:focus {
       box-shadow: 0 0 0 2px #6e9eff;
+      background-color: var(--background-light);
     }
 
     option {
-      color: #333;
+      color: var(--text-light);
     }
   }
 }
@@ -115,7 +128,7 @@
 }
 
 .admin-users-section-BG {
-  background-color: #cdcdcd;
+  background-color: #78727225;
   border-radius: 5px;
   padding: 1rem 0.5rem;
 }
@@ -258,7 +271,7 @@ h2 {
   margin-right: 0.5rem;
 }
 
-.print-button{
+.print-button {
   background: rgb(233, 230, 59);
 
   color: black;
