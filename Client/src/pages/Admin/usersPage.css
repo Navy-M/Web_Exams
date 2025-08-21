@@ -122,15 +122,22 @@
 }
 
 .user-results-section {
-  background: #b4b4b4;
+  background: #b4b4b43b;
+  box-shadow: var(--shadow-light);
   padding: 20px;
   border-radius: 8px;
 }
 
 .admin-users-section-BG {
-  background-color: #78727225;
+  background-color: #9c969621;
   border-radius: 5px;
   padding: 1rem 0.5rem;
+
+  h2{
+    color: rgb(0, 0, 147);
+    text-shadow: 1px 1px 1px var(--text-light), 0 0 1em var(--primary-color),
+    0 0 0.2em rgb(95, 95, 255);
+  }
 }
 /* @media (max-width: 768px) {
   .admin-users-section-BG {
@@ -175,6 +182,18 @@
   padding: 1.5rem;
   border-radius: 1rem;
   border: 1px solid #e0e0e0;
+}
+
+.user-profile-header-BG{
+  display: flex;
+  justify-content: space-between;
+
+  button{
+    margin-right: 2rem;
+    background-color: #165a16;
+    border-radius: 8px;
+    padding:0.2rem  1.5rem;
+  }
 }
 
 .user-profile-card h3 {

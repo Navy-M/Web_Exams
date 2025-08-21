@@ -52,6 +52,7 @@ export const loginUser = async (req, res, next) => {
       user: {
         id: user._id,
         email: user.email,
+        period: user.period,
         role: user.role,
         profile: user.profile,
         testsAssigned: user.testsAssigned,
@@ -69,7 +70,7 @@ export const loginUser = async (req, res, next) => {
  */
 export const registerUser = async (req, res, next) => {
   try {
-    const { fullName, email, password, role } = req.body;
+    const { fullName, period, email, password, role } = req.body;
     // console.log("[Register Attempt]", { email, role });
 
     // Validate input
@@ -89,6 +90,7 @@ export const registerUser = async (req, res, next) => {
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({
       email,
+      period,
       password: hashed,
       role,
       profile: { fullName: fullName },
@@ -100,6 +102,7 @@ export const registerUser = async (req, res, next) => {
       user: {
         email: user.email,
         role: user.role,
+        period,
         profile: {
           fullName: user.profile.fullName,
         },
@@ -158,6 +161,7 @@ export const getProfile = async (req, res) => {
     //   user: {
     //     id: user._id,
     //     email: user.email,
+    //     period: user.period,
     //     role: user.role,
     //     profile: user.profile || {},
     //     testsAssigned: user.testsAssigned || [],
@@ -169,6 +173,7 @@ export const getProfile = async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
+        period: user.period,
         role: user.role,
         profile: user.profile || {},
         testsAssigned: user.testsAssigned || [],

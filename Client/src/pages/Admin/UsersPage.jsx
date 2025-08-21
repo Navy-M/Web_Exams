@@ -26,6 +26,7 @@ const UsersPage = () => {
   const [showAddRow, setShowAddRow] = useState(false);
   const [newUser, setNewUser] = useState({
     fullName: '',
+    period: '',
     email: '',
     role: '',
     password: '',
@@ -432,8 +433,6 @@ const [searchFilter, setSearchFilter] = useState('');
     return format(new Date(dateString), 'd MMMM yyyy - HH:mm', {
       locale: faIR
     });
-
-    
   };
 
   const filteredUsers = users.filter(user => {
@@ -444,6 +443,8 @@ const [searchFilter, setSearchFilter] = useState('');
         return user.profile?.fullName?.toLowerCase().includes(query);
       case 'email':
         return user.email?.toLowerCase().includes(query);
+      case 'period':
+        return user.period?.toLowerCase().includes(query);
       case 'role':
         return user.role?.toLowerCase().includes(query);
       case 'job':
@@ -461,6 +462,24 @@ const [searchFilter, setSearchFilter] = useState('');
     }
   });
 
+  const findFilterName = (value) => {
+    switch (value) {
+      case "name":
+        return "نام";
+      case "period":
+        return "دوره";
+      case "email":
+        return "ایمیل";
+      case "job":
+        return "شماره دانشجویی";
+      case "role":
+        return "نقش";
+      case "province":
+        return "استان";
+      default:
+        return "";
+    }
+  }
 
   return (
     <div className="admin-users-container">
@@ -485,7 +504,10 @@ const [searchFilter, setSearchFilter] = useState('');
               </button>
             </div>
             <div className='user-profile-card'>
-              <h3>🧾 اطلاعات فردی</h3>
+              < div className="user-profile-header-BG" >
+                <h3>🧾 اطلاعات فردی</h3>
+                <button type="button"> {selectedUser.period? `دوره ${selectedUser.period}`: "دوره نامشخص"}</button>
+              </div>
               <ul>
                 <li><strong>📧 ایمیل:</strong> {selectedUser.email}</li>
                 <li><strong>🎂 سن:</strong> {selectedUser.profile.age}</li>
@@ -621,9 +643,9 @@ const [searchFilter, setSearchFilter] = useState('');
         </div>
       ) : (
         <section className="admin-users-section">
-          <h2>مدیریت کاربران</h2>
 
           <section className="admin-users-section-BG">
+          <h2>مدیریت کاربران</h2>
 
 
 
@@ -634,13 +656,6 @@ const [searchFilter, setSearchFilter] = useState('');
             ) : (
             <>
               <div className="admin-search-container">
-                <input 
-                  type="text" 
-                  placeholder="جستجو..." 
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)} 
-                  className="admin-search-input"
-                />
                 <select
                   value={searchFilter}
                   onChange={(e) => setSearchFilter(e.target.value)}
@@ -648,11 +663,20 @@ const [searchFilter, setSearchFilter] = useState('');
                 >
                   <option value="">فیلتر بر اساس همه</option>
                   <option value="name">نام</option>
+                  <option value="period">دوره</option>
                   <option value="email">ایمیل</option>
                   <option value="role">نقش</option>
                   <option value="job">شماره پرسنلی</option>
                   <option value="province">استان</option>
                 </select>
+                <input 
+                  type="text" 
+                  placeholder={`جستجو${searchFilter? "ی " + findFilterName(searchFilter) : ""} ... `} 
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)} 
+                  className="admin-search-input"
+                />
+                
               </div>
 
               <table className="admin-users-table">
@@ -699,6 +723,12 @@ const [searchFilter, setSearchFilter] = useState('');
                             placeholder="نام و نام خانوادگی"
                             value={newUser.fullName}
                             onChange={e => setNewUser({ ...newUser, fullName: e.target.value })}
+                          />
+                          <input
+                            type="text"
+                            placeholder="دوره"
+                            value={newUser.period}
+                            onChange={e => setNewUser({ ...newUser, period: e.target.value })}
                           />
                           <select
                             value={newUser.role}
