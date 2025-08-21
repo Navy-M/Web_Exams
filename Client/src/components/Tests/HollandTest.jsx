@@ -1,18 +1,18 @@
 import React, { useState, useRef } from "react";
-import { Holland_Test } from "../../services/dummyData";
 import "../../styles/halandTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import {useNavigate} from "react-router-dom";
 
 
-const HalandTest = () => {
+const HalandTest = ({questions}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
 
+  const Holland_Test = questions;
   const currentQuestion = Holland_Test[currentIndex];
 
   const handleSelect = async (choice) => {

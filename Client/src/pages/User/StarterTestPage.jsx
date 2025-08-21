@@ -1,8 +1,7 @@
 import React, {useEffect, useState} from 'react'
-import {  Ghq_Test, PersonalFavorites_Test, Test_Cards } from '../../services/dummyData';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
+import { Test_Cards } from '../../services/dummyData';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import {Disc_Test, Clifton_Test, Mbti_Test, Holland_Test, Gardner_Test} from '../../services/dummyData';
 import "../../styles/starterTestPage.css";
 import DiscTest from '../../components/Tests/DISCTest';
 import HollandTest from '../../components/Tests/HollandTest';
@@ -11,6 +10,7 @@ import MBTITest from '../../components/Tests/MBTITest';
 import CliftonTest from '../../components/Tests/CliftonTest';
 import GHQTest from '../../components/Tests/GHQTest';
 import PersonalFavoritesTest from '../../components/Tests/PersonalFavoritesTest';
+import {getTestQuestions} from "../../services/api"; // your axios setup
 
 const StarterTestPage = () => {
     const { user } = useAuth();
@@ -27,6 +27,12 @@ const StarterTestPage = () => {
 
     const handleStart = () => {
       // fetch_Questions(testId);  
+      // try {
+        
+      // } catch (error) {
+      //   console.error("fetch questions error: ", error);
+      // }
+
       setStarted(true);
     };
 
@@ -61,41 +67,21 @@ const StarterTestPage = () => {
         try {
           // Fill existing Test information
           const dummydata = Test_Cards;
+
           setAllTests(dummydata);
         
           const foundTest = Test_Cards.find(t => t.id === testId);
           setCurrentTest(foundTest);
           // console.log(currentTest.duration);
 
-          switch (foundTest.id) {
-            case "MBTI":
-              setQuestions(Mbti_Test);
-              break;
-            case "DISC":
-              setQuestions(Disc_Test);
-              break;
-            case "HOLLAND":
-              setQuestions(Holland_Test);
-              break;
-            case "CLIFTON":
-              setQuestions(Clifton_Test);
-              break;
-            case "GARDNER":
-              setQuestions(Gardner_Test);
-              break;
-            case "GHQ":
-              setQuestions(Ghq_Test);
-              break;
-            case "PERSONAL_FAVORITES":
-              setQuestions(PersonalFavorites_Test);
-              break;
-            default:
-              setQuestions([]);
-              break;
-          }
+          const qs = await getTestQuestions (foundTest.id);
+          // console.log("downloaded questions : ", qs.questions);
+          setQuestions(qs.questions);
+
+          
 
           // Fill user Tests Data
-          const completed  = user?.testsAssigned.private || [];
+          const completed  = user?.testsAssigned || [];
           setCompletedTests(completed );
           // console.log(testId);
 
@@ -147,13 +133,13 @@ const StarterTestPage = () => {
                   {/* <h2>{currentTest.name}</h2> */}
                   {/* <p>{JSON.stringify(questions)}</p> */}
 
-                  {testId === 'MBTI' && <MBTITest  />}
-                  {testId === 'DISC' && <DiscTest  />}
-                  {testId === 'HOLLAND' && <HollandTest  />}
-                  {testId === 'GARDNER' && <GardnerTest  />}
-                  {testId === 'CLIFTON' && <CliftonTest  />}
-                  {testId === 'GHQ' && <GHQTest/>}
-                  {testId === 'PERSONAL_FAVORITES' && <PersonalFavoritesTest/>}
+                  {testId === 'MBTI' && <MBTITest  questions={questions}/>}
+                  {testId === 'DISC' && <DiscTest  questions={questions}/>}
+                  {testId === 'HOLLAND' && <HollandTest questions={questions} />}
+                  {testId === 'GARDNER' && <GardnerTest questions={questions} />}
+                  {testId === 'CLIFTON' && <CliftonTest questions={questions} />}
+                  {testId === 'GHQ' && <GHQTest questions={questions}/>}
+                  {testId === 'PERSONAL_FAVORITES' && <PersonalFavoritesTest questions={questions}/>}
 
                   {/* <button className="submit-button" onClick={finishTest}>Submit Test</button> */}
                 </div>

@@ -1,18 +1,19 @@
 import { useState, useRef } from 'react';
 import '../../styles/test.css';
-import { Clifton_Test } from '../../services/dummyData';
 import { useAuth } from '../../context/AuthContext';
 import { submitResult } from '../../services/api';
 import {useNavigate} from "react-router-dom";
 
 
-const CliftonTest = () => {
+const CliftonTest = ({questions}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
 
+  const Clifton_Test = questions;
+  
   const currentQ = Clifton_Test[currentIndex];
 
   const handleSelect = async (theme) => {

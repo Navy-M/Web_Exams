@@ -1,16 +1,17 @@
 import { useState, useRef } from 'react';
 import '../../styles/test.css';
-import { Ghq_Test } from '../../services/dummyData';
 import { useAuth } from '../../context/AuthContext';
 import { submitResult } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 
-const GHQTest = () => {
+const GHQTest = ({questions}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
+
+  const Ghq_Test = questions;
 
   const handleSelect = (questionId, answer) => {
     setAnswers((prev) => ({ ...prev, [questionId]: parseInt(answer) })); // Ensure numeric value

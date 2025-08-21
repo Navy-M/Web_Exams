@@ -7,6 +7,7 @@ import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import testsRoutes from "./routes/testsRoutes.js"
 import userRoutes from "./routes/userRoutes.js";
 import resultsRoutes from "./routes/resultsRoutes.js";
 import errorHandler from "./middleware/errorMiddleware.js";
@@ -52,6 +53,7 @@ app.use(limiter);
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/tests", testsRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/results", resultsRoutes);
 

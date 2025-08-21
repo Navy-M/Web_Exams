@@ -298,7 +298,7 @@ export const analyzeResult = async (req, res) => {
       });
     }
 
-    console.log("🔍 analysis generated: ", analysis);
+    // console.log("🔍 analysis generated: ", analysis);
 
     // Update the result document
     try {

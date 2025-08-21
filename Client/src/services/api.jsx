@@ -1,5 +1,4 @@
 import axios from 'axios';
-import {Holland_Test } from './dummyData'
 
 // Create Axios instance
 const API = axios.create({
@@ -125,9 +124,13 @@ export const completeProfile = async (form) => {
   }
 };
 // --- TESTS API ---
-export const getTests = async () => ( Holland_Test);
-export const assignTest = async (testId, userIds, deadline) =>
-  (await API.post(`/tests/${testId}/assign`, { userIds, deadline })).data;
+export const getTestQuestions = async (testType) => {
+  const res = (await API.post("tests/getquestions", {testType})).data;
+  // console.log(res);
+  return res;
+}
+// export const assignTest = async (testId, userIds, deadline) =>
+//   (await API.post(`/tests/${testId}/assign`, { userIds, deadline })).data;
 
 // --- RESULTS API ---
 export const submitResult = async (resultData) => {

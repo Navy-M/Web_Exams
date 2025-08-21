@@ -1,16 +1,17 @@
 import { useState, useRef } from 'react';
 import '../../styles/test.css';
-import { PersonalFavorites_Test } from '../../services/dummyData';
 import { useAuth } from '../../context/AuthContext';
 import { submitResult } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 
-const PersonalFavoritesTest = () => {
+const PersonalFavoritesTest = ({questions}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
+
+  const PersonalFavorites_Test = questions;
 
   const handleSelect = (questionId, answer) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer })); // String values for multiple-choice

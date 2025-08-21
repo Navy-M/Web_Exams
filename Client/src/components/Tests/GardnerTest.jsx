@@ -1,18 +1,18 @@
 import React, { useState, useRef } from "react";
-import { Gardner_Test } from "../../services/dummyData";
 import "../../styles/GardnerTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import {useNavigate} from "react-router-dom";
 
 
-const GardnerTest = () => {
+const GardnerTest = ({questions}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
 
+  const Gardner_Test = questions;
   const currentQuestion = Gardner_Test[currentIndex];
 
   const scoreMap = {

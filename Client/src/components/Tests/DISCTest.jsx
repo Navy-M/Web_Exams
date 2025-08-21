@@ -1,17 +1,18 @@
 // components/DiscTest.jsx
 import React, { useState, useRef } from "react";
-import { Disc_Test } from "../../services/dummyData";
 import "../../styles/DiscTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from '../../services/api';
 import {useNavigate} from "react-router-dom";
 
-const DiscTest = () => {
+const DiscTest = ({questions}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
+
+  const Disc_Test = questions;
 
   const currentQuestion = Disc_Test[currentIndex];
 

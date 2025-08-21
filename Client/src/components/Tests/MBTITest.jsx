@@ -1,17 +1,19 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import '../../styles/test.css';
-import { Mbti_Test } from '../../services/dummyData';
 import { useAuth } from '../../context/AuthContext';
 import { submitResult } from '../../services/api';
 import {useNavigate} from "react-router-dom";
 
 
-const MBTITest = () => {
+const MBTITest = ({questions}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
+
+  
+  const Mbti_Test = questions;
 
   const handleSelect = (questionId, answer) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));

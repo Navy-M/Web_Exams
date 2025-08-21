@@ -4013,43 +4013,6 @@ export const PersonalFavorites_Test = [
   },
 ];
 
-// const testSchema = new mongoose.Schema({
-//   name: { type: String, required: true },
-//   description: String,
-//   difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
-//   category: String,
-//   image: String,
-//   timeLimit: Number, // in minutes
-//   questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
-//   recommended: { type: Boolean, default: false },
-//   isPublic: { type: Boolean, default: true },
-//   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-//   createdAt: { type: Date, default: Date.now },
-// });
-
-// export const users = [
-//   {
-//     _id: "683840d4d49ea8978f995e89",
-//     email: "cooci.ebrahimi@gmail.com",
-//     password: "$2b$10$V7Hidj7jAaD4MbozLXUVruHLan0okCYYAJ/qqYDSqHGuc9qVSyD8C",
-//     role: "admin",
-//     profile: {
-//       fullName: "Creator",
-//       age: 24,
-//       gender: "Male",
-//     },
-//     testsAssigned: [
-//       {
-//         testName: "MBTITest",
-//         completedAt: "2025-05-29T11:11:16.374+00:00",
-//         duraion: "0_min",
-
-//       }
-//     ],
-//     createdAt: "2025-05-29T11:11:16.374+00:00",
-//     updatedAt: "2025-05-29T11:11:16.374+00:00",
-//   },
-// ];
 
 export const jobRequirements = {
   "ناوبری و فرماندهی کشتی": {
