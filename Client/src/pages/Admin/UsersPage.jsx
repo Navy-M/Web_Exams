@@ -427,13 +427,13 @@ const [searchFilter, setSearchFilter] = useState('');
     }
   };
 
-  const formatDate = (dateString) => {
-    // console.log("dateString:", dateString );
-    
-    return format(new Date(dateString), 'd MMMM yyyy - HH:mm', {
-      locale: faIR
-    });
-  };
+ const formatDate = (time) =>  new Date(time).toLocaleDateString("fa-IR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   const filteredUsers = users.filter(user => {
     const query = search.toLowerCase();

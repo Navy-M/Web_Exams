@@ -6,6 +6,22 @@ import { useAuth } from "../../context/AuthContext";
 const TestResultCardGrid = ({ onSelectTest }) => {
   const { user } = useAuth();
 
+     const formatDate = (time) =>  new Date(time).toLocaleDateString("fa-IR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  // new Date(test.completedAt).toLocaleString("en-US", {
+  //                   year: "numeric",
+  //                   month: "long",
+  //                   day: "numeric",
+  //                   hour: "2-digit",
+  //                   minute: "2-digit",
+  //                 })
+
   return (
     <div className="test-card-grid">
       {user?.testsAssigned?.map((test) => {
@@ -20,13 +36,7 @@ const TestResultCardGrid = ({ onSelectTest }) => {
             <h3>{testCard?.name || "نوع ناشناخته"}</h3>
             <p>
               {test.completedAt
-                ? new Date(test.completedAt).toLocaleString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
+                ? formatDate(test.completedAt)
                 : "تاریخ نامشخص"}
             </p>
             <span className="tag">{testCard?.type || "بدون نوع"}</span>
