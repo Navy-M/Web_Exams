@@ -11,6 +11,8 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --sun-color: #f5f518;
+  --moon-color: #82f9ff;
   --userName-color: #eb7125;
   --primary-color: #2563eb;
   --secondary-color: #4f46e5;
@@ -25,6 +27,7 @@
 }
 
 [data-theme="dark"] {
+  --sun-color: var(--moon-color);
   --background-light: var(--background-dark);
   --text-light: var(--text-dark);
   --shadow-light: var(--shadow-dark);
