@@ -4,7 +4,9 @@ import { MongoClient, ServerApiVersion } from "mongodb";
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI;
+// const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = process.env.LOCAL_MONGO_URI;
+
 const DB_NAME = "web_exams"; // or whatever your db name is
 
 const seed = async () => {
@@ -26,7 +28,7 @@ const seed = async () => {
     const usersCollection = db.collection("users");
 
     const existingAdmin = await usersCollection.findOne({
-      email: "cooci.ebrahimi@gmail.com",
+      username: "cooci.ebrahimi@gmail.com",
     });
     if (existingAdmin) {
       console.log("⚠️ Admin already exists");
@@ -36,7 +38,7 @@ const seed = async () => {
     const hashedPassword = await bcrypt.hash("Developer123", 10);
 
     const adminUser = {
-      email: "cooci.ebrahimi@gmail.com",
+      username: "cooci.ebrahimi@gmail.com",
       password: hashedPassword,
       role: "admin",
       profile: {

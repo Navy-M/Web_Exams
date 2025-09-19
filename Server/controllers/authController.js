@@ -10,17 +10,17 @@ export const loginUser = async (req, res, next) => {
   // console.log("====== Controller loginUser function called ======");
 
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    // console.log("📧 Email:", email);
+    // console.log("📧 Username:", username);
     // console.log("🔒 Password:", password);
 
-    if (!email || !password) {
-      console.log("❌ Missing email or password");
-      return res.status(400).json({ message: "Email and password required" });
+    if (!username || !password) {
+      console.log("❌ Missing username or password");
+      return res.status(400).json({ message: "Username and password required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ username });
     if (!user) {
       console.log("❌ User not found");
       return res.status(401).json({ message: "Invalid credentials" });
@@ -46,12 +46,13 @@ export const loginUser = async (req, res, next) => {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    console.log(`✅ ${email} Loged in successfuly`);
+    console.log(`✅ ${user} Logged in successfully ✅`);
     return res.json({
       message: "Login successful",
+      token,
       user: {
         id: user._id,
-        email: user.email,
+        username: user.username,
         period: user.period,
         role: user.role,
         profile: user.profile,
@@ -70,43 +71,62 @@ export const loginUser = async (req, res, next) => {
  */
 export const registerUser = async (req, res, next) => {
   try {
-    const { fullName, period, email, password, role } = req.body;
-    // console.log("[Register Attempt]", { email, role });
+    const { username, fullName, period, password, role } = req.body;
+      console.log("username:", username);
+      console.log("password:", password);
+      console.log("fullName:", fullName);
+      console.log("period:", period);
+      console.log("role:", role);
 
     // Validate input
-    if (!email || !password) {
-      console.warn("[Register Error] Missing email or password");
-      return res.status(400).json({ message: "Email and password required" });
+    if (!username || !password || !fullName || !period) {
+      console.warn("[Register Error] Missing username or password");
+      return res.status(400).json({ message: "Username and password required" });
     }
 
     // Check if user already exists
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({ username });
     if (existing) {
-      console.warn("[Register Error] User already exists:", email);
+      console.warn("[Register Error] User already exists:", username);
       return res.status(400).json({ message: "User exists" });
     }
 
     // Hash password and create user
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({
-      email,
+      username,
       period,
       password: hashed,
-      role,
+      role: role || "user",
       profile: { fullName: fullName },
     });
 
-    console.log(" ✅ [Register Success] User created:", user.email);
+     const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+
+    console.log(" ✅ [Register Success] User created:", user.username);
     res.status(201).json({
       message: "User registered",
+      token,
       user: {
-        email: user.email,
+        username: user.username,
         role: user.role,
         period,
         profile: {
           fullName: user.profile.fullName,
         },
-        testsAssigned: user.testsAssigned,
+        testsAssigned: [],
       },
     });
   } catch (err) {
@@ -172,7 +192,7 @@ export const getProfile = async (req, res) => {
     res.json({
       user: {
         id: user._id,
-        email: user.email,
+        username: user.username,
         period: user.period,
         role: user.role,
         profile: user.profile || {},

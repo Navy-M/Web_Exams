@@ -2,10 +2,11 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    email: {
+    username: {
       type: String,
       required: true,
       unique: true,
+      trim: true
     },
     period: String,
     password: {
@@ -17,6 +18,12 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    // optional: keep email if needed later
+  email: {
+    type: String,
+    required: false, // not required anymore
+    unique: false,   // remove uniqueness if unused
+  },
     profile: {
       fullName: String,
       nationalId: String,

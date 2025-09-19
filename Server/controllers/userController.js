@@ -38,6 +38,7 @@ export const completeProfile = async (req, res) => {
       userId,
       fullName,
       nationalId,
+      username,
       age,
       fathersJob,
       gender,
@@ -52,14 +53,17 @@ export const completeProfile = async (req, res) => {
     } = req.body;
 
     // Basic validation
-    if (!userId || !fullName || !phone || !nationalId || !age) {
+    if (!userId || !fullName || !phone || !username || !nationalId || !age) {
       return res.status(400).json({
         message: "برخی از فیلدهای الزامی تکمیل نشده‌اند.",
       });
     }
 
+    const newUsername = username;
+    // console.log("Test Recieve email : ", newEmail);
+
     const info = {
-      userId,
+      // userId,
       fullName,
       nationalId,
       age,
@@ -79,7 +83,7 @@ export const completeProfile = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
-        $set: { profile: info },
+        $set: { username: newUsername, profile: info },
       },
       { new: true }
     ).select("-password");
@@ -87,7 +91,7 @@ export const completeProfile = async (req, res) => {
     return res.status(200).json({
       message: {
         status: "success",
-        text: " your profile information successfully submited. ",
+        text: " پروفایل با موفقیت تکمیل شد.",
       },
       userProfile: updatedUser.profile,
     });
@@ -106,7 +110,7 @@ export const getProfile = (req, res) => {
     return res.json({
       id: decoded.id,
       role: decoded.role,
-      email: decoded.email, // optional
+      username: decoded.username,
     });
   } catch {
     return res.status(401).json({ message: "Invalid token" });
