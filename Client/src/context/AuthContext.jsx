@@ -53,6 +53,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+    // SIGNUP
+  const signup = async (credentials) => {
+    try {
+      const response = await api.createUser(credentials);
+      const { token, user } = response;
+      console.log("Signup response:", response);
+
+      localStorage.setItem("token", token);
+      setUser(user);
+      setUserToken(token);
+      setError(null);
+
+      return user;
+    } catch (err) {
+      console.error(" خطا در ثبت نام:", err);
+      setError(err?.response?.data?.message || "خطا در ثبت نام");
+      throw err;
+    }
+  };
+
   const logout = async () => {
     try {
       await api.logout();
@@ -67,7 +87,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, logout, loading, error }}
+      value={{ user, login, signup, logout, loading, error }}
     >
       {children}
     </AuthContext.Provider>

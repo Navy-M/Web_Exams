@@ -9,11 +9,12 @@ const CompleteProfilePage = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
     userId: user.id,
-    fullName: user.profile.fullName,
+    fullName: user.profile?.fullName || "",
     nationalId: "",
+    username: user.username || "",
     age: "",
     fathersJob: "",
-    gender: "",
+    gender: "مرد",
     single: true,
     education: "",
     diplomaAverage: "",
@@ -66,7 +67,11 @@ const CompleteProfilePage = () => {
       <form className="profile-form" onSubmit={handleSubmit}>
         <div className="form-group">
           <label>نام و نام خانوادگی</label>
-          <input name="fullName" value={user.profile.fullName} onChange={handleChange} />
+          <input name="fullName" value={formData.fullName} onChange={handleChange} />
+        </div>
+        <div className="form-group">
+          <label>نام کاربری</label>
+          <input name="username" value={formData.username} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>کد ملی</label>
@@ -95,14 +100,13 @@ const CompleteProfilePage = () => {
         <div className="form-group">
           <label>جنسیت</label>
           <select name="gender" value={formData.gender} onChange={handleChange}>
-            <option value="" disabled>انتخاب کنید</option>
-            <option value="مرد">مرد</option>
+            <option value="مرد" >مرد</option>
             <option value="زن">زن</option>
             <option value="دیگر">دیگر</option>
           </select>
         </div>
           <div className="form-group">
-          <label>نوع دیپلم</label>
+          <label>میزان تحصیلات</label>
           <select name="education" value={formData.education} onChange={handleChange}>
             <option value="" disabled>انتخاب کنید</option>
             <option value="دیپلم">دیپلم</option>
@@ -114,14 +118,21 @@ const CompleteProfilePage = () => {
         </div>
         
         <div className="form-group">
-          <label>رشته تحصیلی</label>
+          <label>رشته تحصیلی در دوره دوم متوسطه</label>
           <select name="field" value={formData.field} onChange={handleChange}>
             <option value="" disabled>انتخاب کنید</option>
             <option value="ریاضی فیزیک">ریاضی فیزیک</option>
             <option value="علوم تجربی">علوم تجربی</option>
             <option value="انسانی">انسانی</option>
             <option value="دیگر">دیگر</option>
+            
           </select>
+            {formData.field === "دیگر" && 
+              <div className="form-group">
+                <label>رشته تحصیلی خود را اینجا وارد کنید</label>
+                <input type="text" name="field" id="field" />
+              </div>
+            }
         </div>
         <div className="form-group">
           <label>معدل دیپلم</label>

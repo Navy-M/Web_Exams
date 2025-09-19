@@ -1,240 +1,286 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { getTestResults } from '../../services/api';
-import TestCard from '../../components/User/TestCard';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import '../../styles/user-dashboard.css';
-import { useTheme } from '../../context/ThemeContext';
-import { Sun, Moon } from 'lucide-react';
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { Sun, Moon, LogOut, Award, ListChecks, Sparkles } from "lucide-react";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts';
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
 
-import TestResultCardGrid from '../../components/common/TestResultCardGrid';
-import { Test_Cards } from '../../services/dummyData';
-import ShowAnalysis from '../../components/common/ShowAnalysis';
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { getTestResults, getUserById } from "../../services/api";
+import { Test_Cards } from "../../services/dummyData";
+
+import TestCard from "../../components/User/TestCard";
+import TestResultCardGrid from "../../components/common/TestResultCardGrid";
+import ShowAnalysis from "../../components/common/ShowAnalysis";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+
+import "../../styles/user-dashboard.css";
 
 const UserDashboard = () => {
-  const { user, logout } = useAuth();
-  const [allTests, setAllTests] = useState([]);
-  const [completedTests, setCompletedTests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  const [selectedCompletedTest, setSelectedCompletedTest]= useState()
 
+  const [allTests, setAllTests] = useState(Test_Cards ?? []);
+  const [completed, setCompleted] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [selectedCompletedTest, setSelectedCompletedTest] = useState(null);
+
+  // ---- data fetching (fresh user every mount) ----
   useEffect(() => {
-    const fetchTests = async () => {
+    let ignore = false;
+
+    const run = async () => {
       try {
-        // Fill existing Test information
-        const data = Test_Cards;
-        setAllTests(data);
+        setLoading(true);
+        setError("");
 
-        // Fill user Tests Data
-        const userData = user?.testsAssigned || [];
-        // console.log(user);
-        
-        setCompletedTests(userData);
+        const fresh = user?.id
+    ? await getUserById(user.id).then((r) => r.data) // <= .data if your API returns {data}
+    : null;
 
-      } catch (err) {
-        setError('Failed to load tests. Please try again later.');
+        setAllTests(Test_Cards ?? []);
+        setCompleted(fresh?.testsAssigned ?? user?.testsAssigned ?? []);
+      } catch (e) {
+        // 404 or network → fallback to context data so UI keeps working
+        setAllTests(Test_Cards ?? []);
+        setCompleted(user?.testsAssigned ?? []);
+        setError(""); // hide error if you prefer silent fallback
       } finally {
         setLoading(false);
       }
     };
 
-    if (user?.id) fetchTests();
+    run();
+    return () => {
+      ignore = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const handleStartTest = (testId) => {
-    // console.log(testId);
-    navigate(`/users/starttest/${testId}`);
-    
-  }
-
-  const getTestStatus = (test) => {
-    // console.log("completedTests : " , completedTests);
-    if (completedTests.some(completed => completed.testType === test.id) ) return 'Completed';
-    if (new Date(test.deadline) < new Date()) return 'Expired';
-    return 'Pending';
-  };
-
+  // ---- helpers ----
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate("/login");
   };
 
-  const handleSelectCompletedResult = async (id) => {
+  const handleStartTest = useCallback(
+    (testId) => navigate(`/users/starttest/${testId}`),
+    [navigate]
+  );
+
+  const handleSelectCompletedResult = useCallback(async (id) => {
     try {
-        const _result = await getTestResults(id);
-        if (_result) {
-          console.log("Selected Result", _result);
-          setSelectedCompletedTest(_result.data);
+      const res = await getTestResults(id);
+      if (res?.data) setSelectedCompletedTest(res.data);
+    } catch (e) {
+      console.error("❌ Error Select Result:", e);
+    }
+  }, []);
 
-            
-        }
-      } catch (error) {
-        console.error("❌ Error Select Result:", error);
-      }
-  }
+  const getStatus = useCallback(
+    (test) => {
+      if (completed.some((c) => c.testType === test.id)) return "Completed";
+      if (test?.deadline && new Date(test.deadline) < new Date()) return "Expired";
+      return "Pending";
+    },
+    [completed]
+  );
 
- 
+  const scoreSummary = useMemo(() => {
+    const total = completed.reduce((acc, t) => acc + (t.score ?? 0), 0);
+    const doneCount = Math.min(completed.length, 7); // preserves your cap rule
+    return { total, doneCount, allCount: allTests.length };
+  }, [completed, allTests.length]);
+
+  const pendingTests = useMemo(
+    () => allTests.filter((t) => getStatus(t) === "Pending"),
+    [allTests, getStatus]
+  );
+
+  const scoreTrend = useMemo(
+    () =>
+      completed
+        .slice()
+        .filter((t) => typeof t.score === "number")
+        .sort(
+          (a, b) =>
+            new Date(a.completedAt ?? 0).getTime() -
+            new Date(b.completedAt ?? 0).getTime()
+        )
+        .map((t, idx) => ({
+          idx,
+          name: t.name ?? t.testType,
+          score: t.score ?? 0,
+        })),
+    [completed]
+  );
+
+  const hasProfile = !!user?.profile?.age && !!user?.profile?.gender && !!user?.profile?.education;
 
   return (
-    <div className="user-dashboard">
+    <div className="user-dashboard" dir="rtl" data-theme={isDark ? "dark" : "light"}>
       <header className="dashboard-header">
         <div className="header-top">
-          <button onClick={toggleTheme} className="theme-toggle">
+          <button
+            onClick={toggleTheme}
+            className="ui-btn outline"
+            aria-label={isDark ? "تغییر به حالت روشن" : "تغییر به حالت تیره"}
+          >
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            {isDark ? 'Light Mode' : 'Dark Mode'}
+            <span>{isDark ? "حالت روشن" : "حالت تیره"}</span>
           </button>
-          <button onClick={handleLogout} className="logout-button">Logout</button>
 
-
+          <button onClick={handleLogout} className="ui-btn danger" aria-label="خروج">
+            <LogOut size={18} />
+            <span>خروج</span>
+          </button>
         </div>
 
-
-        {user.profile?.age && user.profile?.gender ? 
-          <div className='User_Header_Info'>
+        {!user?.profile?.age || !user?.profile?.gender ? (
+          <div className="complete-user-profile card surface-warning">
+            <div className="cup-content">
+              <div className="cup-text">
+                <h3>ابتدا پروفایل را تکمیل کنید</h3>
+                <p>برای پیشنهاد دقیق تست‌ها، سن و جنسیت لازم است.</p>
+              </div>
+              <button
+                type="button"
+                className="ui-btn primary"
+                onClick={() => navigate("/users/completeProfile")}
+              >
+                تکمیل اطلاعات
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="User_Header_Info">
             <div className="stats">
-              <div className="stat-item">
-                <h3>{allTests.length}</h3>
-                <p>کل تست ها</p>
+              <div className="stat-item card">
+                <div className="stat-icon">
+                  <ListChecks size={18} />
+                </div>
+                <h3>{scoreSummary.allCount}</h3>
+                <p>کل تست‌ها</p>
               </div>
-              <div className="stat-item">
-                <h3>{completedTests.length < 7 ? completedTests?.length : "7"}</h3>
-                {/* <h3>{completedTests?.length}</h3>  ><><><><><><><><   FOR DEBUGING    ><><><><><><><>< */}
-                <p>انجام شده</p>
+
+              <div className="stat-item card">
+                <div className="stat-icon">
+                  <Sparkles size={18} />
+                </div>
+                <h3>{scoreSummary.doneCount}</h3>
+                <p>انجام‌شده</p>
               </div>
-              <div className="stat-item">
-                <h3>{completedTests?.reduce((acc, t) => acc + (t.score || 0), 0)}</h3>
+
+              <div className="stat-item card">
+                <div className="stat-icon">
+                  <Award size={18} />
+                </div>
+                <h3>{scoreSummary.total}</h3>
                 <p>مجموع امتیازات</p>
               </div>
-              <br/>
             </div>
-              <br/>
-              <hr/>
-              <hr/>
-              <h1 className="user-email">{user.email}  |  {user.profile.fullName}</h1>
-          </div>
-          : <div className='complete-user-profile'>
-           <p> لطفا ابتدا اطلاعات خود را تکمیل نمایید.</p>
-           <button type="submit" className="button-primary complete-user-profile-btn"  onClick={() => navigate("/users/completeProfile")}>تکمیل اطلاعات</button>
-          </div>
-        }
 
+            <h1 className="user-email">
+              {user?.username} <span className="sep">|</span> {user?.profile?.fullName}
+            </h1>
+          </div>
+        )}
       </header>
 
       {loading ? (
-        <LoadingSpinner />
+        <div className="skeleton-wrap">
+          <LoadingSpinner />
+          <div className="skeleton-row" />
+          <div className="skeleton-grid">
+            <div className="skeleton-card" />
+            <div className="skeleton-card" />
+            <div className="skeleton-card" />
+          </div>
+        </div>
       ) : error ? (
-        <p className="error-message">{error}</p>
+        <div className="error-state card">
+          <p>{error}</p>
+          <button className="ui-btn" onClick={() => window.location.reload()}>
+            تلاش مجدد
+          </button>
+        </div>
       ) : (
         <>
-          <br/>
-          {user.testsAssigned && user.testsAssigned.length > 6 && (
-            <h2>.تمام آزمایش‌ها انجام شد. لطفا منتظر پاسخ‌ها باشید</h2>
+          {!!user?.testsAssigned && user.testsAssigned.length > 6 && (
+            <div className="notice card">.تمام آزمایش‌ها انجام شد. لطفاً منتظر تحلیل‌ها باشید</div>
           )}
-          <br/>
-          { user.profile?.age && allTests.filter(t => getTestStatus(t) === 'Pending').length > 0 &&
+
+          {user?.profile?.age && pendingTests.length > 0 && (
             <section className="recommended-tests">
-              <h2>تست های پیشنهادی</h2>
-              <br/>
-              {/* {JSON.stringify(allTests.length)} */}
-              {/* <TestCardGrid onSelectTest={handleStartTest} /> */}
-              {allTests.filter(t => getTestStatus(t) === 'Pending').map(test => (
-                  <TestCard
-                    key={test.id}
-                    test={test}
-                    onStart={() => handleStartTest(test.id)}
-                  />
+              <div className="section-head">
+                <h2>تست‌های پیشنهادی</h2>
+                {/* <span className="hint">{pendingTests.length} مورد آماده شروع</span> */}
+              </div>
+
+              <div className="tests-grid">
+                {pendingTests.map((test) => (
+                  <TestCard key={test.id} test={test} onStart={() => handleStartTest(test.id)} />
                 ))}
+              </div>
             </section>
-          }
+          )}
 
-          {/* <br/> */}
-
-          {/* {completedTests.length > 0 && (
+          {scoreTrend.length > 0 && (
             <section className="score-graph">
-              <h2>Score Over Time</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={completedTests.map(t => ({
-                  name: t.name,
-                  score: t.score || 0,
-                }))}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="score" stroke="#2563eb" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
+              <h2>روند امتیازها</h2>
+              <div className="chart-card card">
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={scoreTrend}>
+                    <defs>
+                      <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="var(--primary-color)" />
+                        <stop offset="100%" stopColor="var(--secondary-color)" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--grid-stroke)" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="score" stroke="url(#line)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </section>
-          )} */}
+          )}
 
-          
-          <br/>
-          <hr/>
-          <br/>
-          
-            {user.profile?.age && user.profile?.gender && user.profile?.education &&
-              <>
-              <h2>تست های انجام شده</h2>
-              {completedTests?.length > 0 ?
+          {hasProfile && (
+            <section className="completed-tests">
+              <h2>تست‌های انجام‌شده</h2>
+
+              {completed.length > 0 ? (
                 <>
-                  <section className="active-tests">
+                  <div className="tests-grid">
+                    <TestResultCardGrid onSelectTest={handleSelectCompletedResult} />
+                  </div>
 
-                    <div className="tests-grid">
-                      <TestResultCardGrid onSelectTest={handleSelectCompletedResult} />
-
-                      {/* {completedTests.map(test => {
-                        <div key={test.id} className="test-card" onClick={() => onSelectTest(test.id)}>
-                        <h3>{test.name}</h3>
-                        <p>{test.description}</p>
-                        <span className="tag">{test.type}</span>
-                      </div>
-                      })} */}
+                  {selectedCompletedTest && (
+                    <div className="analysis-wrap card">
+                      <ShowAnalysis testType={selectedCompletedTest.testType} analysisData={selectedCompletedTest.analysis} />
                     </div>
-                  </section>
-                      
-                  {/* <section className="test-history">
-                    <h2>تاریخچه تست ها</h2>
-                    <table className="history-table">
-                      <thead>
-                        <tr>
-                          <th>نام تست</th>
-                          <th>تاریخ تکمیل</th>
-                          <th>مدت زمان</th>
-                          <th>امتیاز</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {completedTests.map(test => (
-                          test.isPublic && 
-                            <tr key={test.testType}>
-                              <td>{test.testType}</td>
-                              <td>{test.completedAt ? new Date(test.completedAt).toLocaleDateString() : '-'}</td>
-                              <td className={getTestStatus(test).toLowerCase()}>{test.duration} Sec</td>
-                              <td>{test.score || '--'}</td>
-                            </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </section> */}
-
-                  {
-                    selectedCompletedTest && 
-                      <ShowAnalysis testType={selectedCompletedTest.testType} analysisData={selectedCompletedTest.analysis}/>
-                  }
-
+                  )}
                 </>
-                : <> 
-                <p> جداول نتایج تست های شما پس از برسی در دسترس میباشد ...</p> </>
-              }
-              </>
-            }
+              ) : (
+                <div className="empty card">
+                  <p>جداول نتایج شما پس از بررسی در دسترس خواهد بود…</p>
+                </div>
+              )}
+            </section>
+          )}
         </>
       )}
     </div>
