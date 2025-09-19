@@ -1,9 +1,10 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
 import LoginPage from "./pages/Public/LoginPage";
+import SignupPage from "./pages/Public/SignupPage";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import UserDashboard from "./pages/User/Dashboard";
-import TestsPage from "./pages/Admin/TestsPage";
+import TestsPage from "./pages/Admin/AdminTestManager/TestsPage";
 import StarterTestPage from "./pages/User/StarterTestPage"
 import CompleteProfilePage from "./pages/User/CompleteProfilePage"
 
@@ -11,6 +12,7 @@ import CompleteProfilePage from "./pages/User/CompleteProfilePage"
 const App = () => (
   <Routes>
     <Route path="/login" element={<LoginPage />} />
+    <Route path="/signup" element={<SignupPage />} />
 
     {/* Admin routes */}
     <Route element={<ProtectedRoute role="admin" />}>
