@@ -71,9 +71,9 @@ export const checkServer = async () => {
 };
 
 // --- AUTH API ---
-export const createUser = async (userData) => (await API.post('/auth/register', userData)).data;
+export const createUser = async (credentials) => (await API.post('/auth/register', credentials)).data;
 export const login = async (credentials) => {
-  console.log('====== api login function called ======', credentials);
+  // console.log('====== api login function called ======', credentials);
   try {
     const res = await API.post('/auth/login', credentials);
     // Optional: Save token if sent in response body instead of cookie

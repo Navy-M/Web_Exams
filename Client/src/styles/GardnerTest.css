@@ -1,4 +1,4 @@
-/* components/GardnerTest.scss */
+/* components/GardnerTest.scss
 .gardner-test {
   max-width: 700px;
   margin: auto;
@@ -42,4 +42,32 @@
   margin-top: 20px;
   font-size: 0.9rem;
   color: #777;
+} */
+
+.gardner-test {
+  max-width: 630px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #f9fcff;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.gardner-test .progress-bar {
+  background: #3498db;
+}
+
+.gardner-test .timer-progress {
+  stroke: #3498db;
+}
+
+.gardner-test .option-button {
+  border: 2px solid #cce4f7;
+  background: #f4faff;
+}
+
+.gardner-test .option-button:hover {
+  background: #e3f4ff;
+  border-color: #3498db;
 }

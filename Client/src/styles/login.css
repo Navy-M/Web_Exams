@@ -62,3 +62,31 @@
   color: #dc3545;
   margin-bottom: 1rem;
 }
+
+.error-message {
+  background: #f8d7da;
+  color: #842029;
+  padding: 0.7rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.signup-text {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.signup-link {
+  color: #007BFF;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 0.3rem;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
+}

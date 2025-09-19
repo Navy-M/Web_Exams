@@ -35,3 +35,55 @@ body[data-theme='dark'] {
 .button-primary:hover {
   background-color: #0056b3; /* Darker shade for hover */
 }
+
+
+:root {
+  color-scheme: light dark;
+
+  /* brand */
+  --primary-color: #2563eb;
+  --secondary-color: #4f46e5;
+  --accent: #22c55e;
+
+  /* surfaces */
+  --bg: #ffffff;
+  --bg-elev: #f8fafc;
+  --bg-warning: #fff7ed;
+
+  /* text */
+  --text: #0f172a;
+  --muted: #64748b;
+
+  /* borders/shadows */
+  --border: #e2e8f0;
+  --grid-stroke: #e5e7eb;
+  --ring: rgba(37, 99, 235, 0.25);
+  --shadow: 0 6px 20px rgba(2, 6, 23, 0.06);
+
+  /* dark invert */
+  --dark-bg: #0b0f19;
+  --dark-elev: #0f172a;
+  --dark-warning: #1f2937;
+  --dark-text: #e5e7eb;
+  --dark-muted: #94a3b8;
+  --dark-border: #1f2937;
+  --dark-grid: #1f2837;
+  --dark-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
+
+  /* radii & misc */
+  --r: 14px;
+  --r-sm: 10px;
+  --gap: 1rem;
+  --speed: 220ms;
+}
+
+[data-theme="dark"] {
+  --bg: var(--dark-bg);
+  --bg-elev: var(--dark-elev);
+  --bg-warning: var(--dark-warning);
+  --text: var(--dark-text);
+  --muted: var(--dark-muted);
+  --border: var(--dark-border);
+  --grid-stroke: var(--dark-grid);
+  --shadow: var(--dark-shadow);
+}

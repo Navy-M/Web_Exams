@@ -1,5 +1,5 @@
 /* components/HalandTest.scss */
-.haland-test {
+/* .haland-test {
   max-width: 600px;
   margin: auto;
   padding: 32px;
@@ -40,4 +40,32 @@
   margin-top: 20px;
   font-size: 0.9rem;
   color: #777;
+} */
+
+.holland-test {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fffef9;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  text-align: center;
+}
+
+.holland-test .progress-bar {
+  background: #f1c40f;
+}
+
+.holland-test .timer-progress {
+  stroke: #f1c40f;
+}
+
+.holland-test .option-button {
+  border: 2px solid #f7e99d;
+  background: #fffbeb;
+}
+
+.holland-test .option-button:hover {
+  background: #fff5c2;
+  border-color: #f1c40f;
 }

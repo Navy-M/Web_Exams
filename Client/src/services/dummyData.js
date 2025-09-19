@@ -1,6 +1,7 @@
 export const Test_Cards = [
   {
     id: "DISC",
+    icon: "/icons/disc.png",
     name: "آزمون DISC",
     description: "شخصیت خود را از طریق مدل DISC بشناسید.",
     type: "personality",
@@ -12,6 +13,7 @@ export const Test_Cards = [
 
   {
     id: "HOLLAND",
+    icon: "/icons/holland.png",
     name: "آزمون هالند",
     description: "تیپ شغلی خود را با آزمون هالند شناسایی کنید.",
     type: "interest",
@@ -23,6 +25,7 @@ export const Test_Cards = [
 
   {
     id: "GARDNER",
+    icon: "/icons/gardner.png",
     name: "آزمون هوش‌های چندگانه گاردنر",
     description: "سطح هوش‌های مختلف خود را ارزیابی کنید.",
     type: "intelligence",
@@ -34,6 +37,7 @@ export const Test_Cards = [
 
   {
     id: "MBTI",
+    icon: "/icons/mbti.png",
     name: "آزمون MBTI",
     description: "با شاخص تیپ‌های مایرز-بریگز، تیپ شخصیتی خود را بشناسید.",
     type: "personality",
@@ -45,6 +49,7 @@ export const Test_Cards = [
 
   {
     id: "CLIFTON",
+    icon: "/icons/clifton.png",
     name: "آزمون نقاط قوت کلیفتون",
     description:
       "نقاط قوت غالب خود را با استفاده از ارزیابی کلیفتون شناسایی کنید.",
@@ -56,6 +61,7 @@ export const Test_Cards = [
   },
   {
     id: "GHQ",
+    icon: "/icons/ghq.png",
     name: "آزمون سلامت عمومی (GHQ)",
     description:
       "سلامت روان و عمومی خود را با پرسشنامه سلامت عمومی ارزیابی کنید.",
@@ -67,6 +73,7 @@ export const Test_Cards = [
   },
   {
     id: "PERSONAL_FAVORITES",
+    icon: "/icons/personal_favorites.png",
     name: "آزمون اولویت‌های شخصی",
     description: "علایق و اولویت‌های شخصی خود را شناسایی کنید.",
     type: "interest",

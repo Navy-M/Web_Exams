@@ -1,174 +1,204 @@
+/* ====== TOKENS (use your existing vars if present) ====== */
+:root {
+  --bg: var(--background-light, #ffffff);
+  --bg-elev: #f8fafc;
+  --text: var(--text-light, #0f172a);
+  --muted: #64748b;
+  --primary: var(--primary-color, #2563eb);
+  --secondary: var(--secondary-color, #4f46e5);
+  --danger: #ef4444;
+  --border: var(--border-light, #e2e8f0);
+  --ring: rgba(37, 99, 235, 0.28);
+  --shadow: 0 6px 20px rgba(2, 6, 23, 0.06);
+  --r: 14px;
+  --r-sm: 10px;
+}
+
+[data-theme="dark"] {
+  --bg: var(--background-dark, #0b0f19);
+  --bg-elev: #0f172a;
+  --text: var(--text-dark, #e5e7eb);
+  --muted: #94a3b8;
+  --border: var(--border-dark, #1f2937);
+  --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+/* ====== LAYOUT ====== */
 .admin-dashboard {
   display: flex;
   min-height: 100vh;
-
-  h1 {
-    color: var(--userName-color);
-    transition: all 0.3s ease;
-  }
+  background: var(--bg);
+  color: var(--text);
+  direction: ltr;
 }
 
 .admin-main {
   flex: 1;
-  margin-left: 200px;
-  padding: 2rem;
-  background: var(--background-light);
-  transition: margin-left 0.3s ease;
+  margin-left: 200px; /* room for AdminSidebar */
+  padding: 1.5rem;
+  background: var(--bg);
+  transition: margin-left .25s ease;
 }
 
-[data-theme="dark"] .admin-main {
-  background: var(--background-dark);
+@media (max-width: 1024px) {
+  .admin-main { margin-left: 160px; }
 }
-
 @media (max-width: 768px) {
-  .admin-dashboard {
-    flex-direction: column;
-  }
-
-  .admin-main {
-    margin-left: 70px;
-    margin-right: 0rem;
-    padding-right: 0rem;
-    padding-left: 0rem;
-    /* background: blueviolet; */
-    /* margin-right: 4rem; */
-  }
+  .admin-dashboard { flex-direction: column; }
+  .admin-main { margin-left: 70px; padding: 1rem; }
 }
 
-.admin-tests-section {
-  margin-top: 2rem;
-  direction: rtl;
+/* ====== HEADER ====== */
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
 
-  h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-  }
+.admin-greet {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--userName-color, #eb7125);
+}
 
-  .admin-tests-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--card-bg);
-    border-radius: 8px;
-    overflow: hidden;
-    direction: rtl;
+/* ====== UTILITIES ====== */
+.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
 
-    th,
-    td {
-      padding: 12px;
-      text-align: right;
-      border-bottom: 1px solid #eee;
-      color: var(--text-light);
-      direction: rtl;
-    }
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem .9rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+.ui-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(2,6,23,.1); }
+.ui-btn:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--ring); }
+.ui-btn.primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; border-color: transparent; }
+.ui-btn.danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+.ui-btn.outline { background: transparent; }
 
-    th {
-      background: var(--header-bg);
-      font-weight: bold;
-      direction: rtl;
-    }
+/* ====== CONTENT WRAPPER ====== */
+.admin-content { margin-top: .5rem; }
 
-    tr:hover {
-      background-color: rgba(0, 0, 0, 0.04);
-    }
-  }
+/* ====== TABLES (tests, users) ====== */
+.admin-tests-section { margin-top: 2rem; direction: rtl; }
+.admin-tests-section h2 { font-size: 1.2rem; margin-bottom: .75rem; }
+
+.admin-tests-section .admin-tests-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.admin-tests-section .admin-tests-table th,
+.admin-tests-section .admin-tests-table td {
+  padding: 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.admin-tests-section .admin-tests-table th {
+  background: rgba(37, 99, 235, .08);
+  font-weight: 700;
+}
+.admin-tests-section .admin-tests-table tr:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
 .admin-user-tests-section {
   width: 100%;
   border-collapse: collapse;
-  background: var(--card-bg);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   direction: rtl;
+  margin-top: 1.5rem;
+}
+.admin-user-tests-section h2 { margin-bottom: 1rem; }
+.admin-user-tests-section .admin-search-input { margin-bottom: 1rem; }
 
-  h2 {
-    margin-bottom: 1rem;
-  }
-
-  .admin-search-input {
-    margin-bottom: 2rem;
-  }
-
-  th,
-  td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-    color: var(--text-light);
-    background-color: var(--background-light);
-    direction: rtl;
-  }
-
-  th {
-    background: #ffd580;
-    font-weight: bold;
-    color: #333;
-  }
-
-  tr:hover {
-    background-color: rgba(0, 0, 0, 0.04);
-  }
+.admin-user-tests-section th,
+.admin-user-tests-section td {
+  padding: 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  background-color: var(--bg);
+}
+.admin-user-tests-section th {
+  background: #ffd580;
+  color: #333;
+  font-weight: 700;
+}
+.admin-user-tests-section tr:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
-/*  */
-/*  */
-
-/* Job Requirements Section */
+/* ====== JOB REQUIREMENTS ====== */
 .job-requirements-section {
-  background-color: #f7f8fa;
-  padding: 2rem;
+  background-color: var(--bg-elev);
+  padding: 1.5rem;
   border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow);
   margin-top: 2rem;
+  direction: rtl;
   font-family: "IRANSans", Tahoma, sans-serif;
 }
-
 .job-requirements-section h3 {
-  font-size: 1.6rem;
-  color: #333;
+  font-size: 1.3rem;
+  color: var(--text);
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
-/* Each Job Card */
 .job-requirements {
-  background-color: var(--background-light);
-  padding: 1rem 1.5rem;
+  background-color: var(--bg);
+  padding: 1rem 1.25rem;
   border-radius: 8px;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-light);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: transform .2s ease, box-shadow .2s ease;
 }
-
 .job-requirements:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 12px rgba(0,0,0,.1);
 }
-
 .job-requirements h4 {
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   color: #ffa600;
-  margin-bottom: 0.8rem;
+  margin-bottom: .5rem;
   border-bottom: 1px solid #ffd580;
-  padding-bottom: 0.3rem;
+  padding-bottom: .25rem;
 }
-
-/* Traits List */
 .job-requirements ul {
-  list-style-type: disc;
-  padding-left: 1.5rem;
+  list-style: disc;
+  padding-inline-start: 1.25rem;
   margin: 0;
-  color: var(--text-light);
+  color: var(--text);
   line-height: 1.6;
 }
+.job-requirements ul li { margin-bottom: .35rem; }
+.job-requirements hr { border: 0; border-top: 1px solid var(--border); margin: .9rem 0; }
 
-.job-requirements ul li {
-  margin-bottom: 0.4rem;
-}
-
-/* Horizontal line between jobs */
-.job-requirements hr {
-  border: 0;
-  border-top: 1px solid #eee;
-  margin: 1rem 0;
-}
+/* ====== RTL TWEAKS ====== */
+[dir="rtl"] .admin-header { direction: rtl; }
+[dir="rtl"] .admin-main { text-align: start; }
