@@ -1,35 +1,48 @@
 import { useState, useRef, useEffect } from 'react';
-import '../../styles/test.css';
+import '../../styles/mbtiTest.css';
+import "./shared.css";
 import { useAuth } from '../../context/AuthContext';
 import { submitResult } from '../../services/api';
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import TopbarStatus from './TopbarStatus';
 
-
-const MBTITest = ({questions}) => {
+const MBTITest = ({ questions, duration = 8 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [started, setStarted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
 
-  
   const Mbti_Test = questions;
+  const currentQuestion = Mbti_Test[currentIndex];
 
-  const handleSelect = (questionId, answer) => {
-    setAnswers(prev => ({ ...prev, [questionId]: answer }));
+  // Timer countdown
+  useEffect(() => {
+    if (!started) return;
+    if (timeLeft <= 0) {
+      handleSubmit();
+      return;
+    }
+    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft, started]);
 
-    // Delay to show selection before moving to next
+  const handleSelect = (questionId, value) => {
+    setAnswers(prev => ({ ...prev, [questionId]: value }));
+
     setTimeout(() => {
-      if (currentQuestion + 1 < Mbti_Test.length) {
-        setCurrentQuestion(currentQuestion + 1);
+      if (currentIndex + 1 < Mbti_Test.length) {
+        setCurrentIndex(currentIndex + 1);
       } else {
         handleSubmit();
       }
-    }, 200); // Optional delay
+    }, 200);
   };
 
   const handleSubmit = async () => {
-    // Convert answers object to array format for backend
     const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
       questionId,
       value
@@ -39,7 +52,7 @@ const MBTITest = ({questions}) => {
       user: user.id,
       testType: 'MBTI',
       answers: formattedAnswers,
-      score:  0,
+      score: 0,
       analysis: {},
       adminFeedback: '',
       startedAt: new Date(startTimeRef.current),
@@ -48,47 +61,61 @@ const MBTITest = ({questions}) => {
 
     try {
       const result = await submitResult(resultData);
-
       if (result?.user) {
-        console.log("MBTI Result saved:", result);
-        alert("آزمون MBTI تمام شد!");
+        alert("🎉 آزمون MBTI با موفقیت ثبت شد!");
         navigate("/");
       }
     } catch (err) {
-      console.error("Submission error:", err);
-      alert("خطا در ارسال نتایج آزمون");
+      console.error("MBTI submission error:", err);
+      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
     }
   };
 
+  const progressPercent = Math.round(((currentIndex + 1) / Mbti_Test.length) * 100);
+
   return (
-    <div className="test-container">
-      <h2>
-            تست MBTI - تست شخصیت شناسی مایرز بریگز
-        </h2>
-
-      {currentQuestion < Mbti_Test.length ? (
-        <div className="question-container">
-          <h3>{Mbti_Test[currentQuestion].text}</h3>
-
-          <div className="options-grid">
-            {Mbti_Test[currentQuestion].options.map((option, index) => (
-              <button
-                key={index}
-                className={`option-button ${
-                  answers[Mbti_Test[currentQuestion].id] === option.value ? 'selected' : ''
-                }`}
-                onClick={() => handleSelect(Mbti_Test[currentQuestion].id, option.value)}
-              >
-                {option.text}
-              </button>
-            ))}
-          </div>
-
-          <p>سوال {currentQuestion + 1} از {Mbti_Test.length}</p>
-
+    <div className="mbti-test">
+      {!started ? (
+        <div className="intro-box">
+          <h2>به آزمون MBTI خوش آمدید 🧩</h2>
+          <p>این آزمون کمک می‌کند تیپ شخصیتی خود را بهتر بشناسید.</p>
+          <h4>مدت زمان تقریبی پاسخ به هر سوال: {((duration / Mbti_Test.length) * 60).toFixed(0)} ثانیه</h4>
+          <button className="start-btn" onClick={() => setStarted(true)}>شروع آزمون</button>
         </div>
       ) : (
-        <p className="completion-message">در حال ارسال نتیجه...</p>
+        <div className="question-box">
+          <div className="top-bar">
+            <TopbarStatus
+              duration={duration}
+              started={started}
+              currentIndex={currentIndex}
+              totalQuestions={Mbti_Test.length}
+              handleSubmit={handleSubmit}
+            />
+          </div>
+
+
+          <div className="question-card">
+            <h3>{currentQuestion.text}</h3>
+            <div className="options-grid">
+              {currentQuestion.options.map((option, idx) => (
+                <button
+                  key={idx}
+                  className={`option-button ${
+                    answers[currentQuestion.id] === option.value ? 'selected' : ''
+                  }`}
+                  onClick={() => handleSelect(currentQuestion.id, option.value)}
+                >
+                  {option.text}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="progress-count">
+            سوال {currentIndex + 1} از {Mbti_Test.length}
+          </p>
+        </div>
       )}
     </div>
   );

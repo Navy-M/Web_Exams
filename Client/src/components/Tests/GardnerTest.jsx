@@ -1,16 +1,20 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "../../styles/GardnerTest.css";
+import "./shared.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import TopbarStatus from "./TopbarStatus";
 
-
-const GardnerTest = ({questions}) => {
+const GardnerTest = ({ questions, duration = 10 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [started, setStarted] = useState(false);
 
   const Gardner_Test = questions;
   const currentQuestion = Gardner_Test[currentIndex];
@@ -23,24 +27,37 @@ const GardnerTest = ({questions}) => {
     "خیلی زیاد": 5,
   };
 
-const handleSelect = async (choice) => {
-  const updatedAnswers = [
-    ...answers,
-    {
-      questionId: currentQuestion.id,
-      value: scoreMap[choice] || 0,
-    },
-  ];
-  setAnswers(updatedAnswers);
+  // Timer countdown
+  useEffect(() => {
+    if (!started) return;
+    if (timeLeft <= 0) {
+      handleSubmit();
+      return;
+    }
+    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft, started]);
 
-  if (currentIndex + 1 < Gardner_Test.length) {
-    setCurrentIndex(currentIndex + 1);
-  } else {
+  const handleSelect = (choice) => {
+    const updatedAnswers = [
+      ...answers,
+      { questionId: currentQuestion.id, value: scoreMap[choice] || 0 },
+    ];
+    setAnswers(updatedAnswers);
+
+    if (currentIndex + 1 < Gardner_Test.length) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      handleSubmit(updatedAnswers);
+    }
+  };
+
+  const handleSubmit = async (finalAnswers = answers) => {
     const resultData = {
       user: user.id,
       testType: "GARDNER",
-      answers: updatedAnswers,
-      score:  0,
+      answers: finalAnswers,
+      score: 0,
       analysis: {},
       adminFeedback: "",
       startedAt: new Date(startTimeRef.current),
@@ -50,44 +67,55 @@ const handleSelect = async (choice) => {
     try {
       const result = await submitResult(resultData);
       if (result?.user) {
-        console.log("GARDNER Result saved:", result);
-        alert("آزمون گاردنر با موفقیت ثبت شد!");
+        alert("🎉 آزمون گاردنر با موفقیت ثبت شد!");
         navigate("/");
+      } else {
+        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
       }
     } catch (err) {
-      console.error("Error submitting Gardner test result:", err);
-      alert("خطا در ثبت نتیجه آزمون گاردنر");
+      console.error(err);
+      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
     }
-  }
-};
+  };
 
-
-// useEffect(() => {
-//   const shuffled = [...Gardner_Test].sort(() => Math.random() - 0.5);
-//   setShuffledQuestions(shuffled);
-// }, []);
-
-
+  const progressPercent = Math.round(((currentIndex + 1) / Gardner_Test.length) * 100);
 
   return (
     <div className="gardner-test">
-      <div className="question-card">
-        <h2>{currentQuestion.text}</h2>
-        <div className="options">
-          {currentQuestion.options.map((option, idx) => (
-            <button
-              key={idx}
-              className="option-button"
-              onClick={() => handleSelect(option)}
-            >
-              {option.text}
-            </button>
-          ))}
+      {!started ? (
+        <div className="intro-box">
+          <h2>به آزمون هوش گاردنر خوش آمدید 🧠</h2>
+          <p>این آزمون به شما کمک می‌کند توانایی‌های مختلف خود را شناسایی کنید.</p>
+          <h4>مدت زمان تقریبی پاسخ‌گویی به هر سوال: {((duration / Gardner_Test.length) * 60).toFixed(0)} ثانیه</h4>
+          <button className="start-btn" onClick={() => setStarted(true)}>شروع آزمون</button>
         </div>
-        <p className="progress">
-          سؤال {currentIndex + 1} از {Gardner_Test.length}
-        </p>
-      </div>
+      ) : (
+        <div className="question-box">
+          <div className="top-bar">
+            <TopbarStatus
+              duration={duration}
+              started={started}
+              currentIndex={currentIndex}
+              totalQuestions={Gardner_Test.length}
+              handleSubmit={handleSubmit}
+            />
+          </div>
+
+          <h2 className="question-text">{currentQuestion.text}</h2>
+
+          <div className="options">
+            {currentQuestion.options.map((option, idx) => (
+              <button key={idx} className="option-button" onClick={() => handleSelect(option)}>
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <p className="progress-count">
+            سؤال {currentIndex + 1} از {Gardner_Test.length}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

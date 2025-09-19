@@ -1,25 +1,41 @@
-import { useState, useRef } from 'react';
-import '../../styles/test.css';
+import { useState, useRef, useEffect } from 'react';
+import '../../styles/personalfavoriteTest.css';
+import "./shared.css";
 import { useAuth } from '../../context/AuthContext';
 import { submitResult } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
+import TopbarStatus from './TopbarStatus';
 
-const PersonalFavoritesTest = ({questions}) => {
+const PersonalFavoritesTest = ({ questions, duration = 8 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [started, setStarted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
 
   const PersonalFavorites_Test = questions;
+  const currentQuestion = PersonalFavorites_Test[currentIndex];
 
-  const handleSelect = (questionId, answer) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: answer })); // String values for multiple-choice
+  // Timer countdown
+  useEffect(() => {
+    if (!started) return;
+    if (timeLeft <= 0) {
+      handleSubmit();
+      return;
+    }
+    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft, started]);
 
-    // Delay to show selection before moving to next
+  const handleSelect = (questionId, value) => {
+    setAnswers(prev => ({ ...prev, [questionId]: value }));
+
     setTimeout(() => {
-      if (currentQuestion + 1 < PersonalFavorites_Test.length) {
-        setCurrentQuestion(currentQuestion + 1);
+      if (currentIndex + 1 < PersonalFavorites_Test.length) {
+        setCurrentIndex(currentIndex + 1);
       } else {
         handleSubmit();
       }
@@ -27,7 +43,6 @@ const PersonalFavoritesTest = ({questions}) => {
   };
 
   const handleSubmit = async () => {
-    // Convert answers object to array format for backend
     const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
       questionId: parseInt(questionId),
       value,
@@ -37,8 +52,8 @@ const PersonalFavoritesTest = ({questions}) => {
       user: user.id,
       testType: 'PERSONAL_FAVORITES',
       answers: formattedAnswers,
-      score: 0, // Initial score, updated by backend if needed
-      analysis: {}, // Populated by backend analyzeResult
+      score: 0,
+      analysis: {},
       adminFeedback: '',
       startedAt: new Date(startTimeRef.current),
       submittedAt: new Date(),
@@ -47,41 +62,59 @@ const PersonalFavoritesTest = ({questions}) => {
     try {
       const result = await submitResult(resultData);
       if (result?.user) {
-        console.log('Personal Favorites Result saved:', result);
-        alert('آزمون اولویت‌های شخصی تمام شد!');
-        navigate('/');
+        alert("🎉 آزمون اولویت‌های شخصی با موفقیت ثبت شد!");
+        navigate("/");
       }
     } catch (err) {
       console.error('Submission error:', err);
-      alert('خطا در ارسال نتایج آزمون');
+      alert("⚠️ خطا در ارسال نتایج آزمون");
     }
   };
 
+  const progressPercent = Math.round(((currentIndex + 1) / PersonalFavorites_Test.length) * 100);
+
   return (
-    <div className="test-container">
-      <h2>آزمون اولویت‌های شخصی</h2>
-
-      {currentQuestion < PersonalFavorites_Test.length ? (
-        <div className="question-container">
-          <p>سوال {currentQuestion + 1} از {PersonalFavorites_Test.length}</p>
-          <h3>{PersonalFavorites_Test[currentQuestion].text}</h3>
-
-          <div className="options-grid">
-            {PersonalFavorites_Test[currentQuestion].options.map((option, index) => (
-              <button
-                key={index}
-                className={`option-button ${
-                  answers[PersonalFavorites_Test[currentQuestion].id] === option.value ? 'selected' : ''
-                }`}
-                onClick={() => handleSelect(PersonalFavorites_Test[currentQuestion].id, option.value)}
-              >
-                {option.text}
-              </button>
-            ))}
-          </div>
+    <div className="personal-favorites-test">
+      {!started ? (
+        <div className="intro-box">
+          <h2>به آزمون اولویت‌های شخصی خوش آمدید 🎯</h2>
+          <p>این آزمون کمک می‌کند تا اولویت‌ها و سلیقه‌های شخصی خود را بهتر بشناسید.</p>
+          <h4>مدت زمان تقریبی پاسخ به هر سوال: {((duration / PersonalFavorites_Test.length) * 60).toFixed(0)} ثانیه</h4>
+          <button className="start-btn" onClick={() => setStarted(true)}>شروع آزمون</button>
         </div>
       ) : (
-        <p className="completion-message">در حال ارسال نتیجه...</p>
+        <div className="question-box">
+          <div className="top-bar">
+            <TopbarStatus
+              duration={duration}
+              started={started}
+              currentIndex={currentIndex}
+              totalQuestions={PersonalFavorites_Test.length}
+              handleSubmit={handleSubmit}
+            />
+          </div>
+
+          <div className="question-card">
+            <h3>{currentQuestion.text}</h3>
+            <div className="options-grid">
+              {currentQuestion.options.map((option, idx) => (
+                <button
+                  key={idx}
+                  className={`option-button ${
+                    answers[currentQuestion.id] === option.value ? 'selected' : ''
+                  }`}
+                  onClick={() => handleSelect(currentQuestion.id, option.value)}
+                >
+                  {option.text}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="progress-count">
+            سوال {currentIndex + 1} از {PersonalFavorites_Test.length}
+          </p>
+        </div>
       )}
     </div>
   );

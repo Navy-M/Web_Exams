@@ -14,12 +14,13 @@ const TestCard = ({ test, onStart }) => {
 
   return (
     <div className="test-card">
+      {/* <img src={test.icon} alt={test.name}/> Testing perposes */}
       <h3>{test.name}</h3>
       <div className="test-meta">
         <span className="deadline">
           تاریخ اتمام: {formatDate(test.deadline)}
         </span>
-        <span className="duration">مدت آزمون: {test.duration?.from} دقیقه</span>
+        <span className="duration">مدت آزمون: {test.duration?.from} تا {test.duration?.to} دقیقه</span>
       </div>
       <div className="test-actions">
         <button 

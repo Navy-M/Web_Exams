@@ -1,25 +1,42 @@
-import { useState, useRef } from 'react';
-import '../../styles/test.css';
+import { useState, useRef, useEffect } from 'react';
+import '../../styles/GHQTest.css';
+import "./shared.css";
 import { useAuth } from '../../context/AuthContext';
 import { submitResult } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
+import TopbarStatus from './TopbarStatus';  
 
-const GHQTest = ({questions}) => {
+const GHQTest = ({ questions, duration = 8 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [started, setStarted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
 
   const Ghq_Test = questions;
+  const currentQuestion = Ghq_Test[currentIndex];
 
-  const handleSelect = (questionId, answer) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: parseInt(answer) })); // Ensure numeric value
+  // Timer countdown
+  useEffect(() => {
+    if (!started) return;
+    if (timeLeft <= 0) {
+      handleSubmit();
+      return;
+    }
+    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft, started]);
 
-    // Delay to show selection before moving to next
+  const handleSelect = (questionId, value) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: parseInt(value) }));
+
+    // Small delay for selection animation
     setTimeout(() => {
-      if (currentQuestion + 1 < Ghq_Test.length) {
-        setCurrentQuestion(currentQuestion + 1);
+      if (currentIndex + 1 < Ghq_Test.length) {
+        setCurrentIndex(currentIndex + 1);
       } else {
         handleSubmit();
       }
@@ -27,61 +44,82 @@ const GHQTest = ({questions}) => {
   };
 
   const handleSubmit = async () => {
-    // Convert answers object to array format for backend
     const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
       questionId: parseInt(questionId),
-      value,
+      value
     }));
 
     const resultData = {
       user: user.id,
       testType: 'GHQ',
       answers: formattedAnswers,
-      score: 0, // Initial score, updated by backend if needed
-      analysis: {}, // Populated by backend analyzeResult
+      score: 0,
+      analysis: {},
       adminFeedback: '',
       startedAt: new Date(startTimeRef.current),
-      submittedAt: new Date(),
+      submittedAt: new Date()
     };
 
     try {
       const result = await submitResult(resultData);
       if (result?.user) {
-        console.log('GHQ Result saved:', result);
-        alert('آزمون سلامت عمومی (GHQ) تمام شد!');
+        alert('🎉 آزمون سلامت عمومی (GHQ) با موفقیت ثبت شد!');
         navigate('/');
+      } else {
+        alert('❌ ذخیره‌سازی نتایج انجام نشد!');
       }
     } catch (err) {
-      console.error('Submission error:', err);
-      alert('خطا در ارسال نتایج آزمون');
+      console.error('GHQ submission error:', err);
+      alert('⚠️ ارسال نتایج با خطا مواجه شد.');
     }
   };
 
+  const progressPercent = Math.round(((currentIndex + 1) / Ghq_Test.length) * 100);
+
   return (
-    <div className="test-container">
-      {/* <h2>آزمون سلامت عمومی (GHQ)</h2> */}
-
-      {currentQuestion < Ghq_Test.length ? (
-        <div className="question-container">
-          <p>سوال {currentQuestion + 1} از {Ghq_Test.length}</p>
-          <h3>{Ghq_Test[currentQuestion].text}</h3>
-
-          <div className="options-grid">
-            {Ghq_Test[currentQuestion].options.map((option, index) => (
-              <button
-                key={index}
-                className={`option-button ${
-                  answers[Ghq_Test[currentQuestion].id] === option.value ? 'selected' : ''
-                }`}
-                onClick={() => handleSelect(Ghq_Test[currentQuestion].id, option.value)}
-              >
-                {option.text}
-              </button>
-            ))}
-          </div>
+    <div className="ghq-test">
+      {!started ? (
+        <div className="intro-box">
+          <h2>به آزمون سلامت عمومی (GHQ) خوش آمدید 🧠</h2>
+          <p>این آزمون کمک می‌کند سطح سلامت روانی خود را بسنجید.</p>
+          <h4>مدت زمان تقریبی پاسخ به هر سوال: {((duration / Ghq_Test.length) * 60).toFixed(0)} ثانیه</h4>
+          <button className="start-btn" onClick={() => setStarted(true)}>
+            شروع آزمون
+          </button>
         </div>
       ) : (
-        <p className="completion-message">در حال ارسال نتیجه...</p>
+        <div className="question-box">
+          <div className="top-bar">
+          <TopbarStatus
+              duration={duration}
+              started={started}
+              currentIndex={currentIndex}
+              totalQuestions={Ghq_Test.length}
+              handleSubmit={handleSubmit}
+            />
+          </div>
+
+          <div className="question-card">
+            <h3>{currentQuestion.text}</h3>
+            <div className="options-grid">
+              {currentQuestion.options.map((option, idx) => (
+                <button
+                  key={idx}
+                  className={`option-button ${
+                    answers[currentQuestion.id] === option.value ? 'selected' : ''
+                  }`}
+                  onClick={() => handleSelect(currentQuestion.id, option.value)}
+                >
+                  {option.text}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="progress-count">
+            سؤال {currentIndex + 1} از {Ghq_Test.length}
+          </p>
+        </div>
       )}
     </div>
   );
