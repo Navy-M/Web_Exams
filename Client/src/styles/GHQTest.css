@@ -1,0 +1,27 @@
+.ghq-test {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fffafa;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.ghq-test .progress-bar {
+  background: #e74c3c;
+}
+
+.ghq-test .timer-progress {
+  stroke: #e74c3c;
+}
+
+.ghq-test .option-button {
+  border: 2px solid #f6c9c9;
+  background: #fff5f5;
+}
+
+.ghq-test .option-button:hover {
+  background: #ffe4e4;
+  border-color: #e74c3c;
+}
