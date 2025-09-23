@@ -72,7 +72,7 @@ const StarterTestPage = () => {
 
           <div className="button-container">
             <button className="back-button" onClick={handleBackDash}><FaArrowLeft/> بازگشت</button>
-            <button className="start-button" onClick={handleStart}>حاظرم</button>
+            <button className="start-button" onClick={handleStart}>شروع</button>
           </div>
         </div>
       ) : (

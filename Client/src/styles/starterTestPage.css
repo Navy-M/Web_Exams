@@ -111,12 +111,14 @@ body[data-theme="light"] {
       }
 
       .start-button {
-        background: linear-gradient(
+        /* background: linear-gradient(
           135deg,
           var(--accent),
-          lighten(var(--accent), 20%)
-        );
-        color: #fff;
+          lighten(var(--accent), 50%)
+        ); */
+        background: var(--accent);
+        color: var(--text);
+
 
         &:hover {
           transform: translateY(-3px);
@@ -125,7 +127,7 @@ body[data-theme="light"] {
       }
 
       .back-button {
-        background: #bdc3c7;
+        background: #b9c4ca90;
         color: var(--text);
         &:hover {
           background: #95a5a6;
