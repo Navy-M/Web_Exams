@@ -1,73 +1,139 @@
-/* components/GardnerTest.scss
+/* تم آبی گاردنر */
+:root {
+  --accent: #3498db;
+  --accent-weak: #cce4f7;
+  --accent-hover: #e3f4ff;
+}
+
+/* ظرف اصلی */
 .gardner-test {
-  max-width: 700px;
-  margin: auto;
-  padding: 32px;
-  background: #fff;
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: var(--bg);
   border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  direction: rtl;
-  text-align: right;
-  font-family: "Vazirmatn", sans-serif;
+  box-shadow: var(--shadow);
+  color: var(--text);
 }
 
-.question-card h2 {
-  font-size: 1.2rem;
-  margin-bottom: 24px;
+/* اینترو */
+.gardner-test .intro-box {
+  text-align: center;
+  background: var(--card);
+  padding: 2rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
 }
 
-.options {
+.start-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
+  box-shadow: 0 6px 16px rgba(52,152,219,.25);
+}
+.start-btn:hover { background: #2f89c5; transform: translateY(-1px); }
+.start-btn:active { transform: translateY(0); }
+
+.question-box { margin-top: 0.5rem; }
+
+/* نوار وضعیت بالا (سازگار با TopbarStatus) */
+.status-wrap { position: sticky; top: 12px; z-index: 10; margin-bottom: 1rem; }
+.status-inner {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  align-items: center;
+  gap: 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,.05);
 }
+
+/* تایمر دایره‌ای */
+.timer-wrap { display: flex; align-items: center; gap: .9rem; min-width: 0; }
+.timer-circle {
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 6px solid var(--accent);
+  background: var(--bg);
+  display: grid; place-items: center; font-weight: 700;
+}
+.timer-text { font-variant-numeric: tabular-nums; }
+.counter { display: flex; align-items: baseline; gap: .4rem; color: var(--muted); }
+.counter strong { color: var(--text); font-size: 1.25rem; }
+.counter .sep { opacity: .6; }
+
+/* پیشرفت */
+.progress-wrap { display: flex; flex-direction: column; gap: .5rem; flex: 1; }
+.progress-bar {
+  width: 100%; height: 12px; background: #f3f4f6;
+  border-radius: 999px; overflow: hidden; border: 1px solid var(--border);
+}
+.progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width .25s ease; }
+.progress-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  color: var(--muted); font-size: .9rem;
+}
+.finish-btn {
+  background: transparent; color: var(--text);
+  border: 1px solid var(--border); padding: 6px 12px;
+  border-radius: 10px; cursor: pointer; min-width: 5rem;
+}
+.finish-btn:hover { border-color: var(--text); }
+
+/* کارت سؤال و گزینه‌ها */
+.question-card {
+  margin-top: .25rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+.question-text {
+  text-align: center;
+  font-weight: 700;
+  margin: 1rem 0 2rem;
+}
+
+/* گزینه‌ها */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+  margin-top: 1rem;
+}
+@media (max-width: 560px) { .options-grid { grid-template-columns: 1fr; } }
 
 .option-button {
-  flex: 1;
-  padding: 12px 16px;
-  min-width: 100px;
-  border: none;
-  border-radius: 8px;
-  background: #f0f0f0;
+  border: 2px solid var(--accent-weak);
+  background: var(--card);
+  color: var(--text);
+  padding: .9rem 1rem;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background 0.3s;
-  font-size: 0.95rem;
-}
-
-.option-button:hover {
-  background: #dcdcdc;
-}
-
-.progress {
-  margin-top: 20px;
-  font-size: 0.9rem;
-  color: #777;
-} */
-
-.gardner-test {
-  max-width: 630px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background: #f9fcff;
-  border-radius: 16px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
   text-align: center;
+  transition: background .2s ease, border-color .2s ease, transform .08s ease;
 }
-
-.gardner-test .progress-bar {
-  background: #3498db;
+.option-button:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent);
 }
-
-.gardner-test .timer-progress {
-  stroke: #3498db;
+.option-button.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(52,152,219,.18) inset;
 }
+.option-button:active { transform: translateY(1px); }
+.option-button:focus-visible { outline: 3px solid rgba(52,152,219,.35); outline-offset: 2px; }
 
-.gardner-test .option-button {
-  border: 2px solid #cce4f7;
-  background: #f4faff;
-}
+.progress-count { text-align: center; color: var(--muted); margin-top: .75rem; }
 
-.gardner-test .option-button:hover {
-  background: #e3f4ff;
-  border-color: #3498db;
+/* موبایل: نوار پیشرفت زیر تایمر */
+@media (max-width: 640px) {
+  .status-inner { flex-direction: column; align-items: stretch; }
+  .timer-wrap { justify-content: space-between; }
 }

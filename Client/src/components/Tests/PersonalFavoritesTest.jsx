@@ -1,157 +1,62 @@
-// components/PersonalFavoritesTest.jsx
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import "../../styles/personalfavoriteTest.css";
 import "./shared.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import TopbarStatus from "./TopbarStatus";
-import { setItemWithExpiry, getItemWithExpiry, removeItem } from "../../services/storage";
 
-/**
- * Props:
- * - questions: array of question objects (id, text, trait, direction, options)
- *   For Likert questions options should have .value numeric 1..5
- * - duration: minutes for whole test
- */
-const STORAGE_KEY = "pf_test_progress_v1";
-const DONE_KEY = "pf_test_done_v1";
+function formatTime(sec) {
+  const m = Math.floor(sec / 60).toString().padStart(2, "0");
+  const s = Math.floor(sec % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
 
-const PersonalFavoritesTest = ({ questions = [], duration = 8 }) => {
-  const { user } = useAuth();
+export default function PersonalFavoritesTest({ questions = [], duration = 8 }) {
+  const { user } = useAuth() || {};
   const navigate = useNavigate();
+  const startTimeRef = useRef(Date.now());
 
-  // state
-  const [started, setStarted] = useState(false);
+  const PF_Test = useMemo(() => (Array.isArray(questions) ? questions : []), [questions]);
+  const total = PF_Test.length;
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({}); // { questionId: value }
-  const [timeLeft, setTimeLeft] = useState(duration * 60); // seconds
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const autosaveRef = useRef(null);
-  const mountedRef = useRef(true);
+  const [answers, setAnswers] = useState({}); // { [questionId]: value }
+  const [started, setStarted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
 
-  // derived
-  const totalQuestions = questions.length;
-  const progressPercent = Math.round(((Object.keys(answers).length) / Math.max(1, totalQuestions)) * 100);
+  const currentQuestion = PF_Test[currentIndex];
+  const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
-  // resume logic
+  // timer (whole test)
   useEffect(() => {
-    mountedRef.current = true;
-    const done = getItemWithExpiry(DONE_KEY);
-    if (done) {
-      alert("شما قبلاً این آزمون را انجام داده‌اید.");
-      navigate("/");
+    if (!started) return;
+    if (timeLeft <= 0) {
+      handleSubmit();
       return;
     }
-
-    const saved = getItemWithExpiry(STORAGE_KEY);
-    if (saved && saved.questionsHash === totalQuestions) {
-      const resume = window.confirm("پیش‌نویس آزمون پیدا شد. آیا می‌خواهید ادامه دهید؟");
-      if (resume) {
-        setAnswers(saved.answers || {});
-        setCurrentIndex(saved.currentIndex || 0);
-        setTimeLeft(saved.timeLeft ?? duration * 60);
-        setStarted(saved.started || false);
-      } else {
-        removeItem(STORAGE_KEY);
-      }
-    }
-
-    return () => { mountedRef.current = false; clearInterval(autosaveRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalQuestions]);
-
-  // overall timer
-  useEffect(() => {
-    if (!started) return;
-    const t = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(t);
-          handleSubmit(); // time up -> submit
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started]);
+  }, [started, timeLeft]);
 
-  // autosave every 2 seconds (debounced)
-  useEffect(() => {
-    if (!started) return;
-    if (autosaveRef.current) clearTimeout(autosaveRef.current);
-    autosaveRef.current = setTimeout(() => {
-      setItemWithExpiry(STORAGE_KEY, {
-        answers,
-        currentIndex,
-        timeLeft,
-        started,
-        savedAt: Date.now(),
-        questionsHash: totalQuestions,
-      }, 1000 * 60 * 60 * 6); // 6 hours
-    }, 1200);
+  const handleSelect = useCallback(
+    (questionId, value) => {
+      const numeric = Number.isFinite(Number(value)) ? Number(value) : parseInt(value, 10) || 0;
+      setAnswers((prev) => ({ ...prev, [questionId]: numeric }));
 
-    return () => clearTimeout(autosaveRef.current);
-  }, [answers, currentIndex, started, timeLeft, totalQuestions]);
+      setTimeout(() => {
+        if (currentIndex + 1 < total) setCurrentIndex((i) => i + 1);
+        else handleSubmit();
+      }, 180);
+    },
+    [currentIndex, total]
+  );
 
-  // keyboard nav: 1..5 select, arrows navigate
-  useEffect(() => {
-    const onKey = (e) => {
-      if (!started) return;
-      const key = e.key;
-      if (/^[1-9]$/.test(key)) {
-        const idx = Number(key) - 1;
-        const opts = questions[currentIndex]?.options || [];
-        if (opts[idx]) {
-          handleSelect(questions[currentIndex].id, opts[idx].value);
-        }
-      }
-      if (key === "ArrowRight") {
-        setCurrentIndex((i) => Math.min(totalQuestions - 1, i + 1));
-      }
-      if (key === "ArrowLeft") {
-        setCurrentIndex((i) => Math.max(0, i - 1));
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started, currentIndex, questions]);
-
-  // helpers
-  const formatTime = (s) => {
-    const m = Math.floor(s / 60).toString().padStart(2, "0");
-    const sec = Math.floor(s % 60).toString().padStart(2, "0");
-    return `${m}:${sec}`;
-  };
-
-  const handleSelect = useCallback((questionId, value) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
-    // small delay then advance
-    setTimeout(() => {
-      setCurrentIndex((i) => Math.min(totalQuestions - 1, i + 1));
-    }, 200);
-  }, [totalQuestions]);
-
-  const handleSubmit = useCallback(async (skipConfirm = false) => {
-    if (submitting) return;
-    // require confirmation if not enough answers
-    const answeredCount = Object.keys(answers).length;
-    if (!skipConfirm && answeredCount < totalQuestions) {
-      const ok = window.confirm(`شما ${answeredCount} از ${totalQuestions} سوال را پاسخ داده‌اید. آیا می‌خواهید در همین حالت ارسال کنید؟`);
-      if (!ok) return;
-    }
-
-    setSubmitting(true);
-    setError("");
-
-    // transform to array of { questionId, value }
-    const formattedAnswers = questions.map(q => ({
-      questionId: q.id,
-      value: answers[q.id] ?? null
+  const handleSubmit = useCallback(async () => {
+    const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
+      questionId: isNaN(Number(questionId)) ? questionId : Number(questionId),
+      value,
     }));
 
     const resultData = {
@@ -161,139 +66,97 @@ const PersonalFavoritesTest = ({ questions = [], duration = 8 }) => {
       score: 0,
       analysis: {},
       adminFeedback: "",
-      startedAt: new Date(Date.now() - (duration * 60 - timeLeft) * 1000),
+      startedAt: new Date(startTimeRef.current),
       submittedAt: new Date(),
     };
 
     try {
       const res = await submitResult(resultData);
-      // handle response shape flexibly
-      if (res && (res.user || res._id || res.id)) {
-        // mark done for 5 hours
-        setItemWithExpiry(DONE_KEY, true, 5 * 60 * 60 * 1000);
-        removeItem(STORAGE_KEY);
+      if (res?.user || res?._id || res?.id) {
         alert("🎉 آزمون با موفقیت ثبت شد!");
         navigate("/");
+        location.reload();
+
       } else {
-        setError("ارسال موفق نبود — لطفاً دوباره تلاش کنید.");
+        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
       }
     } catch (err) {
-      console.error("submit error:", err);
-      setError("خطا در ارسال نتایج — اتصال اینترنت را بررسی کنید.");
-    } finally {
-      if (mountedRef.current) setSubmitting(false);
+      console.error("PF submission error:", err);
+      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [answers, duration, questions, timeLeft, submitting, totalQuestions, user]);
+  }, [answers, navigate, user?.id, user?._id]);
 
-  // start function
-  const handleStart = () => {
-    setStarted(true);
-    setCurrentIndex(0);
-    setTimeLeft(duration * 60);
-  };
-
-  // UI pieces
-  const currentQuestion = questions[currentIndex];
+  if (!total) {
+    return (
+      <div className="pf-test">
+        <div className="intro-box">
+          <h2>آزمون اولویت‌های شخصی</h2>
+          <p>سوالی برای نمایش وجود ندارد.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="pf-test-container" dir="rtl" aria-live="polite">
+    <div className="pf-test" role="main" aria-live="polite">
       {!started ? (
-        <div className="pf-intro card">
-          <h2>آزمون اولویت‌های شخصی 🎯</h2>
+        <div className="intro-box">
           <p>این آزمون به شما کمک می‌کند اولویت‌ها و علایق روزمره‌تان را شناسایی کنید.</p>
-
-          <div className="pf-meta">
-            <div>تعداد سوال: <strong>{totalQuestions}</strong></div>
-            <div>حدود زمان: <strong>{duration} دقیقه</strong></div>
-            <div>تایمر: <strong>{formatTime(duration * 60)}</strong></div>
-          </div>
-
-          <div className="pf-actions">
-            <button className="btn primary" onClick={handleStart}>شروع آزمون</button>
-            <button className="btn outline" onClick={() => navigate("/")}>بازگشت</button>
-          </div>
+          <h2>🎯</h2>
+          <h4>
+            میانگین برای هر سؤال:{" "}
+            {Math.max(5, Math.round((duration * 60) / total))} ثانیه
+          </h4>
+          <button
+            className="start-btn"
+            onClick={() => {
+              setStarted(true);
+              startTimeRef.current = Date.now();
+              setTimeLeft(duration * 60);
+            }}
+          >
+            شروع آزمون
+          </button>
         </div>
       ) : (
-        <div className="pf-body card">
-          <div className="pf-topbar">
+        <div className="question-box">
+          <div className="top-bar">
             <TopbarStatus
-              duration={duration}
-              started={started}
-              currentIndex={currentIndex}
-              totalQuestions={totalQuestions}
-              handleSubmit={() => handleSubmit(true)}
-              overallRemaining={timeLeft}
+              timeLeft={timeLeft}
+              timeText={formatTime(timeLeft)}
               progressPercent={progressPercent}
+              currentIndex={currentIndex}
+              totalQuestions={total}
+              onSubmit={handleSubmit}
             />
           </div>
 
-          {error && <div className="pf-error">{error}</div>}
+          <div className="question-card" key={currentQuestion?.id ?? currentIndex}>
+            <h3 className="question-text">{currentQuestion?.text ?? "سؤال"}</h3>
 
-          <section className="pf-question-card">
-            <div className="pf-question-header">
-              <h3 className="pf-question-text">{currentQuestion?.text || "سوال نامشخص"}</h3>
-              <div className="pf-timer">زمان باقیمانده: <strong>{formatTime(timeLeft)}</strong></div>
-            </div>
-
-            <div className="pf-progress">
-              <div className="pf-progress-bar">
-                <div className="pf-progress-inner" style={{ width: `${progressPercent}%` }} />
-              </div>
-              <div className="pf-progress-label">پاسخ داده شده: {Object.keys(answers).length}/{totalQuestions}</div>
-            </div>
-
-            <div className="pf-options-grid" role="radiogroup" aria-label={`گزینه‌های سوال ${currentIndex + 1}`}>
-              {/* Likert 1..5 left-to-right visually but whole UI is RTL; we display 1 (کاملاً مخالفم) on left */}
-              {currentQuestion?.options?.map((opt, idx) => {
-                const selected = answers[currentQuestion.id] === opt.value;
+            <div className="options-grid" role="listbox" aria-label="گزینه‌ها">
+              {(currentQuestion?.options || []).map((opt, idx) => {
+                const qid = currentQuestion?.id ?? `q_${currentIndex}`;
+                const chosen = answers[qid] === (Number.isFinite(Number(opt.value)) ? Number(opt.value) : parseInt(opt.value, 10));
                 return (
                   <button
                     key={String(opt.value) + idx}
-                    role="radio"
-                    aria-checked={selected}
-                    className={`pf-option ${selected ? "selected" : ""}`}
-                    onClick={() => handleSelect(currentQuestion.id, opt.value)}
-                    disabled={submitting}
+                    type="button"
+                    className={`option-button ${chosen ? "selected" : ""}`}
+                    onClick={() => handleSelect(qid, opt.value)}
+                    aria-pressed={chosen}
                     title={`کلید ${idx + 1}`}
                   >
-                    <span className="pf-option-value">{opt.value}</span>
-                    <span className="pf-option-text">{opt.text}</span>
+                    {opt?.text ?? String(opt?.value)}
                   </button>
                 );
               })}
             </div>
+          </div>
 
-            <div className="pf-nav">
-              <button
-                className="btn outline"
-                onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
-                disabled={currentIndex === 0}
-              >
-                ← قبلی
-              </button>
-
-              <button
-                className="btn outline"
-                onClick={() => setCurrentIndex(i => Math.min(totalQuestions - 1, i + 1))}
-                disabled={currentIndex + 1 >= totalQuestions}
-              >
-                بعدی →
-              </button>
-
-              <button
-                className="btn primary"
-                onClick={() => handleSubmit(false)}
-                disabled={submitting}
-              >
-                {submitting ? "در حال ارسال..." : "ارسال نهایی"}
-              </button>
-            </div>
-          </section>
+          <p className="progress-count">سؤال {currentIndex + 1} از {total}</p>
         </div>
       )}
     </div>
   );
-};
-
-export default PersonalFavoritesTest;
+}

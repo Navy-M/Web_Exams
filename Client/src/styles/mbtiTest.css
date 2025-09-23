@@ -1,27 +1,203 @@
+/* src/styles/mbtiTest.css */
+
+/* ریشه تم با متغیرهای پیش‌فرض (قابل override در shared.css) */
+:root {
+  
+  --accent: #2ecc71;      
+  --accent-weak: #ccebd7; 
+  --accent-hover: #eafff2;
+}
+
+/* ظرف اصلی آزمون */
 .mbti-test {
-  max-width: 650px;
+  max-width: 720px;
   margin: 2rem auto;
-  padding: 2rem;
-  background: #fdfdfd;
-  border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  background: var(--bg);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+.intro-box {
   text-align: center;
+  background: var(--card);
+  padding: 2rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+
+  
 }
 
-.mbti-test .progress-bar {
-  background: #2ecc71;
+.start-btn {
+  background: #4a90e2;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
+  box-shadow: 0 6px 16px rgba(74,144,226,.25);
+}
+.start-btn:hover { background: #357ab8; transform: translateY(-1px); }
+.start-btn:active { transform: translateY(0); }
+
+.question-box { margin-top: 0.5rem; }
+
+/* نوار بالایی وضعیت */
+.status-wrap {
+  position: sticky;
+  top: 12px;
+  z-index: 10;
+  margin-bottom: 1rem;
+}
+.status-inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,.05);
 }
 
-.mbti-test .timer-progress {
-  stroke: #2ecc71;
+/* تایمر دایره‌ای با متن */
+.timer-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+}
+.timer-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 6px solid var(--accent);
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+.timer-text {
+  font-variant-numeric: tabular-nums;
+}
+.counter {
+  display: flex;
+  align-items: baseline;
+  gap: .4rem;
+  color: var(--muted);
+}
+.counter strong {
+  color: var(--text);
+  font-size: 1.25rem;
+}
+.counter .sep { opacity: .6; }
+
+/* پیشرفت */
+.progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  flex: 1;
+}
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width .25s ease;
+}
+.progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: .9rem;
+}
+.finish-btn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  min-width: 5rem;
+}
+.finish-btn:hover { border-color: var(--text); }
+
+/* کارت سؤال و گزینه‌ها */
+.question-card {
+  margin-top: .25rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+.question-text { 
+  text-align: center;  
+  font-weight: 700;
+  margin: 1rem 0rem;
+  margin-bottom: 5rem;
 }
 
-.mbti-test .option-button {
-  border: 2px solid #ccebd7;
-  background: #fafffb;
+.options-grid {
+  display: flex;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+  margin-top: 1rem;
+}
+@media (max-width: 560px) {
+  .options-grid { grid-template-columns: 1fr; }
 }
 
-.mbti-test .option-button:hover {
-  background: #eafff2;
-  border-color: #2ecc71;
+.option-button {
+  border: 2px solid var(--accent-weak);
+  background: var(--card);
+  color: var(--text);
+  padding: .9rem 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: background .2s ease, border-color .2s ease, transform .08s ease;
+}
+.option-button:hover {
+  background: var(---hover);
+  border-color: var(--accent);
+}
+.option-button.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(46,204,113,.15) inset;
+}
+.option-button:active { transform: translateY(1px); }
+.option-button:focus-visible {
+  outline: 3px solid rgba(46,204,113,.35);
+  outline-offset: 2px;
+}
+
+.progress-count {
+  text-align: center;
+  color: var(--muted);
+  margin-top: .75rem;
+}
+
+/* موبایل: نوار پیشرفت زیر تایمر */
+@media (max-width: 640px) {
+  .status-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .timer-wrap {
+    justify-content: space-between;
+  }
 }

@@ -22,7 +22,7 @@ const CompleteProfilePage = () => {
     phone: "",
     city: "",
     province: "",
-    jobPosition: "",
+    jobPosition: "دانشجو",
   });
 
   const handleChange = (e) => {
@@ -51,6 +51,7 @@ const CompleteProfilePage = () => {
         alert("پروفایل شما با موفقیت تکمیل شد.");
         console.log("اطلاعات ارسال شد:", response);
         navigate("/dashboard");
+        location.reload();
       } else {
         alert(response?.message.text || "خطا در ارسال اطلاعات.");
         console.warn("Server response:", response);
@@ -150,10 +151,10 @@ const CompleteProfilePage = () => {
           <label>شهر</label>
           <input name="city" value={formData.city} onChange={handleChange} />
         </div>
-        <div className="form-group">
+        {/* <div className="form-group">
           <label>شماره دانشجویی</label>
           <input name="jobPosition" value={formData.jobPosition} onChange={handleChange} />
-        </div>
+        </div> */}
         <button type="submit" className="submit-button">ثبت اطلاعات</button>
       </form>
     </div>

@@ -4,8 +4,8 @@ import { MongoClient, ServerApiVersion } from "mongodb";
 
 dotenv.config();
 
-// const MONGO_URI = process.env.MONGO_URI;
-const MONGO_URI = process.env.LOCAL_MONGO_URI;
+const MONGO_URI = process.env.MONGO_URI;
+// const MONGO_URI = process.env.LOCAL_MONGO_URI;
 
 const DB_NAME = "web_exams"; // or whatever your db name is
 

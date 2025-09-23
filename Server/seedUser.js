@@ -4,8 +4,8 @@ import { MongoClient, ServerApiVersion } from "mongodb";
 
 dotenv.config();
 
-// const MONGO_URI = process.env.MONGO_URI;
-const MONGO_URI = process.env.LOCAL_MONGO_URI;
+const MONGO_URI = process.env.MONGO_URI;
+// const MONGO_URI = process.env.LOCAL_MONGO_URI;
 
 const DB_NAME = "web_exams"; // or whatever your db name is
 
@@ -28,7 +28,7 @@ const seed = async () => {
     const usersCollection = db.collection("users");
 
     const existingAdmin = await usersCollection.findOne({
-      username: "ownerlife1400@gmail.com",
+      username: "test",
     });
     if (existingAdmin) {
       console.log("⚠️ User already exists");

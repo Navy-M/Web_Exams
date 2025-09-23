@@ -3,6 +3,7 @@ import { Test_Cards } from "../../services/dummyData";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import "../../styles/starterTestPage.css";
+import { removeItem } from "../../services/storage"; 
 
 // Icons
 import { FaClock, FaQuestionCircle, FaLightbulb, FaArrowLeft } from "react-icons/fa";
@@ -71,6 +72,14 @@ const StarterTestPage = () => {
           <p className="test-hint"><FaLightbulb className="icon"/> قبل از شروع تست، محیط آرام داشته باشید و تمرکز کنید.</p>
 
           <div className="button-container">
+            {/* {import.meta.env.DEV && (
+              <button
+                className="cancel-btn"
+                onClick={() => { removeItem(`${currentTest.id.toLowerCase()}TestDone`); removeItem(`${currentTest.id.toLowerCase()}_test_progress_v1`); location.reload(); }}
+              >
+                {currentTest.id} ریست لاک (Dev)
+              </button>
+            )} */}
             <button className="back-button" onClick={handleBackDash}><FaArrowLeft/> بازگشت</button>
             <button className="start-button" onClick={handleStart}>شروع</button>
           </div>
@@ -84,13 +93,13 @@ const StarterTestPage = () => {
             </div>
           </div>
 
-          {testId === "MBTI" && <MBTITest questions={questions}/>}
+          {testId === "MBTI" && <MBTITest questions={questions} duration={currentTest.duration.to }/>}
           {testId === "DISC" && <DiscTest questions={questions} duration={currentTest.duration.to }/>}
-          {testId === "HOLLAND" && <HollandTest questions={questions}/>}
-          {testId === "GARDNER" && <GardnerTest questions={questions}/>}
-          {testId === "CLIFTON" && <CliftonTest questions={questions}/>}
-          {testId === "GHQ" && <GHQTest questions={questions}/>}
-          {testId === "PERSONAL_FAVORITES" && <PersonalFavoritesTest questions={questions}/>}
+          {testId === "HOLLAND" && <HollandTest questions={questions} duration={currentTest.duration.to }/>}
+          {testId === "GARDNER" && <GardnerTest questions={questions} duration={currentTest.duration.to }/>}
+          {testId === "CLIFTON" && <CliftonTest questions={questions} duration={currentTest.duration.to }/>}
+          {testId === "GHQ" && <GHQTest questions={questions} duration={currentTest.duration.to }/>}
+          {testId === "PERSONAL_FAVORITES" && <PersonalFavoritesTest questions={questions} duration={currentTest.duration.to }/>}
         </div>
       )}
     </div>

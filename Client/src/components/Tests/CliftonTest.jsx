@@ -1,126 +1,207 @@
-import { useState, useRef, useEffect } from 'react';
-import '../../styles/CliftonTest.css';
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import "../../styles/CliftonTest.css";
 import "./shared.css";
-import { useAuth } from '../../context/AuthContext';
-import { submitResult } from '../../services/api';
+import { useAuth } from "../../context/AuthContext";
+import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
-import { setItemWithExpiry, getItemWithExpiry } from '../../services/storage';    
-import TopbarStatus from './TopbarStatus';
+import { setItemWithExpiry, getItemWithExpiry, removeItem } from "../../services/storage";
+import TopbarStatus from "./TopbarStatus";
 
-const CliftonTest = ({ questions, duration = 10 }) => {
-  const { user } = useAuth();
+const STORAGE_KEY = "clifton_test_progress_v1";
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60).toString().padStart(2, "0");
+  const s = Math.floor(sec % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+export default function CliftonTest({ questions, duration = 10 }) {
+  const { user } = useAuth() || {};
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
 
+  const Clifton_Test = useMemo(() => (Array.isArray(questions) ? questions : []), [questions]);
+  const total = Clifton_Test.length;
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState({}); // { [qid]: theme }
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration * 60);
 
-  const Clifton_Test = questions;
   const currentQ = Clifton_Test[currentIndex];
+  const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
-  // Timer countdown
+  // try resume
+  useEffect(() => {
+    const saved = getItemWithExpiry(STORAGE_KEY);
+    if (saved && saved.questionsHash === total) {
+      if (window.confirm("پیش‌نویس آزمون کلیفتون پیدا شد. ادامه می‌دهید؟")) {
+        setAnswers(saved.answers || {});
+        setCurrentIndex(saved.currentIndex || 0);
+        setStarted(saved.started || false);
+        setTimeLeft(saved.timeLeft ?? duration * 60);
+        startTimeRef.current = saved.startedAt || Date.now();
+      } else {
+        removeItem(STORAGE_KEY);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total]);
+
+  // timer (whole test)
   useEffect(() => {
     if (!started) return;
     if (timeLeft <= 0) {
       handleSubmit();
       return;
     }
-    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft, started]);
+    const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [started, timeLeft]);
 
-  const handleSelect = async (theme) => {
-    const updatedAnswers = { ...answers, [currentQ.id]: theme };
-    setAnswers(updatedAnswers);
+  // autosave (debounced)
+  useEffect(() => {
+    if (!started) return;
+    const id = setTimeout(() => {
+      setItemWithExpiry(
+        STORAGE_KEY,
+        {
+          answers,
+          currentIndex,
+          started: true,
+          startedAt: startTimeRef.current,
+          timeLeft,
+          questionsHash: total,
+          savedAt: Date.now(),
+        },
+        6 * 60 * 60 * 1000 // 6h
+      );
+    }, 2000);
+    return () => clearTimeout(id);
+  }, [answers, currentIndex, started, timeLeft, total]);
 
-    if (currentIndex + 1 < Clifton_Test.length) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      handleSubmit(updatedAnswers);
-    }
-  };
+  const handleSelect = useCallback(
+    (theme) => {
+      const qid = currentQ?.id ?? `q_${currentIndex}`;
+      setAnswers((prev) => ({ ...prev, [qid]: theme }));
+      setTimeout(() => {
+        if (currentIndex + 1 < total) setCurrentIndex((i) => i + 1);
+        else handleSubmit();
+      }, 180);
+    },
+    [currentIndex, currentQ?.id, total]
+  );
 
-  const handleSubmit = async (finalAnswers = answers) => {
-    const formattedAnswers = Object.entries(finalAnswers).map(([questionId, choice]) => ({
-      questionId: parseInt(questionId),
-      choice
+  const handleSubmit = useCallback(async () => {
+    const formattedAnswers = Object.entries(answers).map(([questionId, choice]) => ({
+      questionId: isNaN(Number(questionId)) ? questionId : Number(questionId),
+      choice,
     }));
 
     const resultData = {
-      user: user.id,
-      testType: 'CLIFTON',
+      user: user?.id || user?._id || null,
+      testType: "CLIFTON",
       answers: formattedAnswers,
       score: 0,
       analysis: {},
-      adminFeedback: '',
+      adminFeedback: "",
       startedAt: new Date(startTimeRef.current),
-      submittedAt: new Date()
+      submittedAt: new Date(),
     };
 
     try {
       const result = await submitResult(resultData);
-      if (result?.user) {
+      if (result?.user || result?._id || result?.id) {
         alert("🎉 آزمون کلیفتون با موفقیت ثبت شد!");
+        removeItem(STORAGE_KEY);
         navigate("/");
+        location.reload();
+
       } else {
         alert("❌ ذخیره‌سازی نتایج انجام نشد!");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Clifton submission error:", error);
       alert("⚠️ ارسال نتایج با خطا مواجه شد.");
     }
-  };
+  }, [answers, navigate, user?.id, user?._id]);
 
-  const progressPercent = Math.round(((currentIndex + 1) / Clifton_Test.length) * 100);
+  if (!total) {
+    return (
+      <div className="clifton-test">
+        <div className="intro-box">
+          <h2>آزمون کلیفتون</h2>
+          <p>سوالی برای نمایش وجود ندارد.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="clifton-test">
+    <div className="clifton-test" role="main" aria-live="polite">
       {!started ? (
         <div className="intro-box">
-          <h2>به آزمون Clifton خوش آمدید 💼</h2>
-          <p>این آزمون به شما کمک می‌کند توانایی‌ها و علایق شغلی خود را بهتر بشناسید.</p>
-          <h4>مدت زمان تقریبی پاسخ به هر سوال: {((duration / Clifton_Test.length) * 60).toFixed(0)} ثانیه</h4>
-          <button className="start-btn" onClick={() => setStarted(true)}>شروع آزمون</button>
+          <p>این آزمون به شما کمک می‌کند توانایی‌ها و علایق شغلی خود را بهتر بشناسید</p>
+          <h2>💼</h2>
+          <h4>
+            میانگین برای هر سؤال:{" "}
+            {Math.max(5, Math.round((duration * 60) / total))} ثانیه
+          </h4>
+          <button
+            className="start-btn"
+            onClick={() => {
+              setStarted(true);
+              startTimeRef.current = Date.now();
+              setTimeLeft(duration * 60);
+            }}
+          >
+            شروع آزمون
+          </button>
         </div>
       ) : (
         <div className="question-box">
           <div className="top-bar">
-           <TopbarStatus
-              duration={duration}
-              started={started}
+            <TopbarStatus
+              timeLeft={timeLeft}
+              timeText={formatTime(timeLeft)}
+              progressPercent={progressPercent}
               currentIndex={currentIndex}
-              totalQuestions={Clifton_Test.length}
-              handleSubmit={handleSubmit}
+              totalQuestions={total}
+              onSubmit={handleSubmit}
             />
           </div>
 
-          <div className="question-card">
-            <h2>{currentQ.question || currentQ.text}</h2>
-            <div className="options-grid two-col">
+          <div className="question-card" key={currentQ?.id ?? currentIndex}>
+            {/* <h3 className="question-text">{currentQ?.question || currentQ?.text || "سؤال"}</h3> */}
+
+            <div className="options-grid two-col" role="listbox" aria-label="گزینه‌ها">
               <button
-                className={`option-button ${answers[currentQ.id] === currentQ.theme_a ? 'selected' : ''}`}
-                onClick={() => handleSelect(currentQ.theme_a)}
+                type="button"
+                className={`option-button ${answers[currentQ?.id] === currentQ?.theme_a ? "selected" : ""}`}
+                onClick={() => handleSelect(currentQ?.theme_a)}
+                aria-pressed={answers[currentQ?.id] === currentQ?.theme_a}
+                title="کلید 1"
               >
-                {currentQ.statement_a}
+                {currentQ?.statement_a}
               </button>
               <button
-                className={`option-button ${answers[currentQ.id] === currentQ.theme_b ? 'selected' : ''}`}
-                onClick={() => handleSelect(currentQ.theme_b)}
+                type="button"
+                className={`option-button ${answers[currentQ?.id] === currentQ?.theme_b ? "selected" : ""}`}
+                onClick={() => handleSelect(currentQ?.theme_b)}
+                aria-pressed={answers[currentQ?.id] === currentQ?.theme_b}
+                title="کلید 2"
               >
-                {currentQ.statement_b}
+                {currentQ?.statement_b}
               </button>
             </div>
           </div>
 
           <p className="progress-count">
-            سؤال {currentIndex + 1} از {Clifton_Test.length}
+            سؤال {currentIndex + 1} از {total}
           </p>
         </div>
       )}
     </div>
   );
-};
-
-export default CliftonTest;
+}

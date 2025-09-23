@@ -167,11 +167,25 @@ const UserDashboard = () => {
             <div className="stats">
               <div className="stat-item card">
                 <div className="stat-icon">
+                  <Award size={18} />
+                </div>
+                {/* <h3>{scoreSummary.total}</h3> */}
+                {/* <p>مجموع امتیازات</p>
+                 */}
+                 <h1 className="user-email">
+                   {user?.username} <span className="sep">|</span> {user?.profile?.fullName}
+                 </h1>
+              </div>
+
+              
+              <div className="stat-item card">
+                <div className="stat-icon">
                   <ListChecks size={18} />
                 </div>
                 <h3>{scoreSummary.allCount}</h3>
                 <p>کل تست‌ها</p>
               </div>
+
 
               <div className="stat-item card">
                 <div className="stat-icon">
@@ -181,18 +195,9 @@ const UserDashboard = () => {
                 <p>انجام‌شده</p>
               </div>
 
-              <div className="stat-item card">
-                <div className="stat-icon">
-                  <Award size={18} />
-                </div>
-                <h3>{scoreSummary.total}</h3>
-                <p>مجموع امتیازات</p>
-              </div>
             </div>
 
-            <h1 className="user-email">
-              {user?.username} <span className="sep">|</span> {user?.profile?.fullName}
-            </h1>
+            
           </div>
         )}
       </header>

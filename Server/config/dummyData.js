@@ -8,7 +8,7 @@ export const Test_Cards = [
     questionFormat: "multipleChoiceTrait", // Options with associated traits
     createdAt: "2025-05-29T11:11:16.374+00:00",
     deadline: "2026-07-29T11:11:16.374+00:00",
-    duration: { from: 5, to: 8 },
+    duration: { from: 8, to: 9 },
   },
 
   {
@@ -20,7 +20,7 @@ export const Test_Cards = [
     questionFormat: "yesNo",
     createdAt: "2025-05-13T04:14:16.374+00:00",
     deadline: "2026-07-13T04:14:16.374+00:00",
-    duration: { from: 40, to: 45 },
+    duration: { from: 11, to: 12 },
   },
 
   {
@@ -32,7 +32,7 @@ export const Test_Cards = [
     questionFormat: "likert",
     createdAt: "2025-05-05T16:11:16.374+00:00",
     deadline: "2026-07-15T16:11:16.374+00:00",
-    duration: { from: 30, to: 45 },
+    duration: { from: 13, to: 14 },
   },
 
   {
@@ -44,7 +44,7 @@ export const Test_Cards = [
     questionFormat: "eitherOr",
     createdAt: "2025-05-20T23:12:16.374+00:00",
     deadline: "2026-07-20T12:12:16.374+00:00",
-    duration: { from: 20, to: 32 },
+    duration: { from: 15, to: 16 },
   },
 
   {
@@ -57,7 +57,7 @@ export const Test_Cards = [
     questionFormat: "pairedStatementChoice", // Two statements per question, choose one
     createdAt: "2025-06-03T11:11:16.374+00:00",
     deadline: "2026-07-03T11:11:16.374+00:00",
-    duration: { from: 8, to: 12 }, // Typically takes a bit longer than DISC
+    duration: { from: 14, to: 15 }, // Typically takes a bit longer than DISC
   },
   {
     id: "GHQ",
@@ -69,7 +69,7 @@ export const Test_Cards = [
     questionFormat: "likert", // Likert-scale questions for health assessment
     createdAt: "2025-07-01T10:00:00.000+00:00",
     deadline: "2026-07-01T10:00:00.000+00:00",
-    duration: { from: 10, to: 15 },
+    duration: { from: 2, to: 3 },
   },
   {
     id: "PERSONAL_FAVORITES",
@@ -80,7 +80,7 @@ export const Test_Cards = [
     questionFormat: "multipleChoice", // Choose from a list of preferences
     createdAt: "2025-07-10T14:30:00.000+00:00",
     deadline: "2026-07-10T14:30:00.000+00:00",
-    duration: { from: 5, to: 10 },
+    duration: { from: 1, to: 2 },
   },
 ];
 
@@ -4156,174 +4156,8 @@ export const Ghq_Test = [
 ];
 
 export const PersonalFavorites_Test = [
-  // ===============================
-  // Trait: Hobby (Leisure Activities)
-  // 3 questions
-  // ===============================
   {
-    id: 17,
-    text: "کدام فعالیت اوقات فراغت را بیشتر ترجیح می‌دهید؟",
-    trait: "Hobby",
-    direction: "Preference", // No specific direction, tracks preference
-    options: [
-      { text: "خواندن کتاب", value: "Reading" },
-      { text: "ورزش کردن", value: "Sports" },
-      { text: "تماشای فیلم", value: "Movies" },
-      { text: "سفر و طبیعت‌گردی", value: "Travel" },
-    ],
-  },
-  {
-    id: 18,
-    text: "برای سرگرمی, کدام را انتخاب می‌کنید؟",
-    trait: "Hobby",
-    direction: "Preference",
-    options: [
-      { text: "بازی‌های ویدئویی", value: "Gaming" },
-      { text: "نقاشی یا طراحی", value: "Art" },
-      { text: "موسیقی نواختن", value: "Music" },
-      { text: "آشپزی", value: "Cooking" },
-    ],
-  },
-  {
-    id: 19,
-    text: "کدام فعالیت خلاقانه را بیشتر دوست دارید؟",
-    trait: "Hobby",
-    direction: "Preference",
-    options: [
-      { text: "نوشتن داستان یا شعر", value: "Writing" },
-      { text: "عکاسی", value: "Photography" },
-      { text: "ساخت صنایع دستی", value: "Crafts" },
-      { text: "باغبانی", value: "Gardening" },
-    ],
-  },
-
-  // ===============================
-  // Trait: Work (Work-Related Preferences)
-  // 3 questions
-  // ===============================
-  {
-    id: 20,
-    text: "کدام محیط کاری را ترجیح می‌دهید؟",
-    trait: "Work",
-    direction: "Preference",
-    options: [
-      { text: "کار تیمی در دفتر", value: "TeamOffice" },
-      { text: "کار انفرادی در خانه", value: "RemoteSolo" },
-      { text: "کار در فضای باز", value: "Outdoor" },
-      { text: "کار در آزمایشگاه یا کارگاه", value: "Lab" },
-    ],
-  },
-  {
-    id: 21,
-    text: "کدام نوع پروژه کاری را ترجیح می‌دهید؟",
-    trait: "Work",
-    direction: "Preference",
-    options: [
-      { text: "پروژه‌های خلاقانه", value: "Creative" },
-      { text: "پروژه‌های تحلیلی", value: "Analytical" },
-      { text: "پروژه‌های اجرایی", value: "Operational" },
-      { text: "پروژه‌های تحقیقاتی", value: "Research" },
-    ],
-  },
-  {
-    id: 22,
-    text: "کدام نقش کاری را بیشتر دوست دارید؟",
-    trait: "Work",
-    direction: "Preference",
-    options: [
-      { text: "رهبری تیم", value: "Leadership" },
-      { text: "کار فنی تخصصی", value: "Technical" },
-      { text: "پشتیبانی و خدمات", value: "Support" },
-      { text: "مشاوره", value: "Consulting" },
-    ],
-  },
-
-  // ===============================
-  // Trait: Social (Social Activities)
-  // 3 questions
-  // ===============================
-  {
-    id: 23,
-    text: "کدام فعالیت اجتماعی را بیشتر ترجیح می‌دهید؟",
-    trait: "Social",
-    direction: "Preference",
-    options: [
-      { text: "مهمانی با دوستان", value: "Parties" },
-      { text: "گفتگوهای خانوادگی", value: "Family" },
-      { text: "فعالیت‌های گروهی داوطلبانه", value: "Volunteering" },
-      { text: "تنهایی و آرامش", value: "Solitude" },
-    ],
-  },
-  {
-    id: 24,
-    text: "برای گذراندن وقت با دیگران, کدام را انتخاب می‌کنید؟",
-    trait: "Social",
-    direction: "Preference",
-    options: [
-      { text: "کافه‌نشینی", value: "Cafe" },
-      { text: "پیک‌نیک در طبیعت", value: "Picnic" },
-      { text: "بازی‌های گروهی", value: "GroupGames" },
-      { text: "تماشای تئاتر یا کنسرت", value: "Events" },
-    ],
-  },
-  {
-    id: 25,
-    text: "کدام نوع تعامل اجتماعی را دوست دارید؟",
-    trait: "Social",
-    direction: "Preference",
-    options: [
-      { text: "بحث‌های عمیق و فکری", value: "DeepTalk" },
-      { text: "گپ‌های سبک و طنز", value: "CasualTalk" },
-      { text: "فعالیت‌های ورزشی گروهی", value: "SportsGroup" },
-      { text: "کارگاه‌های آموزشی گروهی", value: "Workshops" },
-    ],
-  },
-
-  // ===============================
-  // Trait: Lifestyle (Daily Life Preferences)
-  // 3 questions
-  // ===============================
-  {
-    id: 26,
-    text: "کدام سبک زندگی را ترجیح می‌دهید؟",
-    trait: "Lifestyle",
-    direction: "Preference",
-    options: [
-      { text: "زندگی شهری شلوغ", value: "Urban" },
-      { text: "زندگی آرام روستایی", value: "Rural" },
-      { text: "زندگی ماجراجویانه", value: "Adventurous" },
-      { text: "زندگی مینیمال", value: "Minimalist" },
-    ],
-  },
-  {
-    id: 27,
-    text: "برای استراحت, کدام را انتخاب می‌کنید؟",
-    trait: "Lifestyle",
-    direction: "Preference",
-    options: [
-      { text: "خواب و استراحت کامل", value: "Rest" },
-      { text: "مدیتیشن یا یوگا", value: "Meditation" },
-      { text: "فعالیت بدنی سبک", value: "LightExercise" },
-      { text: "مطالعه یا تماشای محتوا", value: "Media" },
-    ],
-  },
-  {
-    id: 28,
-    text: "کدام نوع غذا را بیشتر دوست دارید؟",
-    trait: "Lifestyle",
-    direction: "Preference",
-    options: [
-      { text: "غذاهای سنتی ایرانی", value: "Traditional" },
-      { text: "غذاهای بین‌المللی", value: "International" },
-      { text: "غذاهای گیاهی", value: "Vegetarian" },
-      { text: "فست‌فود", value: "FastFood" },
-    ],
-  },
-];
-
-export const PersonalFavorites_Test_Additions = [
-  {
-    id: 29,
+    id: 1,
     text: "من از کار با ابزارهای دقیق و فناوری‌های پیشرفته برای حل مسائل فنی لذت می‌برم.",
     trait: "Work",
     direction: "Agreement",
@@ -4336,7 +4170,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 30,
+    id: 2,
     text: "علاقه‌مند هستم نحوه عملکرد سیستم‌های مکانیکی را درک کنم و آن‌ها را تعمیر یا بهینه‌سازی کنم.",
     trait: "Work",
     direction: "Agreement",
@@ -4349,7 +4183,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 31,
+    id: 3,
     text: "هدایت وسیلهٔ نقلیهٔ سنگین یا کار با تجهیزات بزرگ در مسیرهای مختلف و استفاده از تجهیزات پیشرفته برایم جذاب است.",
     trait: "Work",
     direction: "Agreement",
@@ -4362,7 +4196,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 32,
+    id: 4,
     text: "در شرایط بحرانی می‌توانم آرامش خود را حفظ کنم و تصمیمات منطقی و سریع بگیرم.",
     trait: "Work",
     direction: "Agreement",
@@ -4375,7 +4209,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 33,
+    id: 5,
     text: "داشتن تجهیزات مقاوم و کارا برای مواجهه با شرایط سخت برایم اهمیت دارد.",
     trait: "Work",
     direction: "Agreement",
@@ -4388,7 +4222,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 34,
+    id: 6,
     text: "دوست دارم در محیط‌هایی کار کنم که نیاز به دقت بالا و رعایت قوانین و مقررات دارند.",
     trait: "Work",
     direction: "Agreement",
@@ -4401,7 +4235,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 35,
+    id: 7,
     text: "علاقه‌مندم در پروژه‌هایی شرکت کنم که شامل تحلیل داده‌ها و استفاده از تکنولوژی‌های جدید باشند.",
     trait: "Work",
     direction: "Agreement",
@@ -4414,7 +4248,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 36,
+    id: 8,
     text: "کار با تیم‌های چندملیتی یا تعامل با افراد از فرهنگ‌های مختلف برایم جذاب است.",
     trait: "Work",
     direction: "Agreement",
@@ -4427,7 +4261,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 37,
+    id: 9,
     text: "دوست دارم در محیط‌هایی کار کنم که نیاز به برنامه‌ریزی و مدیریت منابع و زمان دارند.",
     trait: "Work",
     direction: "Agreement",
@@ -4440,7 +4274,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 38,
+    id: 10,
     text: "از یادگیری مهارت‌های جدید و به‌کارگیری عملی آن‌ها در شرایط واقعی لذت می‌برم.",
     trait: "Work",
     direction: "Agreement",
@@ -4453,7 +4287,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 39,
+    id: 11,
     text: "علاقه‌مندم در محیط‌هایی کار کنم که نیاز به حل مسائل پیچیده و تصمیم‌گیری سریع دارند.",
     trait: "Work",
     direction: "Agreement",
@@ -4466,7 +4300,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 40,
+    id: 12,
     text: "دوست دارم در مسئولیت‌هایی قرار بگیرم که نیاز به رهبری و مدیریت تیمی داشته باشند.",
     trait: "Work",
     direction: "Agreement",
@@ -4479,7 +4313,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 41,
+    id: 13,
     text: "از کار در محیط‌های دریایی یا فعالیت‌های مرتبط با دریا لذت می‌برم.",
     trait: "Work",
     direction: "Agreement",
@@ -4492,7 +4326,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 42,
+    id: 14,
     text: "مایلم در مأموریت‌ها یا فعالیت‌هایی شرکت کنم که نیاز به دقت و توجه به جزئیات دارند.",
     trait: "Work",
     direction: "Agreement",
@@ -4505,7 +4339,7 @@ export const PersonalFavorites_Test_Additions = [
     ],
   },
   {
-    id: 43,
+    id: 15,
     text: "از کار با ابزارها و تکنولوژی‌های جدید برای حل مشکلات عملی لذت می‌برم.",
     trait: "Work",
     direction: "Agreement",

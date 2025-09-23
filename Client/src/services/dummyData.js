@@ -8,7 +8,7 @@ export const Test_Cards = [
     questionFormat: "multipleChoiceTrait", // Options with associated traits
     createdAt: "2025-05-29T11:11:16.374+00:00",
     deadline: "2026-07-29T11:11:16.374+00:00",
-    duration: { from: 5, to: 8 },
+    duration: { from: 8, to: 9 },
   },
 
   {
@@ -20,7 +20,7 @@ export const Test_Cards = [
     questionFormat: "yesNo",
     createdAt: "2025-05-13T04:14:16.374+00:00",
     deadline: "2026-07-13T04:14:16.374+00:00",
-    duration: { from: 40, to: 45 },
+    duration: { from: 11, to: 12 },
   },
 
   {
@@ -32,7 +32,7 @@ export const Test_Cards = [
     questionFormat: "likert",
     createdAt: "2025-05-05T16:11:16.374+00:00",
     deadline: "2026-07-15T16:11:16.374+00:00",
-    duration: { from: 30, to: 45 },
+    duration: { from: 13, to: 14 },
   },
 
   {
@@ -44,7 +44,7 @@ export const Test_Cards = [
     questionFormat: "eitherOr",
     createdAt: "2025-05-20T23:12:16.374+00:00",
     deadline: "2026-07-20T12:12:16.374+00:00",
-    duration: { from: 20, to: 32 },
+    duration: { from: 15, to: 16 },
   },
 
   {
@@ -57,7 +57,7 @@ export const Test_Cards = [
     questionFormat: "pairedStatementChoice", // Two statements per question, choose one
     createdAt: "2025-06-03T11:11:16.374+00:00",
     deadline: "2026-07-03T11:11:16.374+00:00",
-    duration: { from: 8, to: 12 }, // Typically takes a bit longer than DISC
+    duration: { from: 14, to: 15 }, // Typically takes a bit longer than DISC
   },
   {
     id: "GHQ",
@@ -69,7 +69,7 @@ export const Test_Cards = [
     questionFormat: "likert", // Likert-scale questions for health assessment
     createdAt: "2025-07-01T10:00:00.000+00:00",
     deadline: "2026-07-01T10:00:00.000+00:00",
-    duration: { from: 10, to: 15 },
+    duration: { from: 2, to: 3 },
   },
   {
     id: "PERSONAL_FAVORITES",
@@ -80,7 +80,7 @@ export const Test_Cards = [
     questionFormat: "multipleChoice", // Choose from a list of preferences
     createdAt: "2025-07-10T14:30:00.000+00:00",
     deadline: "2026-07-10T14:30:00.000+00:00",
-    duration: { from: 5, to: 10 },
+    duration: { from: 1, to: 2 },
   },
 ];
 

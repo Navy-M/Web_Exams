@@ -1,60 +1,74 @@
-import { useState, useRef, useEffect } from 'react';
-import '../../styles/mbtiTest.css';
+// src/components/tests/MBTITest.jsx
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import "../../styles/mbtiTest.css";
 import "./shared.css";
-import { useAuth } from '../../context/AuthContext';
-import { submitResult } from '../../services/api';
+import { useAuth } from "../../context/AuthContext";
+import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
-import TopbarStatus from './TopbarStatus';
+import TopbarStatus from "./TopbarStatus";
 
-const MBTITest = ({ questions, duration = 8 }) => {
-  const { user } = useAuth();
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+export default function MBTITest({ questions, duration = 8 }) {
+  const { user } = useAuth() || {};
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
+
+  const Mbti_Test = useMemo(() => Array.isArray(questions) ? questions : [], [questions]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration * 60);
 
-  const Mbti_Test = questions;
+  const total = Mbti_Test.length;
   const currentQuestion = Mbti_Test[currentIndex];
+  const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
-  // Timer countdown
+  // Timer
   useEffect(() => {
     if (!started) return;
     if (timeLeft <= 0) {
       handleSubmit();
       return;
     }
-    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft, started]);
+    const t = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [started, timeLeft]);
 
-  const handleSelect = (questionId, value) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
-
+  const handleSelect = useCallback((questionId, value) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    // افکت کوتاه انتخاب و سپس رفتن به سوال بعد
     setTimeout(() => {
-      if (currentIndex + 1 < Mbti_Test.length) {
-        setCurrentIndex(currentIndex + 1);
-      } else {
+      setCurrentIndex((prev) => {
+        if (prev + 1 < Mbti_Test.length) return prev + 1;
+        // آخرین سوال
         handleSubmit();
-      }
-    }, 200);
-  };
+        return prev;
+      });
+    }, 160);
+  }, [Mbti_Test.length]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
       questionId,
-      value
+      value,
     }));
 
     const resultData = {
-      user: user.id,
-      testType: 'MBTI',
+      user: user?.id || null,
+      testType: "MBTI",
       answers: formattedAnswers,
       score: 0,
       analysis: {},
-      adminFeedback: '',
+      adminFeedback: "",
       startedAt: new Date(startTimeRef.current),
       submittedAt: new Date(),
     };
@@ -64,61 +78,79 @@ const MBTITest = ({ questions, duration = 8 }) => {
       if (result?.user) {
         alert("🎉 آزمون MBTI با موفقیت ثبت شد!");
         navigate("/");
+        location.reload();
+
       }
     } catch (err) {
       console.error("MBTI submission error:", err);
       alert("⚠️ ارسال نتایج با خطا مواجه شد.");
     }
-  };
+  }, [answers, navigate, user?.id]);
 
-  const progressPercent = Math.round(((currentIndex + 1) / Mbti_Test.length) * 100);
+  if (!total) {
+    return (
+      <div className="mbti-test">
+        <div className="intro-box">
+          <h2>آزمون MBTI</h2>
+          <p>سوالی برای نمایش وجود ندارد.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="mbti-test">
+    <div className="mbti-test" role="main" aria-live="polite">
       {!started ? (
         <div className="intro-box">
-          <h2>به آزمون MBTI خوش آمدید 🧩</h2>
-          <p>این آزمون کمک می‌کند تیپ شخصیتی خود را بهتر بشناسید.</p>
-          <h4>مدت زمان تقریبی پاسخ به هر سوال: {((duration / Mbti_Test.length) * 60).toFixed(0)} ثانیه</h4>
-          <button className="start-btn" onClick={() => setStarted(true)}>شروع آزمون</button>
+          <p>این آزمون کمک می‌کند تیپ شخصیتی خود را بهتر بشناسید</p>
+          <h2>🧩</h2>
+          <h4>
+              میانگین برای هر سؤال:{" "}
+            {Math.max(5, Math.round((duration * 60) / total))} ثانیه•
+          </h4>
+          <button className="start-btn" onClick={() => setStarted(true)}>
+            شروع آزمون
+          </button>
         </div>
       ) : (
         <div className="question-box">
           <div className="top-bar">
             <TopbarStatus
-              duration={duration}
-              started={started}
+              timeLeft={timeLeft}
+              timeText={formatTime(timeLeft)}
+              progressPercent={progressPercent}
               currentIndex={currentIndex}
-              totalQuestions={Mbti_Test.length}
-              handleSubmit={handleSubmit}
+              totalQuestions={total}
+              onSubmit={handleSubmit}
             />
           </div>
 
+          <div className="question-card" key={currentQuestion?.id ?? currentIndex}>
+            <h3 className="question-text">{currentQuestion.text}</h3>
 
-          <div className="question-card">
-            <h3>{currentQuestion.text}</h3>
-            <div className="options-grid">
-              {currentQuestion.options.map((option, idx) => (
-                <button
-                  key={idx}
-                  className={`option-button ${
-                    answers[currentQuestion.id] === option.value ? 'selected' : ''
-                  }`}
-                  onClick={() => handleSelect(currentQuestion.id, option.value)}
-                >
-                  {option.text}
-                </button>
-              ))}
+            <div className="options-grid" role="listbox" aria-label="گزینه‌ها">
+              {currentQuestion.options.map((option, idx) => {
+                const selected = answers[currentQuestion.id] === option.value;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`option-button ${selected ? "selected" : ""}`}
+                    onClick={() => handleSelect(currentQuestion.id, option.value)}
+                    aria-pressed={selected}
+                  >
+                    {option.text}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           <p className="progress-count">
-            سوال {currentIndex + 1} از {Mbti_Test.length}
+            سؤال {currentIndex + 1} از {total}
           </p>
         </div>
       )}
     </div>
   );
-};
-
-export default MBTITest;
+}
