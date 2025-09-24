@@ -47,3 +47,12 @@
     background-color: #f9f9f9;
   }
 }
+
+
+/* Prevent text selection / copying */
+body {
+  user-select: none;      /* Modern browsers */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}

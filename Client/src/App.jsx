@@ -9,6 +9,12 @@ import StarterTestPage from "./pages/User/StarterTestPage"
 import CompleteProfilePage from "./pages/User/CompleteProfilePage"
 
 
+// Block right-click
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+// Block text drag
+document.addEventListener("dragstart", (e) => e.preventDefault());
+
 const App = () => (
   <Routes>
     <Route path="/login" element={<LoginPage />} />
@@ -32,6 +38,7 @@ const App = () => (
     {/* Redirect unknown routes */}
     <Route path="*" element={<Navigate to="/login" />} />
   </Routes>
+  
 );
 
 export default App;

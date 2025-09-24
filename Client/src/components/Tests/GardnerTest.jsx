@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import "../../styles/GardnerTest.css";
-import "./shared.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";

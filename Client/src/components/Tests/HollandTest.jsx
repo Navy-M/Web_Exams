@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import "../../styles/HalandTest.css"; // ← همون فایلی که خودت داری
-import "./shared.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
