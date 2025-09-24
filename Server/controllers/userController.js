@@ -34,70 +34,87 @@ export const getUsers = async (req, res, next) => {
 
 export const completeProfile = async (req, res) => {
   try {
-    const {
-      userId,
-      fullName,
-      nationalId,
-      username,
-      age,
-      fathersJob,
-      gender,
-      single,
-      education,
-      diplomaAverage,
-      field,
-      phone,
-      city,
-      province,
-      jobPosition,
-    } = req.body;
+    // Allow both shapes: flat or { profile: {...} }
+    const src = (req.body && typeof req.body.profile === 'object')
+      ? req.body.profile
+      : req.body;
 
-    // Basic validation
-    if (!userId || !fullName || !phone || !username || !nationalId || !age) {
+    const userId = req.body.userId ?? src.userId ?? req.user?._id;
+    const username = req.body.username ?? src.username;
+
+    // console.log("=== [completeProfile] payload →", {
+    //   userId,
+    //   username,
+    //   profile: src
+    // });
+
+    // Required fields (from src)
+    const required = {
+      userId,
+      fullName: src.fullName,
+      nationalId: src.nationalId,
+      phone: src.phone,
+      age: src.age,
+      single: src.single,
+      education: src.education,
+      diplomaAverage: src.diplomaAverage,
+      field: src.field,
+    };
+
+    const missing = Object.entries(required)
+      .filter(([, v]) => v === undefined || v === null || v === '')
+      .map(([k]) => k);
+
+    if (missing.length) {
+      console.warn("[completeProfile] Missing fields:", missing);
       return res.status(400).json({
-        message: "برخی از فیلدهای الزامی تکمیل نشده‌اند.",
+        message: `برخی از فیلدهای الزامی تکمیل نشده‌اند: ${missing.join(", ")}`
       });
     }
 
-    const newUsername = username;
-    // console.log("Test Recieve email : ", newEmail);
-
+    // Coerce types
     const info = {
-      // userId,
-      fullName,
-      nationalId,
-      age,
-      fathersJob,
-      gender,
-      single,
-      education,
-      diplomaAverage,
-      field,
-      phone,
-      city,
-      province,
-      jobPosition,
+      fullName: String(src.fullName).trim(),
+      nationalId: String(src.nationalId).trim(),
+      age: Number(src.age),
+      fathersJob: src.fathersJob ?? "",
+      gender: src.gender ?? "",
+      single: String(src.single) === "true" || src.single === true,
+      education: src.education ?? "",
+      diplomaAverage: typeof src.diplomaAverage === 'number'
+        ? src.diplomaAverage
+        : (src.diplomaAverage ? Number(src.diplomaAverage) : ""),
+      field: src.field ?? "",
+      phone: String(src.phone).trim(),
+      city: src.city ?? "",
+      province: src.province ?? "",
+      jobPosition: src.jobPosition ?? "دانشجو",
     };
 
-    // Update the user profile directly
+    const updateDoc = {
+      ...(username ? { username: String(username).trim() } : {}),
+      profile: info,
+    };
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      {
-        $set: { username: newUsername, profile: info },
-      },
-      { new: true }
+      { $set: updateDoc },
+      { new: true, runValidators: true, context: "query" }
     ).select("-password");
 
+    if (!updatedUser) {
+      console.error("[completeProfile] User not found:", userId);
+      return res.status(404).json({ message: "کاربر پیدا نشد." });
+    }
+
+    console.log("[completeProfile] ✅ Update OK for user:", userId);
     return res.status(200).json({
-      message: {
-        status: "success",
-        text: " پروفایل با موفقیت تکمیل شد.",
-      },
+      message: { status: "success", text: "پروفایل با موفقیت تکمیل شد." },
       userProfile: updatedUser.profile,
     });
   } catch (err) {
-    console.error("Error completing profile to user:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("[completeProfile] ❌ Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 

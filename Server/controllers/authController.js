@@ -72,11 +72,11 @@ export const loginUser = async (req, res, next) => {
 export const registerUser = async (req, res, next) => {
   try {
     const { username, fullName, period, password, role } = req.body;
-      console.log("username:", username);
-      console.log("password:", password);
-      console.log("fullName:", fullName);
-      console.log("period:", period);
-      console.log("role:", role);
+      // console.log("username:", username);
+      // console.log("password:", password);
+      // console.log("fullName:", fullName);
+      // console.log("period:", period);
+      // console.log("role:", role);
 
     // Validate input
     if (!username || !password || !fullName || !period) {

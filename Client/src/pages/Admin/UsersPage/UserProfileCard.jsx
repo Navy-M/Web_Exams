@@ -19,7 +19,7 @@ const UserProfileCard = ({ user }) => {
         <li><strong>📞 تلفن:</strong> {p.phone || "—"}</li>
         <li><strong>🏙️ شهر:</strong> {p.city || "—"}</li>
         <li><strong>🗺️ استان:</strong> {p.province || "—"}</li>
-        <li><strong>💼 شماره دانشجویی:</strong> {p.jobPosition || "—"}</li>
+        {/* <li><strong>💼 شماره دانشجویی:</strong> {p.jobPosition || "—"}</li> */}
       </ul>
     </div>
   );

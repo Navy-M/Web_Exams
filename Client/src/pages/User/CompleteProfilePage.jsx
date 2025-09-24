@@ -12,12 +12,12 @@ const CompleteProfilePage = () => {
     fullName: user.profile?.fullName || "",
     nationalId: "",
     username: user.username || "",
-    age: "",
+    age: 0,
     fathersJob: "",
     gender: "مرد",
     single: true,
     education: "",
-    diplomaAverage: "",
+    diplomaAverage: 0.0,
     field: "",
     phone: "",
     city: "",
@@ -31,9 +31,33 @@ const CompleteProfilePage = () => {
       [e.target.name]: e.target.value,
     }));
   };
+  
+  const payload = {
+  userId: formData.userId || user?._id || user?.id,
+  username: formData.username,
+  profile: {
+    fullName: formData.fullName,
+    nationalId: formData.nationalId,
+    age: formData.age ? Number(formData.age) : null,
+    fathersJob: formData.fathersJob,
+    gender: formData.gender,
+    single: String(formData.single) === 'true' || formData.single === true,
+    education: formData.education,
+    diplomaAverage: Number(formData.diplomaAverage) || null,
+    field: formData.field,
+    phone: formData.phone,
+    city: formData.city,
+    province: formData.province,
+    jobPosition: formData.jobPosition,
+  },
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    console.log("[completeProfile] payload →", payload);
+
 
     const allRequiredFieldsFilled = Object.entries(formData)
       .filter(([key]) => key !== "jobPosition" && key !== "fullName") // exclude jobPosition
@@ -45,7 +69,7 @@ const CompleteProfilePage = () => {
     }
 
     try {
-      const response = await API.completeProfile(formData);
+      const response = await API.completeProfile(payload);
         
       if (response?.message?.status === "success") {
         alert("پروفایل شما با موفقیت تکمیل شد.");
@@ -57,7 +81,13 @@ const CompleteProfilePage = () => {
         console.warn("Server response:", response);
       }
     } catch (error) {
-      console.error("خطا در ارسال اطلاعات:", error);
+      // console.error("خطا در ارسال اطلاعات:", error);
+      // Show useful details in console for mobile debugging
+      console.error("Submit failed:", {
+        msg: error.message,
+        responseStatus: error.response?.status,
+        responseData: error.response?.data,
+      });
       alert("مشکلی در برقراری ارتباط با سرور پیش آمده است.");
     }
   };
@@ -68,15 +98,15 @@ const CompleteProfilePage = () => {
       <form className="profile-form" onSubmit={handleSubmit}>
         <div className="form-group">
           <label>نام و نام خانوادگی</label>
-          <input name="fullName" value={formData.fullName} onChange={handleChange} />
+          <input  type="text" name="fullName" value={formData.fullName} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>نام کاربری</label>
-          <input name="username" value={formData.username} onChange={handleChange} />
+          <input  type="text" name="username" value={formData.username} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>کد ملی</label>
-          <input name="nationalId" value={formData.nationalId} onChange={handleChange} />
+          <input  type="text" name="nationalId" value={formData.nationalId} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>سن</label>
@@ -84,7 +114,7 @@ const CompleteProfilePage = () => {
         </div>
         <div className="form-group">
           <label>شغل پدر</label>
-          <input type="fathersJob" name="fathersJob" value={formData.fathersJob} onChange={handleChange} />
+          <input type="text" name="fathersJob" value={formData.fathersJob} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>وضعیت تاهل</label>
@@ -137,25 +167,25 @@ const CompleteProfilePage = () => {
         </div>
         <div className="form-group">
           <label>معدل دیپلم</label>
-          <input type="diplomaAverage" name="diplomaAverage" value={formData.diplomaAverage} onChange={handleChange} />
+          <input type="number" name="diplomaAverage" value={formData.diplomaAverage} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>شماره تماس</label>
-          <input name="phone" value={formData.phone} onChange={handleChange} />
+          <input type="text" name="phone" value={formData.phone} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>استان</label>
-          <input name="province" value={formData.province} onChange={handleChange} />
+          <input type="text" name="province" value={formData.province} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>شهر</label>
-          <input name="city" value={formData.city} onChange={handleChange} />
+          <input type="text" name="city" value={formData.city} onChange={handleChange} />
         </div>
         {/* <div className="form-group">
           <label>شماره دانشجویی</label>
-          <input name="jobPosition" value={formData.jobPosition} onChange={handleChange} />
+          <input type="text" name="jobPosition" value={formData.jobPosition} onChange={handleChange} />
         </div> */}
-        <button type="submit" className="submit-button">ثبت اطلاعات</button>
+        <button  type="submit" className="submit-button">ثبت اطلاعات</button>
       </form>
     </div>
   );

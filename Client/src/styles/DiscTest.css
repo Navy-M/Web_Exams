@@ -139,6 +139,7 @@
   border-radius: 16px;
   box-shadow: var(--shadow);
   color: var(--text);
+  direction: ltr;
 }
 
 /* اینترو */
@@ -232,8 +233,9 @@
 }
 .finish-btn {
   background: transparent; color: var(--text);
-  border: 1px solid var(--border); padding: 6px 12px;
+  border: 1px solid var(--warning); padding: 6px 12px;
   border-radius: 10px; cursor: pointer; min-width: 5rem;
+
 }
 .finish-btn:hover { border-color: var(--text); }
 

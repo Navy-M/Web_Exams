@@ -1,3 +1,6 @@
+import React from 'react';
+import './shared.css';
+
 // src/components/tests/TopbarStatus.jsx
 export default function TopbarStatus({
   timeLeft,

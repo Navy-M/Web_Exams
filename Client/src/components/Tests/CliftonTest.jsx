@@ -200,6 +200,33 @@ export default function CliftonTest({ questions, duration = 10 }) {
           <p className="progress-count">
             سؤال {currentIndex + 1} از {total}
           </p>
+
+          <div className="nav-actions">
+              <button
+                onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+                disabled={currentIndex === 0}
+                className="nav-btn"
+                aria-label="سوال قبلی"
+              >
+                ← قبلی
+              </button>
+
+              <button
+                onClick={() => currentIndex + 1 < total && setCurrentIndex((i) => i + 1)}
+                disabled={currentIndex + 1 >= total}
+                className="nav-btn"
+                aria-label="سوال بعدی"
+              >
+                بعدی →
+              </button>
+              {/* <button
+                onClick={() => window.confirm("ارسال آزمون؟") && handleSubmit()}
+                className="submit-btn"
+                disabled={submitting}
+              >
+                {submitting ? "در حال ارسال..." : "ارسال نهایی"}
+              </button> */}
+            </div>
         </div>
       )}
     </div>

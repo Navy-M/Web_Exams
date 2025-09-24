@@ -4,6 +4,7 @@ import axios from 'axios';
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
   withCredentials: true, // Required for sending cookies (for auth)
+  headers: { "Content-Type": "application/json" },
 });
 
 // --- REQUEST INTERCEPTOR ---
@@ -60,16 +61,9 @@ API.interceptors.response.use(
 
 
 export const checkServer = async () => {
-  try {
-    const res = await axios.get('http://localhost:5000/api/health', {
-      withCredentials: true, // Send cookies if any
-    });
-    console.log('Server reachable:', res.data.message);
-  } catch (err) {
-    console.error('Axios connection error:', err.message);
-  }
+  const res = await API.get("/health");
+  console.log("Server reachable:", res.data.message);
 };
-
 // --- AUTH API ---
 export const createUser = async (credentials) => (await API.post('/auth/register', credentials)).data;
 export const login = async (credentials) => {
@@ -125,7 +119,7 @@ export const completeProfile = async (form) => {
 };
 // --- TESTS API ---
 export const getTestQuestions = async (testType) => {
-  const res = (await API.post("tests/getquestions", {testType})).data;
+  const res = (await API.post("/tests/getquestions", {testType})).data;
   // console.log(res);
   return res;
 }

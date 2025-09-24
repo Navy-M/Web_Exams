@@ -88,7 +88,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
     perQTimerRef.current = setInterval(() => {
       setPerQuestionRemaining((t) => {
         if (t <= 1) {
-          handleAutoAdvance();
+          // handleAutoAdvance();
           return perQuestionTime;
         }
         return t - 1;
@@ -285,9 +285,9 @@ export default function DiscTest({ questions = [], duration = 8 }) {
               })}
             </div>
 
-            <p className="progress-count">سؤال {currentIndex + 1} از {total}</p>
+              <p className="progress-count">سؤال {currentIndex + 1} از {total}</p>
 
-            {/* <div className="nav-actions">
+            <div className="nav-actions">
               <button
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
@@ -296,6 +296,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
               >
                 ← قبلی
               </button>
+
               <button
                 onClick={() => currentIndex + 1 < total && setCurrentIndex((i) => i + 1)}
                 disabled={currentIndex + 1 >= total}
@@ -304,14 +305,14 @@ export default function DiscTest({ questions = [], duration = 8 }) {
               >
                 بعدی →
               </button>
-              <button
+              {/* <button
                 onClick={() => window.confirm("ارسال آزمون؟") && handleSubmit()}
                 className="submit-btn"
                 disabled={submitting}
               >
                 {submitting ? "در حال ارسال..." : "ارسال نهایی"}
-              </button>
-            </div> */}
+              </button> */}
+            </div>
           </div>
         </div>
       )}
