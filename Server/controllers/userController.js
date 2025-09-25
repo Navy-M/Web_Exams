@@ -1,6 +1,5 @@
 import User from "../models/User.js";
-import Result from "../models/Result.js";
-import { getTestAnalysis } from "../utils/testAnalyzer.js";
+
 
 export const deleteUser = async (req, res, next) => {
   try {
@@ -31,6 +30,24 @@ export const getUsers = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getUserById = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    // Find user by ID and exclude password
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "کاربر پیدا نشد." });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user by ID:", error);
+    res.status(500).json({ message: "خطا در دریافت اطلاعات کاربر." });
+  }
+};
+
 
 export const completeProfile = async (req, res) => {
   try {
