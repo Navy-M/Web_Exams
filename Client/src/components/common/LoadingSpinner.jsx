@@ -1,4 +1,4 @@
-// src/components/common/LoadingSpinner.jsx
+// src/components/Common/LoadingSpinner.jsx
 import React from 'react';
 import '../../styles/LoadingSpinner.css';
 

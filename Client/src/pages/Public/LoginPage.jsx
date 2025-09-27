@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/main.css';
 import '../../styles/login.css';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import LoadingSpinner from '../../components/Common/LoadingSpinner';
 import { checkServer } from '../../services/api';
 
 const LoginPage = () => {
