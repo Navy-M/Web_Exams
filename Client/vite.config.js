@@ -7,6 +7,10 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',  // allow external access on VPS
     port: 5174,        // your custom port
-    strictPort: true
+    strictPort: true,
+    allowedHosts: [
+      'tipnama.ir',
+      'www.tipnama.ir'
+    ]
   }
 })
