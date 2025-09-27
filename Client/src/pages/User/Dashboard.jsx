@@ -19,7 +19,7 @@ import { Test_Cards } from "../../services/dummyData";
 import TestCard from "../../components/User/TestCard";
 import TestResultCardGrid from "../../components/Common/TestResultCardGrid";
 import ShowAnalysis from "../../components/Common/ShowAnalysis";
-import LoadingSpinner from "../../components/Common/LoadingSpinner";
+import {LoadingSpinner} from "../../components/Common/LoadingSpinner";
 
 import "../../styles/user-dashboard.css";
 
