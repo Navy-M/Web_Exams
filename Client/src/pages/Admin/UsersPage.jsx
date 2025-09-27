@@ -10,7 +10,7 @@ import {
   analyzeTests,
 } from "../../services/api";
 
-import ShowAnalysis from "../../components/common/ShowAnalysis";
+import ShowAnalysis from "../../components/Common/ShowAnalysis";
 import SearchBar from "./UsersPage/SearchBar";
 import UsersTable from "./UsersPage/UsersTable";
 import UserProfileCard from "./UsersPage/UserProfileCard";

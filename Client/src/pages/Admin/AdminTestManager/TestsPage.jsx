@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import TestResultCardGrid from "../../../components/common/TestResultCardGrid";
+import TestResultCardGrid from "../../../components/Common/TestResultCardGrid";
 
 const TestsPage = () => {
   const [selectedTestId, setSelectedTestId] = useState(null);

@@ -17,9 +17,9 @@ import { getTestResults, getUserById } from "../../services/api";
 import { Test_Cards } from "../../services/dummyData";
 
 import TestCard from "../../components/User/TestCard";
-import TestResultCardGrid from "../../components/common/TestResultCardGrid";
-import ShowAnalysis from "../../components/common/ShowAnalysis";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import TestResultCardGrid from "../../components/Common/TestResultCardGrid";
+import ShowAnalysis from "../../components/Common/ShowAnalysis";
+import LoadingSpinner from "../../components/Common/LoadingSpinner";
 
 import "../../styles/user-dashboard.css";
 
