@@ -153,7 +153,7 @@ export const deleteResult = async (resultId) => {
 
 export const getUserResults = async (userId) => {
   try {
-    const response = await API.post(`/results/${userId}/list`);
+    const response = await API.post(`/results/list/${userId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching user results:', error);

@@ -80,7 +80,7 @@ export const Test_Cards = [
     questionFormat: "multipleChoice", // Choose from a list of preferences
     createdAt: "2025-07-10T14:30:00.000+00:00",
     deadline: "2026-07-10T14:30:00.000+00:00",
-    duration: { from: 1, to: 2 },
+    duration: { from: 2, to: 3 },
   },
 ];
 

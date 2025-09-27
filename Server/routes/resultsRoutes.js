@@ -31,6 +31,6 @@ router.post("/submitfeedback", updateTestFeedback);
 
 router.post("/:userId/userResult", getResults);
 
-router.post("/results/:userId/list", protect, admin, getResultsByUser);
+router.post("/results/list/:userId", protect, admin, getResultsByUser);
 
 export default router;
