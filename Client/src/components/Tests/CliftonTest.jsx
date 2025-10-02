@@ -7,6 +7,7 @@ import { setItemWithExpiry, getItemWithExpiry, removeItem } from "../../services
 import TopbarStatus from "./TopbarStatus";
 
 const STORAGE_KEY = "clifton_test_progress_v1";
+const DONE_KEY = "cliftonTestDone";
 
 function formatTime(sec) {
   const m = Math.floor(sec / 60).toString().padStart(2, "0");
@@ -26,12 +27,21 @@ export default function CliftonTest({ questions, duration = 10 }) {
   const [answers, setAnswers] = useState({}); // { [qid]: theme }
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(DONE_KEY));
+  const submittingRef = useRef(false);
 
   const currentQ = Clifton_Test[currentIndex];
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
+  useEffect(() => {
+    if (!blocked) return;
+    alert("You have already completed this test. Please try again in 24 hours.");
+    navigate("/");
+  }, [blocked, navigate]);
+
   // try resume
   useEffect(() => {
+    if (blocked) return;
     const saved = getItemWithExpiry(STORAGE_KEY);
     if (saved && saved.questionsHash === total) {
       if (window.confirm("پیش‌نویس آزمون کلیفتون پیدا شد. ادامه می‌دهید؟")) {
@@ -49,7 +59,7 @@ export default function CliftonTest({ questions, duration = 10 }) {
 
   // timer (whole test)
   useEffect(() => {
-    if (!started) return;
+    if (blocked || !started) return;
     if (timeLeft <= 0) {
       handleSubmit();
       return;
@@ -57,11 +67,11 @@ export default function CliftonTest({ questions, duration = 10 }) {
     const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started, timeLeft]);
+  }, [blocked, started, timeLeft]);
 
   // autosave (debounced)
   useEffect(() => {
-    if (!started) return;
+    if (blocked || !started) return;
     const id = setTimeout(() => {
       setItemWithExpiry(
         STORAGE_KEY,
@@ -93,6 +103,8 @@ export default function CliftonTest({ questions, duration = 10 }) {
   );
 
   const handleSubmit = useCallback(async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     const formattedAnswers = Object.entries(answers).map(([questionId, choice]) => ({
       questionId: isNaN(Number(questionId)) ? questionId : Number(questionId),
       choice,
@@ -113,18 +125,26 @@ export default function CliftonTest({ questions, duration = 10 }) {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
         alert("🎉 آزمون کلیفتون با موفقیت ثبت شد!");
+        setItemWithExpiry(DONE_KEY, true, 24 * 60 * 60 * 1000); // 24h
+        setBlocked(true);
         removeItem(STORAGE_KEY);
         navigate("/");
         location.reload();
 
       } else {
         alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        submittingRef.current = false;
       }
     } catch (error) {
       console.error("Clifton submission error:", error);
       alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      submittingRef.current = false;
     }
   }, [answers, navigate, user?.id, user?._id]);
+
+  if (blocked) {
+    return null;
+  }
 
   if (!total) {
     return (

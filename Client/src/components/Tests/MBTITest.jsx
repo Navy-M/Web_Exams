@@ -5,6 +5,9 @@ import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import TopbarStatus from "./TopbarStatus";
+import { getItemWithExpiry, setItemWithExpiry } from "../../services/storage";
+
+const DONE_KEY = "mbtiTestDone";
 
 function formatTime(sec) {
   const m = Math.floor(sec / 60);
@@ -23,14 +26,22 @@ export default function MBTITest({ questions, duration = 8 }) {
   const [answers, setAnswers] = useState({});
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(DONE_KEY));
+  const submittingRef = useRef(false);
 
   const total = Mbti_Test.length;
   const currentQuestion = Mbti_Test[currentIndex];
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
+  useEffect(() => {
+    if (!blocked) return;
+    alert("You have already completed this test. Please try again in 24 hours.");
+    navigate("/");
+  }, [blocked, navigate]);
+
   // Timer
   useEffect(() => {
-    if (!started) return;
+    if (blocked || !started) return;
     if (timeLeft <= 0) {
       handleSubmit();
       return;
@@ -40,7 +51,7 @@ export default function MBTITest({ questions, duration = 8 }) {
     }, 1000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started, timeLeft]);
+  }, [blocked, started, timeLeft]);
 
   const handleSelect = useCallback((questionId, value) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -56,6 +67,8 @@ export default function MBTITest({ questions, duration = 8 }) {
   }, [Mbti_Test.length]);
 
   const handleSubmit = useCallback(async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
       questionId,
       value,
@@ -76,15 +89,25 @@ export default function MBTITest({ questions, duration = 8 }) {
       const result = await submitResult(resultData);
       if (result?.user) {
         alert("🎉 آزمون MBTI با موفقیت ثبت شد!");
+        setItemWithExpiry(DONE_KEY, true, 24 * 60 * 60 * 1000);
+        setBlocked(true);
         navigate("/");
         location.reload();
 
+      } else {
+        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        submittingRef.current = false;
       }
     } catch (err) {
       console.error("MBTI submission error:", err);
       alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      submittingRef.current = false;
     }
   }, [answers, navigate, user?.id]);
+
+  if (blocked) {
+    return null;
+  }
 
   if (!total) {
     return (

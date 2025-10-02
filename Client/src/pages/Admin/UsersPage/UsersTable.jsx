@@ -1,4 +1,5 @@
-import React from "react";
+﻿import React from "react";
+import { useI18n } from "../../../i18n";
 
 const UsersTable = ({
   users,
@@ -10,31 +11,33 @@ const UsersTable = ({
   setNewUser,
   onSubmitNew,
 }) => {
+  const { t } = useI18n();
+
   return (
     <div className="table-wrap">
       <table className="admin-users-table">
         <thead>
           <tr>
-            <th>ردیف</th>
-            <th>نام و نام خانوادگی</th>
-            <th>نام کاربری</th>
-            <th>نقش</th>
-            <th>اقدامات</th>
+            <th>{t("usersPage.tableHeaders.index")}</th>
+            <th>{t("usersPage.tableHeaders.fullName")}</th>
+            <th>{t("usersPage.tableHeaders.username")}</th>
+            <th>{t("usersPage.tableHeaders.completedProf")}</th>
+            <th>{t("usersPage.tableHeaders.actions")}</th>
           </tr>
         </thead>
         <tbody>
           {users.map((u, idx) => (
             <tr key={u._id}>
               <td className="center">{idx + 1}</td>
-              <td>{u.profile?.fullName || "—"}</td>
-              <td>{u.username || "—"}</td>
-              <td>{u.role || "—"}</td>
+              <td>{u.profile?.fullName || t("usersPage.profile.missing")}</td>
+              <td>{u.username || t("usersPage.profile.missing")}</td>
+              <td>{u.profile?.age ? (t("usersPage.profile.isCompleted")) : (t("usersPage.profile.missing"))}</td>
               <td className="actions">
-                <button className="btn ghost" onClick={() => onView(u)}>
-                  مشاهده نتایج
+                <button style={{color: "var(--text)"}} className="btn ghost" onClick={() => onView(u)}>
+                  {t("usersPage.table.view")}
                 </button>
-                <button className="btn danger" onClick={() => onDelete(u._id)}>
-                  حذف
+                <button style={{color: "var(--text)"}} className="btn danger" onClick={() => onDelete(u._id)}>
+                  {t("common.buttons.delete")}
                 </button>
               </td>
             </tr>
@@ -46,7 +49,7 @@ const UsersTable = ({
                 <div className="add-user-form">
                   <input
                     type="text"
-                    placeholder="نام و نام خانوادگی"
+                    placeholder={t("usersPage.table.placeholders.fullName")}
                     value={newUser.fullName}
                     onChange={(e) =>
                       setNewUser({ ...newUser, fullName: e.target.value })
@@ -54,7 +57,7 @@ const UsersTable = ({
                   />
                   <input
                     type="text"
-                    placeholder="دوره"
+                    placeholder={t("usersPage.table.placeholders.period")}
                     value={newUser.period}
                     onChange={(e) =>
                       setNewUser({ ...newUser, period: e.target.value })
@@ -66,12 +69,12 @@ const UsersTable = ({
                       setNewUser({ ...newUser, role: e.target.value })
                     }
                   >
-                    <option value="user">کاربر</option>
-                    <option value="admin">ادمین</option>
+                    <option value="user">{t("usersPage.table.roleUser")}</option>
+                    <option value="admin">{t("usersPage.table.roleAdmin")}</option>
                   </select>
                   <input
                     type="text"
-                    placeholder="نام کاربری"
+                    placeholder={t("usersPage.table.placeholders.username")}
                     value={newUser.username}
                     onChange={(e) =>
                       setNewUser({ ...newUser, username: e.target.value })
@@ -79,14 +82,14 @@ const UsersTable = ({
                   />
                   <input
                     type="password"
-                    placeholder="رمز عبور"
+                    placeholder={t("usersPage.table.placeholders.password")}
                     value={newUser.password}
                     onChange={(e) =>
                       setNewUser({ ...newUser, password: e.target.value })
                     }
                   />
                   <button className="btn primary" onClick={onSubmitNew}>
-                    ثبت
+                    {t("common.buttons.submit")}
                   </button>
                 </div>
               </td>
@@ -101,7 +104,9 @@ const UsersTable = ({
                 className="btn outline"
                 onClick={() => setShowAddRow((v) => !v)}
               >
-                {showAddRow ? "❌ بستن فرم" : "➕ افزودن کاربر جدید"}
+                {showAddRow
+                  ? t("usersPage.table.hideForm")
+                  : t("usersPage.table.showForm")}
               </button>
             </td>
           </tr>

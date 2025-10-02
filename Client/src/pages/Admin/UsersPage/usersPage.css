@@ -30,11 +30,11 @@
 /* buttons */
 .btn{ display:inline-flex; align-items:center; gap:.5rem; padding:.5rem .85rem; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); cursor:pointer; transition:transform .15s, box-shadow .15s; }
 .btn:hover{ transform: translateY(-1px); box-shadow: 0 10px 24px rgba(2,6,23,.1); }
-.btn.primary{ background: linear-gradient(135deg, var(--primary), var(--secondary)); color:#fff; border-color: transparent; }
+.btn.primary{ background: linear-gradient(135deg, var(--primary), var(--secondary)); color:var(--text-dark); border-color: transparent; }
 .btn.ghost{ background: transparent; }
 .btn.outline{ background: transparent; background-color: var(--background-dark); border-color: var(--primary); color: var(--primary); }
-.btn.danger{ background: rgba(239,68,68,.15); color:#fff; border-color: rgba(239,68,68,.3); }
-.btn.danger:hover{ background: rgba(239,68,68,.25); }
+.btn.danger{ background: rgba(239, 68, 68, 0.603); color: var(--text-dark); border-color: rgba(239,68,68,.3); }
+.btn.danger:hover{ background: rgba(239, 68, 68, 0.575); }
 
 /* search */
 .admin-search-container{ display:flex; gap:.6rem; margin-bottom: .9rem; flex-wrap: wrap; }

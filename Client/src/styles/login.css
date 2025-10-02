@@ -1,4 +1,5 @@
 .login-container {
+  direction: rtl;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -79,7 +80,6 @@
   font-size: 0.9rem;
   color: #555;
 }
-
 .signup-link {
   color: #007BFF;
   text-decoration: none;
@@ -87,6 +87,54 @@
   margin-left: 0.3rem;
 }
 
+
+
 .signup-link:hover {
   text-decoration: underline;
+}.auth-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
 }
+
+.auth-subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.password-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.password-field input {
+  flex: 1;
+}
+
+.toggle-password {
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: inherit;
+  padding: 0.45rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.2s;
+}
+
+.toggle-password:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .toggle-password {
+  border-color: var(--border-dark);
+}
+
+.route-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+

@@ -4,6 +4,9 @@ import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import TopbarStatus from "./TopbarStatus";
+import { getItemWithExpiry, setItemWithExpiry } from "../../services/storage";
+
+const DONE_KEY = "gardnerTestDone";
 
 function formatTime(sec) {
   const m = Math.floor(sec / 60).toString().padStart(2, "0");
@@ -31,14 +34,22 @@ export default function GardnerTest({ questions, duration = 10 }) {
   // جواب‌ها به‌صورت map نگه می‌داریم: { [questionId]: number }
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(DONE_KEY));
+  const submittingRef = useRef(false);
   const [started, setStarted] = useState(false);
 
   const currentQuestion = Gardner_Test[currentIndex];
+  useEffect(() => {
+    if (!blocked) return;
+    alert("You have already completed this test. Please try again in 24 hours.");
+    navigate("/");
+  }, [blocked, navigate]);
+
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
   // تایمر کل آزمون
   useEffect(() => {
-    if (!started) return;
+    if (blocked || !started) return;
     if (timeLeft <= 0) {
       handleSubmit();
       return;
@@ -46,7 +57,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
     const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started, timeLeft]);
+  }, [blocked, started, timeLeft]);
 
   // انتخاب گزینه
   const handleSelect = useCallback(
@@ -71,6 +82,8 @@ export default function GardnerTest({ questions, duration = 10 }) {
 
   // ارسال نهایی
   const handleSubmit = useCallback(async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
       questionId,
       value,
@@ -91,17 +104,25 @@ export default function GardnerTest({ questions, duration = 10 }) {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
         alert("🎉 آزمون گاردنر با موفقیت ثبت شد!");
+        setItemWithExpiry(DONE_KEY, true, 24 * 60 * 60 * 1000);
+        setBlocked(true);
         navigate("/");
         location.reload();
 
       } else {
         alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        submittingRef.current = false;
       }
     } catch (err) {
       console.error("Gardner submission error:", err);
       alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      submittingRef.current = false;
     }
   }, [answers, navigate, user?.id, user?._id]);
+
+  if (blocked) {
+    return null;
+  }
 
   if (!total) {
     return (

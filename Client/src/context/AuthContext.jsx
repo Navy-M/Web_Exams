@@ -1,13 +1,15 @@
-import { createContext, useContext, useState, useEffect } from "react";
+﻿import { createContext, useContext, useState, useEffect } from "react";
 import * as api from "../services/api";
+import { useI18n } from "../i18n";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const { t } = useI18n();
   const [user, setUser] = useState(null);
-  const [userToken, setUserToken] = useState(localStorage.getItem("token")); // persist token
+  const [userToken, setUserToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // <-- track auth errors
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -18,24 +20,22 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const res = await api.getProfile();
-        // test
         setUser(res.user);
       } catch (err) {
         console.error("Profile error:", err);
         setUser(null);
         setUserToken(null);
         localStorage.removeItem("token");
-        setError("Session expired. Please log in again."); // optional message
+        setError(t("auth.sessionExpired"));
       } finally {
         setLoading(false);
       }
     };
 
     checkAuth();
-  }, [userToken]);
+  }, [userToken, t]);
 
   const login = async (credentials) => {
-    // console.log('====== AuthContext login function called ======', credentials);
     try {
       const response = await api.login(credentials);
       const { token, user } = response;
@@ -48,17 +48,15 @@ export const AuthProvider = ({ children }) => {
       return user;
     } catch (err) {
       console.error("Login error:", err);
-      setError("Invalid credentials"); // optional
-      throw err; // rethrow so caller can also handle it
+      setError(t("auth.invalidCredentials"));
+      throw err;
     }
   };
 
-    // SIGNUP
   const signup = async (credentials) => {
     try {
       const response = await api.createUser(credentials);
       const { token, user } = response;
-      console.log("Signup response:", response);
 
       localStorage.setItem("token", token);
       setUser(user);
@@ -67,8 +65,8 @@ export const AuthProvider = ({ children }) => {
 
       return user;
     } catch (err) {
-      console.error(" خطا در ثبت نام:", err);
-      setError(err?.response?.data?.message || "خطا در ثبت نام");
+      console.error("Signup error:", err);
+      setError(err?.response?.data?.message || t("auth.signupFailed"));
       throw err;
     }
   };
@@ -78,11 +76,11 @@ export const AuthProvider = ({ children }) => {
       await api.logout();
     } catch (err) {
       console.warn("Logout failed, but clearing local state anyway.");
+      setError(t("auth.logoutFailed"));
     }
     localStorage.removeItem("token");
     setUser(null);
     setUserToken(null);
-    setError(null);
   };
 
   return (

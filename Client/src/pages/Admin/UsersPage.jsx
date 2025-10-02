@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+﻿import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   getUsers,
   deleteUser,
@@ -9,6 +9,7 @@ import {
   deleteResult,
   analyzeTests,
 } from "../../services/api";
+import { useI18n } from "../../i18n";
 
 import ShowAnalysis from "../../components/Common/ShowAnalysis";
 import SearchBar from "./UsersPage/SearchBar";
@@ -21,6 +22,8 @@ import { printUserReport } from "./UsersPage/printUserReport.js";
 import "./UsersPage/usersPage.css";
 
 const UsersPage = () => {
+  const { t } = useI18n();
+
   // data
   const [users, setUsers] = useState([]);
   const [userResults, setUserResults] = useState([]);
@@ -59,7 +62,7 @@ const UsersPage = () => {
         const nonAdmin = (list || []).filter((u) => u.role !== "admin");
         if (!ignore) setUsers(nonAdmin);
       } catch (e) {
-        if (!ignore) setError("خطا در دریافت کاربران");
+        if (!ignore) setError(t("usersPage.loadError"));
       } finally {
         if (!ignore) setLoading(false);
       }
@@ -68,14 +71,13 @@ const UsersPage = () => {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [t]);
 
   // when selecting a user, fetch results (or use embedded)
   useEffect(() => {
     const run = async () => {
       if (!selectedUser) return;
       try {
-        // prefer API if available, else from user object
         const results =
           (await getUserResults(selectedUser._id)) ||
           selectedUser.testsAssigned ||
@@ -126,7 +128,7 @@ const UsersPage = () => {
             pick(u.profile?.jobPosition).includes(q) ||
             pick(u.profile?.province).includes(q)
           );
-        }
+      }
     });
   }, [users, search, searchFilter]);
 
@@ -141,17 +143,17 @@ const UsersPage = () => {
         role: newUser.role,
       });
 
-      alert(res.message || "کاربر اضافه شد");
+      alert(res.message || t("usersPage.addSuccess"));
       if (res.user) setUsers((prev) => [...prev, res.user]);
       setNewUser({ fullName: "", period: "", username: "", role: "user", password: "" });
       setShowAddRow(false);
     } catch (err) {
-      alert(err?.response?.message || "خطا در افزودن کاربر");
+      alert(err?.response?.message || t("usersPage.addFailure"));
     }
   };
 
   const handleDeleteUser = async (id) => {
-    if (!window.confirm("آیا از حذف کاربر مطمئن هستید؟")) return;
+    if (!window.confirm(t("usersPage.deleteUserConfirm"))) return;
     try {
       await deleteUser(id);
       setUsers((prev) => prev.filter((u) => u._id !== id));
@@ -160,7 +162,7 @@ const UsersPage = () => {
         setUserResults([]);
       }
     } catch {
-      alert("خطا در حذف کاربر");
+      alert(t("usersPage.deleteUserFailure"));
     }
   };
 
@@ -170,18 +172,18 @@ const UsersPage = () => {
       const data = res?.data ?? res;
       setSelectedResult(data);
     } catch {
-      alert("خطا در دریافت نتایج");
+      alert(t("usersPage.selectResultError"));
     }
   };
 
   const handleDeleteUserResult = async (resultId) => {
-    if (!window.confirm("آیا از حذف آزمون مطمئن هستید؟")) return;
+    if (!window.confirm(t("usersPage.deleteResultConfirm"))) return;
     try {
       await deleteResult(resultId);
       setUserResults((prev) => prev.filter((r) => r.resultId !== resultId && r._id !== resultId));
       if (selectedResult?._id === resultId) setSelectedResult(null);
     } catch {
-      alert("خطا در حذف آزمون");
+      alert(t("usersPage.deleteResultFailure"));
     }
   };
 
@@ -189,10 +191,10 @@ const UsersPage = () => {
     try {
       const { resultId, testType } = result;
       const response = await analyzeTests({ resultId, testType });
-      console.log("✅ Analyzed Result:", response?.data || response);
-      alert("تحلیل با موفقیت انجام شد ✅");
+      console.log("Analysis response", response?.data || response);
+      alert(t("usersPage.analyzeSuccess"));
     } catch {
-      alert("خطایی در تحلیل تست رخ داد");
+      alert(t("usersPage.analyzeFailure"));
     }
   };
 
@@ -204,46 +206,54 @@ const UsersPage = () => {
         resultId: selectedResult._id,
         feedback,
       });
-      alert("بازخورد با موفقیت ثبت شد");
+      alert(t("usersPage.feedbackSuccess"));
       setFeedback("");
       setSelectedResult(null);
-      // refresh results
       const refreshed = await getUserResults(selectedUser._id);
       setUserResults(refreshed || []);
     } catch {
-      alert("خطا در ثبت بازخورد");
+      alert(t("usersPage.feedbackFailure"));
     }
   };
 
   const handlePrintUserResume = () => {
     if (!selectedUser) return;
     if (!selectedUser?.profile?.age) {
-      alert(`کاربر ${selectedUser?.profile?.fullName || ""} هنوز اطلاعات فردی را کامل نکرده است!`);
+      alert(
+        t("usersPage.resumeMissingAge", {
+          name: selectedUser?.profile?.fullName || "",
+        })
+      );
       return;
     }
-    if (!window.confirm("آیا از چاپ کارنامه کاربر مطمئن هستید؟")) return;
+    if (!window.confirm(t("usersPage.printConfirm"))) return;
     const html = printUserReport({ user: selectedUser, results: userResults, formatDate });
     const w = window.open("", "_blank");
-    if (!w) return alert("خطا در باز کردن پنجره چاپ");
+    if (!w) return alert(t("usersPage.popupBlocked"));
     w.document.write(html);
     w.document.close();
     w.focus();
     w.print();
   };
 
-  // render
   if (selectedUser) {
     return (
       <div className="admin-users-container">
         <div className="user-results-layout">
           <header className="user-results-header">
             <div className="user-title">
-              <h2>نتایج تست‌های کاربر:</h2>
+              <h2>{t("usersPage.selectedTitle")}</h2>
               <h2 className="user-name">{selectedUser?.profile?.fullName}</h2>
             </div>
+            
             <div className="user-actions">
-              <button className="btn ghost" onClick={() => setSelectedUser(null)}>بازگشت</button>
-              <button className="btn primary" onClick={handlePrintUserResume}>چاپ کارنامه</button>
+            <button className="btn primary" onClick={handlePrintUserResume}>
+                {t("usersPage.printResume")}
+              </button>
+              <button style={{color: "var(--text)"}}  className="btn danger" onClick={() => setSelectedUser(null)}>
+                {t("usersPage.back")}
+              </button>
+              
             </div>
           </header>
 
@@ -266,7 +276,11 @@ const UsersPage = () => {
                 <section className="feedback-section card">
                   {selectedResult?.analysis && (
                     <div className="analysis-wrap">
-                      <h4>نتایج آزمون {selectedResult.testType}</h4>
+                      <h4>
+                        {t("usersPage.analysisHeading", {
+                          testType: selectedResult.testType,
+                        })}
+                      </h4>
                       <ShowAnalysis
                         testType={selectedResult.testType}
                         analysisData={selectedResult.analysis}
@@ -293,16 +307,15 @@ const UsersPage = () => {
     );
   }
 
-  // list view
   return (
     <div className="admin-users-container">
       <section className="admin-users-section card">
         <header className="section-head">
-          <h2>مدیریت کاربران</h2>
+          <h2>{t("usersPage.title")}</h2>
         </header>
 
         {loading ? (
-          <p>در حال بارگذاری…</p>
+          <p>{t("usersPage.loadingList")}</p>
         ) : error ? (
           <p className="error">{error}</p>
         ) : (

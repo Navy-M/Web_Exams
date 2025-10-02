@@ -67,8 +67,8 @@ const TestsStatus = () => {
     return users.filter((u) => {
       if (searchFilter === "name")
         return lc(u.profile?.fullName).includes(q);
-      if (searchFilter === "email")
-        return lc(u.email).includes(q);
+      if (searchFilter === "period")
+        return lc(u.period).includes(q);
       if (searchFilter === "role")
         return lc(u.role).includes(q);
       if (searchFilter === "job")

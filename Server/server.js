@@ -4,6 +4,7 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
+import jwt from "jsonwebtoken";
 import mongoSanitize from "express-mongo-sanitize";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -34,6 +35,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(cookieParser());
+const getRoleFromRequest = (req) => {
+  const cookieToken = req.cookies?.token;
+  const authHeader = req.headers?.authorization;
+  const bearerToken = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const token = cookieToken || bearerToken;
+  if (!token) return null;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded?.role || null;
+  } catch (err) {
+    return null;
+  }
+};
 
 // If you need original query parsed for some reason
 // app.use((req, res, next) => {
@@ -47,7 +61,20 @@ app.use(cookieParser());
 // Rate limiter middleware
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Allow 100 requests per minute per IP
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  max: (req, res) => {
+    if (process.env.NODE_ENV === "development") {
+      return 1000;
+    }
+
+    const role = getRoleFromRequest(req);
+    if (role === "admin" || role === "dev" || role === "developer") {
+      return 1000;
+    }
+
+    return 100;
+  },
 });
 app.use(limiter);
 

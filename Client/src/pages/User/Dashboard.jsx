@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+﻿import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sun, Moon, LogOut, Award, ListChecks, Sparkles } from "lucide-react";
 import {
@@ -13,6 +13,7 @@ import {
 
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import { useI18n } from "../../i18n";
 import { getTestResults, getUserById } from "../../services/api";
 import { Test_Cards } from "../../services/dummyData";
 
@@ -27,15 +28,14 @@ const UserDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { t } = useI18n();
 
   const [allTests, setAllTests] = useState(Test_Cards ?? []);
   const [completed, setCompleted] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [selectedCompletedTest, setSelectedCompletedTest] = useState(null);
 
-  // ---- data fetching (fresh user every mount) ----
   useEffect(() => {
     let ignore = false;
 
@@ -44,19 +44,16 @@ const UserDashboard = () => {
         setLoading(true);
         setError("");
 
-        const fresh = user?.id
-    ? await getUserById(user.id).then((r) => r.data) // <= .data if your API returns {data}
-    : null;
+        const fresh = user?.id ? await getUserById(user.id) : null;
 
         setAllTests(Test_Cards ?? []);
         setCompleted(fresh?.testsAssigned ?? user?.testsAssigned ?? []);
       } catch (e) {
-        // 404 or network → fallback to context data so UI keeps working
         setAllTests(Test_Cards ?? []);
         setCompleted(user?.testsAssigned ?? []);
-        setError(""); // hide error if you prefer silent fallback
+        setError(t("common.messages.unexpectedError"));
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     };
 
@@ -65,9 +62,8 @@ const UserDashboard = () => {
       ignore = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, t]);
 
-  // ---- helpers ----
   const handleLogout = async () => {
     await logout();
     navigate("/login");
@@ -83,7 +79,7 @@ const UserDashboard = () => {
       const res = await getTestResults(id);
       if (res?.data) setSelectedCompletedTest(res.data);
     } catch (e) {
-      console.error("❌ Error Select Result:", e);
+      console.error("select result error", e);
     }
   }, []);
 
@@ -98,7 +94,7 @@ const UserDashboard = () => {
 
   const scoreSummary = useMemo(() => {
     const total = completed.reduce((acc, t) => acc + (t.score ?? 0), 0);
-    const doneCount = Math.min(completed.length, 7); // preserves your cap rule
+    const doneCount = Math.min(completed.length, 7);
     return { total, doneCount, allCount: allTests.length };
   }, [completed, allTests.length]);
 
@@ -127,38 +123,36 @@ const UserDashboard = () => {
 
   const hasProfile = !!user?.profile?.age && !!user?.profile?.gender && !!user?.profile?.education;
 
+  const themeLabel = isDark ? t("dashboard.theme.toLight") : t("dashboard.theme.toDark");
+
   return (
     <div className="user-dashboard" dir="rtl" data-theme={isDark ? "dark" : "light"}>
       <header className="dashboard-header">
         <div className="header-top">
-          <button
-            onClick={toggleTheme}
-            className="ui-btn outline"
-            aria-label={isDark ? "تغییر به حالت روشن" : "تغییر به حالت تیره"}
-          >
+          <button onClick={toggleTheme} className="ui-btn outline" aria-label={themeLabel}>
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            <span>{isDark ? "حالت روشن" : "حالت تیره"}</span>
+            <span>{themeLabel}</span>
           </button>
 
-          <button onClick={handleLogout} className="ui-btn danger" aria-label="خروج">
+          <button onClick={handleLogout} className="ui-btn danger" aria-label={t("dashboard.logout")}>
             <LogOut size={18} />
-            <span>خروج</span>
+            <span>{t("dashboard.logout")}</span>
           </button>
         </div>
 
-        {!user?.profile?.age || !user?.profile?.gender ? (
+        {!hasProfile ? (
           <div className="complete-user-profile card surface-warning">
             <div className="cup-content">
               <div className="cup-text">
-                <h3>ابتدا پروفایل را تکمیل کنید</h3>
-                <p>برای پیشنهاد دقیق تست‌ها، سن و جنسیت لازم است.</p>
+                <h3>{t("dashboard.completeProfile.title")}</h3>
+                <p>{t("dashboard.completeProfile.message")}</p>
               </div>
               <button
                 type="button"
                 className="ui-btn primary"
                 onClick={() => navigate("/users/completeProfile")}
               >
-                تکمیل اطلاعات
+                {t("dashboard.completeProfile.cta")}
               </button>
             </div>
           </div>
@@ -169,35 +163,27 @@ const UserDashboard = () => {
                 <div className="stat-icon">
                   <Award size={18} />
                 </div>
-                {/* <h3>{scoreSummary.total}</h3> */}
-                {/* <p>مجموع امتیازات</p>
-                 */}
-                 <h1 className="user-email">
-                   {user?.username} <span className="sep">|</span> {user?.profile?.fullName}
-                 </h1>
+                <h1 className="user-email">
+                  {user?.username} <span className="sep">|</span> {user?.profile?.fullName}
+                </h1>
               </div>
-
 
               <div className="stat-item card">
                 <div className="stat-icon">
                   <ListChecks size={18} />
                 </div>
                 <h3>{scoreSummary.allCount}</h3>
-                <p>کل تست‌ها</p>
+                <p>{t("dashboard.stats.assigned")}</p>
               </div>
-
 
               <div className="stat-item card">
                 <div className="stat-icon">
                   <Sparkles size={18} />
                 </div>
                 <h3>{scoreSummary.doneCount}</h3>
-                <p>انجام‌شده</p>
+                <p>{t("dashboard.stats.completed")}</p>
               </div>
-
             </div>
-
-            
           </div>
         )}
       </header>
@@ -216,20 +202,19 @@ const UserDashboard = () => {
         <div className="error-state card">
           <p>{error}</p>
           <button className="ui-btn" onClick={() => window.location.reload()}>
-            تلاش مجدد
+            {t("dashboard.actions.reload")}
           </button>
         </div>
       ) : (
         <>
           {!!user?.testsAssigned && user.testsAssigned.length > 6 && (
-            <div className="notice card">.تمام آزمایش‌ها انجام شد. لطفاً منتظر تحلیل‌ها باشید</div>
+            <div className="notice card">{t("dashboard.notice.limit")}</div>
           )}
 
           {user?.profile?.age && pendingTests.length > 0 && (
             <section className="recommended-tests">
               <div className="section-head">
-                <h2>تست‌های پیشنهادی</h2>
-                {/* <span className="hint">{pendingTests.length} مورد آماده شروع</span> */}
+                <h2>{t("dashboard.sections.recommended")}</h2>
               </div>
 
               <div className="tests-grid">
@@ -242,7 +227,7 @@ const UserDashboard = () => {
 
           {scoreTrend.length > 0 && (
             <section className="score-graph">
-              <h2>روند امتیازها</h2>
+              <h2>{t("dashboard.sections.trend")}</h2>
               <div className="chart-card card">
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={scoreTrend}>
@@ -265,7 +250,7 @@ const UserDashboard = () => {
 
           {hasProfile && (
             <section className="completed-tests">
-              <h2>تست‌های انجام‌شده</h2>
+              <h2>{t("dashboard.sections.completed")}</h2>
 
               {completed.length > 0 ? (
                 <>
@@ -275,13 +260,16 @@ const UserDashboard = () => {
 
                   {selectedCompletedTest && (
                     <div className="analysis-wrap card">
-                      <ShowAnalysis testType={selectedCompletedTest.testType} analysisData={selectedCompletedTest.analysis} />
+                      <ShowAnalysis
+                        testType={selectedCompletedTest.testType}
+                        analysisData={selectedCompletedTest.analysis}
+                      />
                     </div>
                   )}
                 </>
               ) : (
                 <div className="empty card">
-                  <p>جداول نتایج شما پس از بررسی در دسترس خواهد بود…</p>
+                  <p>{t("dashboard.empty.completed")}</p>
                 </div>
               )}
             </section>
@@ -293,3 +281,4 @@ const UserDashboard = () => {
 };
 
 export default UserDashboard;
+

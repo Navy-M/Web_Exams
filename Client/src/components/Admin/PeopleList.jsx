@@ -54,7 +54,7 @@ const PeopleList = () => {
                     <tr key={user._id}>
                       <td style={{textAlign: 'center'}}>{index + 1}</td>
                       <td>{user.profile?.fullName}</td>
-                      <td>{user.email}</td>
+                      <td>{user.username}</td>
                       <td>{user.role}</td>
                       <td>
                         <button 

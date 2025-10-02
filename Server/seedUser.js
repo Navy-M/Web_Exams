@@ -35,7 +35,7 @@ const seed = async () => {
       return;
     }
 
-    const hashedPassword = await bcrypt.hash("1234", 10);
+    const hashedPassword = await bcrypt.hash("123456", 10);
 
     const adminUser = {
       username: "ownerlife1400@gmail.com",

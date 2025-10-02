@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
 // Create Axios instance
 const API = axios.create({
@@ -29,7 +29,7 @@ API.interceptors.response.use(
     // Custom error message extraction
     const message = data?.message || 
                     data?.error || 
-                    'خطای سرور | Server error';
+                    'خطای سرور';
 
     // Handle specific status codes
     switch (status) {
@@ -114,7 +114,7 @@ export const completeProfile = async (form) => {
     return response.data; // assume { status: "...", message: "...", data: ... }
   } catch (error) {
     console.error("completeProfile error:", error);
-    throw error.response?.data || { message: "خطای ناشناخته هنگام ارسال اطلاعات." };
+    throw error.response?.data || { message: "ذخیره اطلاعات پروفایل با خطا مواجه شد." };
   }
 };
 // --- TESTS API ---
@@ -207,3 +207,6 @@ export const prioritizeUsers = async (people, quotas, weights) => {
 };
 
 export default API;
+
+
+

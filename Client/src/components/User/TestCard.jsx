@@ -1,37 +1,53 @@
-// components/User/TestCard.js
-import { Link } from 'react-router-dom';
-import '../../styles/test-Card.css'
+﻿import { useMemo } from "react";
+import { useI18n } from "../../i18n";
+import "../../styles/test-Card.css";
 
 const TestCard = ({ test, onStart }) => {
+  const { t } = useI18n();
 
-     const formatDate = (time) =>  new Date(time).toLocaleDateString("fa-IR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const formatDate = (time) =>
+    new Date(time).toLocaleDateString("fa-IR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const nameKey = `tests.catalog.${test.id}.name`;
+  const descriptionKey = `tests.catalog.${test.id}.description`;
+
+  const name = useMemo(() => {
+    const translated = t(nameKey);
+    return translated === nameKey ? test.name : translated;
+  }, [t, nameKey, test.name]);
+
+  const description = useMemo(() => {
+    const translated = t(descriptionKey);
+    return translated === descriptionKey ? test.description : translated;
+  }, [t, descriptionKey, test.description]);
+
+  const deadlineLabel = test.deadline
+    ? t("tests.card.deadline", { date: formatDate(test.deadline) })
+    : "";
+
+  const durationLabel =
+    test.duration?.from && test.duration?.to
+      ? t("tests.card.duration", { from: test.duration.from, to: test.duration.to })
+      : t("starterTest.durationUnknown");
 
   return (
     <div className="test-card">
-      {/* <img src={test.icon} alt={test.name}/> Testing perposes */}
-      <h3>{test.name}</h3>
+      <h3>{name}</h3>
+      <p className="test-description">{description}</p>
       <div className="test-meta">
-        <span className="deadline">
-          تاریخ اتمام: {formatDate(test.deadline)}
-        </span>
-        <span className="duration">مدت آزمون: {test.duration?.from} تا {test.duration?.to} دقیقه</span>
+        {deadlineLabel && <span className="deadline">{deadlineLabel}</span>}
+        <span className="duration">{durationLabel}</span>
       </div>
       <div className="test-actions">
-        <button 
-          onClick={onStart}
-          className="start-button"
-        >
-          شروع آزمون
+        <button onClick={onStart} className="start-button">
+          {t("tests.card.start")}
         </button>
-        {/* <Link to={`/test/instructions/${test._id}`} className="view-details">
-          مشاهده جزیات
-        </Link> */}
       </div>
     </div>
   );

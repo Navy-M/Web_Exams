@@ -1,97 +1,122 @@
-import { useState, useEffect } from 'react'; 
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import LoadingSpinner from '../../components/Common/LoadingSpinner';
 import '../../styles/main.css';
 import '../../styles/login.css';
-import LoadingSpinner from '../../components/Common/LoadingSpinner';
-import { checkServer } from '../../services/api';
+
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const { user, login, error: authError } = useAuth();
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const { user, login } = useAuth();
-  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
 
   useEffect(() => {
-    if (!loading && user) {
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+    if (user) {
+      navigate(user.role === 'admin' ? '/admin' : '/dashboard', { replace: true });
     }
+  }, [user, navigate]);
 
-    // Clear form and error on mount
-    setError('');
+  useEffect(() => {
+    // clear fields when component mounts
     setUsername('');
     setPassword('');
-  }, [user, loading, navigate]);
+    setFormError('');
+  }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  useEffect(() => {
+    if (authError) {
+      setFormError(authError);
+    }
+  }, [authError]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (submitting) return;
+
+    if (!username.trim() || !password.trim()) {
+      setFormError('نام کاربری و گذرواژه الزامی است.');
+      return;
+    }
+
+    setSubmitting(true);
+    setFormError('');
+
     try {
-      const loggedInUser = await login({ username, password });
-
-      if (loggedInUser?.role === 'admin') {
-        navigate('/admin');
+      const loggedIn = await login({ username: username.trim(), password });
+      if (loggedIn?.role === 'admin') {
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (err) {
-      const message = err?.response?.data?.message || 'Invalid credentials';
-      setError(message);
+      const message = err?.response?.data?.message || 'نام کاربری یا گذرواژه نادرست است.';
+      setFormError(message);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
     <div className="login-container">
-      <form onSubmit={handleSubmit} className="login-form" noValidate>
-        <h1>ورود به سامانه</h1>
+      <form className="login-form" onSubmit={handleSubmit} noValidate>
+        <header className="auth-header">
+          <h1>ورود به سامانه</h1>
+          <p className="auth-subtitle">برای مشاهده آزمون‌ها و نتایج، نام کاربری و گذرواژه خود را وارد کنید.</p>
+        </header>
 
-        {error && <div className="error-message">{error}</div>}
+        {formError && <div className="error-message">{formError}</div>}
 
         <div className="form-group">
-          <label htmlFor="mobile">حساب کاربری</label>
+          <label htmlFor="username">نام کاربری</label>
           <input
             id="username"
             type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
             autoComplete="username"
-            disabled={loading}
+            placeholder="مثلاً student1403"
+            value={username}
+            disabled={submitting}
+            onChange={(event) => setUsername(event.target.value)}
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="password">رمز عبور</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            disabled={loading}
-          />
+          <label htmlFor="password">گذرواژه</label>
+          <div className="password-field">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              placeholder="گذرواژه خود را وارد کنید"
+              value={password}
+              disabled={submitting}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <button
+              type="button"
+              className="toggle-password"
+              onClick={() => setShowPassword((prev) => !prev)}
+              aria-label={showPassword ? 'مخفی کردن گذرواژه' : 'نمایش گذرواژه'}
+              disabled={submitting}
+            >
+              {showPassword ? 'مخفی' : 'نمایش'}
+            </button>
+          </div>
         </div>
 
-        <button type="submit" className="button-primary" disabled={loading}>
-          {loading ? <LoadingSpinner size={20} color="#fff" /> : 'ورود به سامانه'}
+        <button type="submit" className="button-primary" disabled={submitting}>
+          {submitting ? <LoadingSpinner size={20} color="#fff" /> : 'ورود به حساب کاربری'}
         </button>
 
-        {/* Sign Up link */}
         <p className="signup-text">
-          حساب کاربری ندارید؟{' '}
+          حساب کاربری ندارید؟
           <Link to="/signup" className="signup-link">
-            ثبت نام
+            ثبت‌نام کنید
           </Link>
         </p>
       </form>

@@ -48,7 +48,7 @@ const UsersTable = ({ users, selected, onToggleUser, onToggleAll, allVisibleSele
             <th>ردیف</th>
             <th>نام و نام خانوادگی</th>
             {/* <th>ایمیل</th> */}
-            <th>نقش</th>
+            <th>دوره</th>
             <th>استان</th>
             <th>آزمون‌ها</th>
           </tr>
@@ -69,7 +69,7 @@ const UsersTable = ({ users, selected, onToggleUser, onToggleAll, allVisibleSele
                 <td className="center">{idx + 1}</td>
                 <td>{u.profile?.fullName || "—"}</td>
                 {/* <td>{u.email || "—"}</td> */}
-                <td>{u.role || "—"}</td>
+                <td>{u.period || "—"}</td>
                 <td>{u.profile?.province || "—"}</td>
                 <td><UserStat u={u} /></td>
               </tr>

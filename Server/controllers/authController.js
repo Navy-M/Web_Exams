@@ -107,12 +107,27 @@ export const registerUser = async (req, res, next) => {
       { expiresIn: "30d" }
     );
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    let skipSessionCookie = false;
+    const existingToken = req.cookies?.token;
+    if (existingToken) {
+      try {
+        const decodedSession = jwt.verify(existingToken, process.env.JWT_SECRET);
+        if (decodedSession?.role === "admin") {
+          skipSessionCookie = true;
+        }
+      } catch (cookieErr) {
+        console.warn("[Register] existing token verification failed", cookieErr?.message);
+      }
+    }
+
+    if (!skipSessionCookie) {
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "Lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+    }
 
 
     console.log(" ✅ [Register Success] User created:", user.username);

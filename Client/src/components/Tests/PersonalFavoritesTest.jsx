@@ -4,6 +4,9 @@ import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import TopbarStatus from "./TopbarStatus";
+import { getItemWithExpiry, setItemWithExpiry } from "../../services/storage";
+
+const DONE_KEY = "pfTestDone";
 
 function formatTime(sec) {
   const m = Math.floor(sec / 60).toString().padStart(2, "0");
@@ -23,13 +26,21 @@ export default function PersonalFavoritesTest({ questions = [], duration = 8 }) 
   const [answers, setAnswers] = useState({}); // { [questionId]: value }
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(DONE_KEY));
+  const submittingRef = useRef(false);
 
   const currentQuestion = PF_Test[currentIndex];
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
+  useEffect(() => {
+    if (!blocked) return;
+    alert("You have already completed this test. Please try again in 24 hours.");
+    navigate("/");
+  }, [blocked, navigate]);
+
   // timer (whole test)
   useEffect(() => {
-    if (!started) return;
+    if (blocked || !started) return;
     if (timeLeft <= 0) {
       handleSubmit();
       return;
@@ -37,7 +48,7 @@ export default function PersonalFavoritesTest({ questions = [], duration = 8 }) 
     const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started, timeLeft]);
+  }, [blocked, started, timeLeft]);
 
   const handleSelect = useCallback(
     (questionId, value) => {
@@ -53,6 +64,8 @@ export default function PersonalFavoritesTest({ questions = [], duration = 8 }) 
   );
 
   const handleSubmit = useCallback(async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
       questionId: isNaN(Number(questionId)) ? questionId : Number(questionId),
       value,
@@ -73,17 +86,25 @@ export default function PersonalFavoritesTest({ questions = [], duration = 8 }) 
       const res = await submitResult(resultData);
       if (res?.user || res?._id || res?.id) {
         alert("🎉 آزمون با موفقیت ثبت شد!");
+        setItemWithExpiry(DONE_KEY, true, 24 * 60 * 60 * 1000);
+        setBlocked(true);
         navigate("/");
         location.reload();
 
       } else {
         alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        submittingRef.current = false;
       }
     } catch (err) {
       console.error("PF submission error:", err);
       alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      submittingRef.current = false;
     }
   }, [answers, navigate, user?.id, user?._id]);
+
+  if (blocked) {
+    return null;
+  }
 
   if (!total) {
     return (

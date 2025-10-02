@@ -1,4 +1,5 @@
-import React from "react";
+﻿import React from "react";
+import { useI18n } from "../../../i18n";
 
 const ResultsTable = ({
   results,
@@ -8,47 +9,56 @@ const ResultsTable = ({
   onAnalyze,
   selectedResultId,
 }) => {
+  const { t } = useI18n();
+
   return (
     <section className="results-section card">
-      <h3>لیست نتایج ارسال شده</h3>
+      <h3>{t("usersPage.results.title")}</h3>
 
       {results?.length ? (
         <div className="table-wrap">
           <table className="results-table">
             <thead>
               <tr>
-                <th>نام تست</th>
-                <th>تاریخ انجام</th>
-                <th>مدت زمان</th>
-                <th>بازخورد</th>
-                <th>اقدامات</th>
+                <th>{t("usersPage.results.headers.testType")}</th>
+                <th>{t("usersPage.results.headers.completedAt")}</th>
+                <th>{t("usersPage.results.headers.duration")}</th>
+                <th>{t("usersPage.results.headers.feedback")}</th>
+                <th>{t("usersPage.results.headers.actions")}</th>
               </tr>
             </thead>
             <tbody>
               {results.map((r) => {
                 const disabled = !!selectedResultId;
+                const duration = r.duration
+                  ? `${r.duration} ${t("usersPage.results.durationUnit")}`
+                  : "--";
+
                 return (
                   <tr key={r._id || r.resultId}>
                     <td>{r.testType}</td>
-                    <td>{r.completedAt ? formatDate(r.completedAt) : "—"}</td>
-                    <td>{r.duration || "--"} ثانیه</td>
-                    <td>{r.adminFeedback || "بدون بازخورد"}</td>
+                    <td>{r.completedAt ? formatDate(r.completedAt) : t("usersPage.profile.missing")}</td>
+                    <td>{duration}</td>
+                    <td>{r.adminFeedback || t("usersPage.results.noFeedback")}</td>
                     <td className="actions">
                       <button
                         className="btn danger"
+                        style={{color: "red"}}
+
                         disabled={disabled}
                         onClick={() => onDelete(r.resultId || r._id)}
                       >
-                        حذف آزمون
+                        {t("usersPage.results.delete")}
                       </button>
 
                       {!r?.adminFeedback && (
                         <button
+                        style={{color: "var(--text)"}}
                           className="btn ghost"
                           disabled={disabled}
-                          onClick={() => onSelectResult(r.resultId)}
+                          onClick={() => onSelectResult(r.resultId || r._id)}
                         >
-                          ثبت بازخورد
+                          {t("usersPage.results.feedback")}
                         </button>
                       )}
 
@@ -58,15 +68,16 @@ const ResultsTable = ({
                           disabled={disabled}
                           onClick={() => onAnalyze(r)}
                         >
-                          تصحیح
+                          {t("usersPage.results.analyze")}
                         </button>
                       ) : (
                         <button
+                        style={{color: "var(--text)"}}
                           className="btn outline"
                           disabled={disabled}
-                          onClick={() => onSelectResult(r.resultId)}
+                          onClick={() => onSelectResult(r.resultId || r._id)}
                         >
-                          مشاهده نتایج
+                          {t("usersPage.results.viewAnalysis")}
                         </button>
                       )}
                     </td>
@@ -77,7 +88,7 @@ const ResultsTable = ({
           </table>
         </div>
       ) : (
-        <p className="muted">نتیجه‌ای برای نمایش وجود ندارد</p>
+        <p className="muted">{t("usersPage.results.noData")}</p>
       )}
     </section>
   );

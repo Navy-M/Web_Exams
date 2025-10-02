@@ -1,23 +1,27 @@
-// src/components/Auth/ProtectedRoute.jsx
-import { useContext } from 'react';
+﻿// src/components/Auth/ProtectedRoute.jsx
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import LoadingSpinner from '../Common/LoadingSpinner';
 
 const ProtectedRoute = ({ role }) => {
-  const { user } = useAuth();
-// console.log(user);
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="route-loader">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   if (!user) {
-    // Not logged in
     return <Navigate to="/login" replace />;
   }
 
   if (role && user.role !== role) {
-    // Role doesn't match
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
   }
 
-  // User is authenticated and role matches (if specified)
   return <Outlet />;
 };
 

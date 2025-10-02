@@ -127,7 +127,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
       savedAt: Date.now(),
     };
     const id = setTimeout(() => {
-      setItemWithExpiry(STORAGE_KEY, payload, 6 * 60 * 60 * 1000); // 6h
+      setItemWithExpiry(STORAGE_KEY, payload, 25 * 60 * 60 * 1000); // 25h
     }, 2000);
     return () => clearTimeout(id);
   }, [answers, currentIndex, started, startedAt, overallRemaining, perQuestionRemaining, questions.length]);
@@ -204,7 +204,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
     try {
       const result = await submitResult(resultData);
       if (result && (result.user || result._id || result.id)) {
-        setItemWithExpiry(DONE_KEY, true, 5 * 60 * 60 * 1000); // 5h
+        setItemWithExpiry(DONE_KEY, true, 24 * 60 * 60 * 1000); // 24h
         removeItem(STORAGE_KEY);
         alert("🎉 آزمون با موفقیت ثبت شد!");
         navigate("/");

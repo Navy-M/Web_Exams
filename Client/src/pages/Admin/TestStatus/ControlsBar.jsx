@@ -15,7 +15,7 @@ const ControlsBar = ({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="جستجو… (نام، ایمیل، نقش، استان)"
+          placeholder="جستجو… (نام، دوره، نقش، استان)"
           aria-label="جستجو"
         />
       </div>
@@ -28,7 +28,7 @@ const ControlsBar = ({
         >
           <option value="">همه فیلدها</option>
           <option value="name">نام</option>
-          <option value="email">ایمیل</option>
+          <option value="period">دوره</option>
           <option value="role">نقش</option>
           <option value="job">شماره دانشجویی</option>
           <option value="province">استان</option>
@@ -42,6 +42,8 @@ const ControlsBar = ({
           <option value="10">نمایش ۱۰</option>
           <option value="50">نمایش ۵۰</option>
           <option value="100">نمایش ۱۰۰</option>
+          <option value="200">نمایش ۲۰۰</option>
+          <option value="300">نمایش ۳۰۰</option>
         </select>
       </div>
     </div>
