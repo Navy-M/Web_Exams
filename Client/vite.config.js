@@ -1,16 +1,18 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+﻿import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command, mode }) => ({
   plugins: [react()],
-  server: {
-    host: '0.0.0.0',  // allow external access on VPS
-    port: 5174,        // your custom port
+  server: command === 'serve' ? {
+    host: '0.0.0.0',
+    port: 5174,
     strictPort: true,
-    allowedHosts: [
-      'tipnama.ir',
-      'www.tipnama.ir'
-    ]
+    allowedHosts: ['tipnama.ir', 'www.tipnama.ir']
+  } : undefined,
+  build: {
+    outDir: 'dist',
+    sourcemap: mode !== 'production',
+    target: 'es2019',
+    emptyOutDir: true
   }
-})
+}));

@@ -1,12 +1,50 @@
-# React + Vite
+﻿# TIPNAMA Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+این برنامه رابط کاربری سامانه آزمون‌های TIPNAMA است که با Vite و React پیاده‌سازی شده است. این سند مراحل آماده‌سازی، توسعه و انتشار نسخه تولیدی را توضیح می‌دهد.
 
-Currently, two official plugins are available:
+## پیش‌نیازها
+- Node.js 18 یا جدیدتر
+- npm (یا هر package manager دلخواه)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## نصب وابستگی‌ها
+```bash
+cd Client
+npm install
+```
 
-## Expanding the ESLint configuration
+## پیکربندی متغیرهای محیطی
+- برای توسعه محلی فایل `.env` موجود است و به‌صورت پیش‌فرض به API محلی (http://localhost:5000/api) اشاره می‌کند.
+- برای انتشار نسخه تولیدی از `.env.production` استفاده می‌شود که آدرس API سرور اصلی را نگه می‌دارد. در صورت نیاز مقدار `VITE_API_URL` را به آدرس نهایی خود تغییر دهید.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## اجرای محیط توسعه
+```bash
+npm run dev
+```
+سرویس توسعه روی پورت 5174 اجرا می‌شود (قابل تغییر در `vite.config.js`).
+
+## ساخت نسخه تولیدی
+```bash
+npm run build
+```
+خروجی آماده انتشار در پوشه `Client/dist` قرار می‌گیرد. جهت بررسی خروجی می‌توانید از دستور زیر استفاده کنید:
+```bash
+npm run preview
+```
+
+## نکات انتشار
+- قبل از انتشار، پوشه `dist` را روی وب‌سرور یا CDN دلخواه سرو می‌کنید.
+- در صورت استفاده از nginx یا reverse proxy اطمینان حاصل کنید که درخواست‌های SPA به `index.html` هدایت شوند.
+- اگر دامنه‌های جدیدی برای دسترسی به محیط توسعه نیاز بود، لیست `allowedHosts` در `vite.config.js` را به‌روز کنید.
+
+## ساختار پروژه
+- `src/main.jsx`: نقطه ورود برنامه و Provider های اصلی.
+- `src/services/api.jsx`: پیکربندی axios و فراخوانی‌های API.
+- `src/components/Tests/*`: کامپوننت‌های آزمون‌ها به همراه منطق محدودسازی ۲۴ ساعته.
+- `src/i18n`: منابع چندزبانه و ترجمه‌ها.
+
+## دستورات lint (اختیاری)
+```bash
+npm run lint
+```
+
+در صورت نیاز به استقرار سی‌آی/سی‌دی، پیشنهاد می‌شود مراحل `npm ci`, `npm run build` و در نهایت آپلود محتویات پوشه `dist` در pipeline لحاظ شوند.
