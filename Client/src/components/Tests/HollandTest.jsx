@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import "../../styles/HalandTest.css"; // ← همون فایلی که خودت داری
+import "../../styles/halandTest.css"; // ← همون فایلی که خودت داری
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
@@ -209,3 +209,4 @@ const HalandTest = ({ questions, duration = 8 }) => {
 };
 
 export default HalandTest;
+

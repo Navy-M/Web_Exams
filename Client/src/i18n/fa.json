@@ -216,6 +216,50 @@
     "sessionExpired": "نشست شما منقضی شده است. لطفاً دوباره وارد شوید.",
     "invalidCredentials": "نام کاربری یا کلمه عبور نادرست است.",
     "signupFailed": "ثبت‌نام کاربر با خطا مواجه شد.",
-    "logoutFailed": "خروج از حساب با خطا مواجه شد."
+    "logoutFailed": "خروج از حساب با خطا مواجه شد.",
+    "common": {
+      "togglePasswordShow": "نمایش ",
+      "togglePasswordHide": "پنهان  "
+    },
+    "login": {
+      "title": "ورود به حساب کاربری",
+      "subtitle": "برای دسترسی به سامانه آزمون‌های تیپ‌نما اطلاعات خود را وارد کنید.",
+      "usernameLabel": "نام کاربری",
+      "usernamePlaceholder": "مثلاً student1403",
+      "passwordLabel": "کلمه عبور",
+      "passwordPlaceholder": "کلمه عبور خود را وارد کنید",
+      "signInButton": "ورود به سامانه",
+      "footerText": "حساب کاربری ندارید؟",
+      "footerLink": "ثبت‌نام ",
+      "errors": {
+        "required": "نام کاربری و کلمه عبور را وارد کنید.",
+        "generic": "ورود به سامانه با مشکل مواجه شد. دوباره تلاش کنید."
+      }
+    },
+    "signup": {
+      "title": "ایجاد حساب جدید",
+      "subtitle": "فرم زیر را تکمیل کنید تا در سامانه تیپ‌نما ثبت‌نام کنید.",
+      "fullNameLabel": "نام و نام خانوادگی",
+      "fullNamePlaceholder": "نام و نام خانوادگی",
+      "periodLabel": "دوره / گروه",
+      "periodPlaceholder": "مثلاً  45",
+      "usernameLabel": "نام کاربری",
+      "usernamePlaceholder": "یک نام کاربری منحصربه‌فرد انتخاب کنید",
+      "passwordLabel": "کلمه عبور",
+      "passwordPlaceholder": "حداقل ۶ کاراکتر",
+      "confirmPasswordLabel": "تکرار کلمه عبور",
+      "confirmPasswordPlaceholder": "کلمه عبور را دوباره وارد کنید",
+      "submit": "ایجاد حساب کاربری",
+      "footerText": "قبلاً ثبت‌نام کرده‌اید؟",
+      "footerLink": "وارد شوید",
+      "toggleConfirmShow": "نمایش ",
+      "toggleConfirmHide": "پنهان کردن ",
+      "errors": {
+        "required": "تمام فیلدهای الزامی را تکمیل کنید.",
+        "passwordLength": "کلمه عبور باید حداقل ۶ کاراکتر باشد.",
+        "mismatch": "تکرار کلمه عبور با مقدار اولیه یکسان نیست.",
+        "generic": "ثبت‌نام با خطا مواجه شد. دوباره تلاش کنید."
+      }
+    }
   }
 }

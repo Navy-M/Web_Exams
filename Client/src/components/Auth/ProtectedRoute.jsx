@@ -1,7 +1,7 @@
-﻿// src/components/Auth/ProtectedRoute.jsx
+// src/components/Auth/ProtectedRoute.jsx
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import LoadingSpinner from '../Common/LoadingSpinner';
+import LoadingSpinner from '../Common/LoadingSpinner.jsx';
 
 const ProtectedRoute = ({ role }) => {
   const { user, loading } = useAuth();
@@ -26,3 +26,4 @@ const ProtectedRoute = ({ role }) => {
 };
 
 export default ProtectedRoute;
+

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sun, Moon, LogOut, Award, ListChecks, Sparkles } from "lucide-react";
 import {
@@ -20,7 +20,7 @@ import { Test_Cards } from "../../services/dummyData";
 import TestCard from "../../components/User/TestCard";
 import TestResultCardGrid from "../../components/Common/TestResultCardGrid";
 import ShowAnalysis from "../../components/Common/ShowAnalysis";
-import LoadingSpinner from "../../components/Common/LoadingSpinner";
+import LoadingSpinner from "../../components/Common/LoadingSpinner.jsx";
 
 import "../../styles/user-dashboard.css";
 
@@ -281,4 +281,5 @@ const UserDashboard = () => {
 };
 
 export default UserDashboard;
+
 

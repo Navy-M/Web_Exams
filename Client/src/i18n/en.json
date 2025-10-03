@@ -93,7 +93,6 @@
       "province": "Province",
       "missing": "❌",
       "isCompleted": "✅"
-
     },
     "results": {
       "title": "User test history",
@@ -217,6 +216,50 @@
     "sessionExpired": "Your session has expired. Please sign in again.",
     "invalidCredentials": "Invalid username or password.",
     "signupFailed": "Signing up failed. Please try again.",
-    "logoutFailed": "Sign out failed, please try again."
+    "logoutFailed": "Sign out failed, please try again.",
+    "common": {
+      "togglePasswordShow": "Show password",
+      "togglePasswordHide": "Hide password"
+    },
+    "login": {
+      "title": "Sign in to your account",
+      "subtitle": "Enter your credentials to access the TIPNAMA platform.",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "e.g. student1403",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "signInButton": "Sign in",
+      "footerText": "Don't have an account?",
+      "footerLink": "Create one",
+      "errors": {
+        "required": "Please enter your username and password.",
+        "generic": "We couldn't sign you in. Please try again."
+      }
+    },
+    "signup": {
+      "title": "Create a new account",
+      "subtitle": "Fill in the form below to join TIPNAMA.",
+      "fullNameLabel": "Full name",
+      "fullNamePlaceholder": "Your full name",
+      "periodLabel": "Period / group",
+      "periodPlaceholder": "e.g. Development 1403",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "Choose a unique username",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "At least 6 characters",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "Re-enter your password",
+      "submit": "Create account",
+      "footerText": "Already registered?",
+      "footerLink": "Sign in",
+      "toggleConfirmShow": "Show password confirmation",
+      "toggleConfirmHide": "Hide password confirmation",
+      "errors": {
+        "required": "Please complete all required fields.",
+        "passwordLength": "Password must be at least 6 characters long.",
+        "mismatch": "Password confirmation does not match.",
+        "generic": "We couldn't complete your registration. Please try again."
+      }
+    }
   }
 }
