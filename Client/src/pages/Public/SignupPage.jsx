@@ -93,7 +93,7 @@ const SignupPage = () => {
         {formError && <div className="error-message">{formError}</div>}
 
         <div className="form-group">
-          <label htmlFor="username" class="required">{t('auth.signup.usernameLabel')}</label>
+          <label htmlFor="username" className="required">{t('auth.signup.usernameLabel')}</label>
           <input
             id="username"
             name="username"
@@ -134,7 +134,7 @@ const SignupPage = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="password" class="required">{t('auth.signup.passwordLabel')}</label>
+          <label htmlFor="password" className="required">{t('auth.signup.passwordLabel')}</label>
           <div className="password-field">
             <input
               id="password"
@@ -160,7 +160,7 @@ const SignupPage = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="confirmPassword" class="required">{t('auth.signup.confirmPasswordLabel')}</label>
+          <label htmlFor="confirmPassword" className="required">{t('auth.signup.confirmPasswordLabel')}</label>
           <div className="password-field">
             <input
               id="confirmPassword"
