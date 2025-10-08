@@ -68,6 +68,9 @@ const getRoleFromRequest = (req) => {
 // Sanitize against NoSQL injection attacks
 // app.use(mongoSanitize());
 
+// put this near the top, before app.use(limiter)
+app.set('trust proxy', 1); // one proxy (nginx). Or just true.
+
 // Rate limiter middleware
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
