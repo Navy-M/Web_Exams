@@ -1,7 +1,10 @@
 ﻿import mongoose from "mongoose";
 
 const connectDB = async () => {
-  const candidates = [process.env.MONGO_URI, process.env.LOCAL_MONGO_URI].filter(Boolean);
+  // Dev
+  // const candidates = [process.env.MONGO_URI, process.env.LOCAL_MONGO_URI].filter(Boolean);
+  // Product
+  const candidates = [process.env.MONGO_URI].filter(Boolean);
 
   if (candidates.length === 0) {
     console.error("[DB] No MongoDB connection string provided (MONGO_URI or LOCAL_MONGO_URI).");
