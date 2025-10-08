@@ -9,7 +9,8 @@
     "dev": "nodemon server.js",
     "seedDBAdmin": "node seedAdmin.js",
     "seedDBUser": "node seedUser.js",
-    "testDB": "node testMongo.js"
+    "testDB": "node testMongo.js",
+    "backupDB": "node backupMongo.js"
   },
   "author": "",
   "license": "ISC",

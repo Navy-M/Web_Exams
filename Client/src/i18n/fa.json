@@ -41,6 +41,7 @@
     "feedbackFailure": "ثبت بازخورد با خطا مواجه شد.",
     "resumeMissingAge": "اطلاعات سنی {{name}} هنوز تکمیل نشده است. لطفاً ابتدا پروفایل را کامل کنید.",
     "printConfirm": "آیا می‌خواهید پرونده کاربر چاپ شود؟",
+    "analyzeAll": "تحلیل همه تست ها",
     "popupBlocked": "مرورگر اجازه‌ی باز کردن پنجره جدید نداد.",
     "loadingList": "در حال بارگذاری فهرست کاربران...",
     "tableHeaders": {
@@ -118,7 +119,31 @@
       "submit": "ثبت بازخورد",
       "cancel": "انصراف"
     },
-    "analysisHeading": "تحلیل آزمون {{testType}}"
+    "analysisHeading": "تحلیل آزمون {{testType}}",
+    "printFullAnalysis": "چاپ یا دانلود تحلیل کامل",
+    "choosePrintOrDownload": "برای چاپ روی «تأیید» بزنید یا برای دانلود PDF روی «انصراف» کلیک کنید",
+    "fullAnalysis": "تحلیل کامل",
+    "report": "گزارش",
+    "personalInfo": "اطلاعات فردی",
+    "name": "نام",
+    "age": "سن",
+    "period": "دوره",
+    "role": "نقش",
+    "job": "شغل",
+    "province": "استان",
+    "createdAt": "تاریخ ایجاد",
+    "sortingSuggestions": "پیشنهادهای مسیر شغلی",
+    "testsOverview": "نمای کلی آزمون‌ها",
+    "testsCount": "تعداد کل آزمون‌ها: {{count}}",
+    "date": "تاریخ",
+    "analysisSummary": "خلاصه تحلیل",
+    "scores": "امتیازات",
+    "strengths": "نقاط قوت",
+    "weaknesses": "نقاط قابل بهبود",
+    "recommendations": "پیشنهادها",
+    "adminFeedback": "بازخورد مدیر",
+    "popupBlocked": "مرورگر جلوی باز شدن پنجره را گرفته است. لطفاً تنظیمات مرورگر را بررسی کنید."
+  
   },
   "dashboard": {
     "theme": {

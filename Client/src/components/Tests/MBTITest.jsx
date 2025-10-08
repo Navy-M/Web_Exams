@@ -39,33 +39,6 @@ export default function MBTITest({ questions, duration = 8 }) {
     navigate("/");
   }, [blocked, navigate]);
 
-  // Timer
-  useEffect(() => {
-    if (blocked || !started) return;
-    if (timeLeft <= 0) {
-      handleSubmit();
-      return;
-    }
-    const t = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocked, started, timeLeft]);
-
-  const handleSelect = useCallback((questionId, value) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
-    // افکت کوتاه انتخاب و سپس رفتن به سوال بعد
-    setTimeout(() => {
-      setCurrentIndex((prev) => {
-        if (prev + 1 < Mbti_Test.length) return prev + 1;
-        // آخرین سوال
-        handleSubmit();
-        return prev;
-      });
-    }, 160);
-  }, [Mbti_Test.length]);
-
   const handleSubmit = useCallback(async () => {
     if (submittingRef.current) return;
     submittingRef.current = true;
@@ -104,6 +77,31 @@ export default function MBTITest({ questions, duration = 8 }) {
       submittingRef.current = false;
     }
   }, [answers, navigate, user?.id]);
+  useEffect(() => {
+    if (blocked || !started) return;
+    if (timeLeft <= 0) {
+      handleSubmit();
+      return;
+    }
+    const t = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [blocked, started, timeLeft, handleSubmit]);
+
+  const handleSelect = useCallback((questionId, value) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    // افکت کوتاه انتخاب و سپس رفتن به سوال بعد
+    setTimeout(() => {
+      setCurrentIndex((prev) => {
+        if (prev + 1 < Mbti_Test.length) return prev + 1;
+        // آخرین سوال
+        handleSubmit();
+        return prev;
+      });
+    }, 160);
+  }, [Mbti_Test.length, handleSubmit]);
+
 
   if (blocked) {
     return null;

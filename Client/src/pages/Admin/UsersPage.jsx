@@ -35,6 +35,12 @@ const UsersPage = () => {
   const [error, setError] = useState("");
   const [showAddRow, setShowAddRow] = useState(false);
 
+    // bulk analyze ui
+    const [bulkAnalyzing, setBulkAnalyzing] = useState(false);
+    const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
+    const [bulkErrors, setBulkErrors] = useState([]); // array of {resultId, message}
+
+    
   // search
   const [search, setSearch] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
@@ -198,6 +204,61 @@ const UsersPage = () => {
     }
   };
 
+  // 🔹 NEW: Analyze all results sequentially (one-by-one)
+  const handleAnalyzeAll = async () => {
+    if (!selectedUser) return;
+
+    const items = (userResults || []).filter(
+      (r) => r && (r.resultId || r._id) && r.testType
+    );
+
+    if (items.length === 0) {
+      alert(t("usersPage.noResultsToAnalyze") || "No results to analyze.");
+      return;
+    }
+
+    setBulkAnalyzing(true);
+    setBulkErrors([]);
+    setBulkProgress({ done: 0, total: items.length });
+
+    for (let i = 0; i < items.length; i++) {
+      const r = items[i];
+      const resultId = r.resultId || r._id;
+      try {
+        await analyzeTests({ resultId, testType: r.testType });
+      } catch (e) {
+        const message =
+          e?.response?.data?.message ||
+          e?.message ||
+          t("usersPage.analyzeFailure");
+        setBulkErrors((prev) => [...prev, { resultId, message }]);
+      } finally {
+        setBulkProgress({ done: i + 1, total: items.length });
+      }
+    }
+
+    // Refresh results after batch
+    try {
+      const refreshed = await getUserResults(selectedUser._id);
+      setUserResults(refreshed || []);
+      setSelectedResult(null);
+    } catch {
+      // ignore; we already ran the batch
+    }
+
+    setBulkAnalyzing(false);
+
+    if (bulkErrors.length === 0) {
+      alert(t("usersPage.analyzeAllDone") || "All analyses completed.");
+    } else {
+      alert(
+        (t("usersPage.analyzeAllDoneWithErrors") ||
+          "Done with some errors.") +
+          ` (${bulkErrors.length})`
+      );
+    }
+  };
+
   const handleSubmitFeedback = async () => {
     if (!feedback.trim() || !selectedResult || !selectedUser) return;
     try {
@@ -236,6 +297,270 @@ const UsersPage = () => {
     w.print();
   };
 
+  function escapeHTML(str = "") {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+  
+  /**
+   * Builds a full printable HTML:
+   *  - Cover/summary page (personal info + sorting suggestions)
+   *  - One page per test analysis
+   */
+  function printAllAnalysesReport({ user, results, formatDate, t }) {
+    const profile = user?.profile || {};
+    const fullName = profile.fullName || user?.username || "—";
+    const period = user?.period || "—";
+    const role = user?.role || "—";
+    const age = profile.age != null ? profile.age : "—";
+    const job = profile.jobPosition || "—";
+    const province = profile.province || "—";
+    const createdAt = user?.createdAt ? formatDate(user.createdAt) : "—";
+  
+    // Gather suggestions from each test analysis if present
+    const allSuggestions = [];
+    const safeResults = (results || []).filter(Boolean);
+    safeResults.forEach((r) => {
+      const suggs =
+        r?.analysis?.suggestions ||
+        r?.analysis?.recommendations ||
+        r?.analysis?.careerSuggestions ||
+        [];
+      if (Array.isArray(suggs)) {
+        suggs.forEach((s) => {
+          if (s && typeof s === "string") allSuggestions.push(s);
+          else if (s?.title) allSuggestions.push(s.title);
+        });
+      }
+    });
+  
+    // Deduplicate & cap suggestions (nice for 1st page)
+    const dedupSuggestions = Array.from(new Set(allSuggestions)).slice(0, 10);
+  
+    // Card builder for a test page
+    const renderTestPage = (r, idx) => {
+      const title = r?.testType || `Test #${idx + 1}`;
+      const when = r?.createdAt ? formatDate(r.createdAt) : "—";
+      const summary =
+        r?.analysis?.summary ||
+        r?.analysis?.overall ||
+        r?.analysis?.overview ||
+        "";
+  
+      const strengths = r?.analysis?.strengths || [];
+      const weaknesses = r?.analysis?.weaknesses || [];
+      const scores = r?.analysis?.scores || r?.analysis?.score || null;
+      const tips =
+        r?.analysis?.tips ||
+        r?.analysis?.recommendations ||
+        r?.analysis?.suggestions ||
+        [];
+  
+      const adminFeedback = r?.adminFeedback || "";
+  
+      const renderList = (items) =>
+        Array.isArray(items) && items.length
+          ? `<ul>${items
+              .map((x) => `<li>${escapeHTML(typeof x === "string" ? x : x?.title || JSON.stringify(x))}</li>`)
+              .join("")}</ul>`
+          : `<p class="muted">—</p>`;
+  
+      const renderScores = (obj) => {
+        if (!obj || typeof obj !== "object") return `<p class="muted">—</p>`;
+        const rows = Object.entries(obj).map(
+          ([k, v]) =>
+            `<tr><td>${escapeHTML(k)}</td><td>${escapeHTML(
+              typeof v === "number" ? v.toString() : JSON.stringify(v)
+            )}</td></tr>`
+        );
+        return `<table class="scores"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${rows.join(
+          ""
+        )}</tbody></table>`;
+      };
+  
+      return `
+        <section class="page">
+          <header class="page-head">
+            <h2>${escapeHTML(title)}</h2>
+            <div class="meta">
+              <span>${escapeHTML(t("usersPage.date") || "Date")}: ${escapeHTML(when)}</span>
+            </div>
+          </header>
+  
+          <div class="grid">
+            <div class="block">
+              <h3>${escapeHTML(t("usersPage.analysisSummary") || "Summary")}</h3>
+              <p>${escapeHTML(summary || "—")}</p>
+            </div>
+  
+            <div class="block">
+              <h3>${escapeHTML(t("usersPage.scores") || "Scores")}</h3>
+              ${renderScores(scores)}
+            </div>
+  
+            <div class="block two-col">
+              <div>
+                <h3>${escapeHTML(t("usersPage.strengths") || "Strengths")}</h3>
+                ${renderList(strengths)}
+              </div>
+              <div>
+                <h3>${escapeHTML(t("usersPage.weaknesses") || "Weaknesses")}</h3>
+                ${renderList(weaknesses)}
+              </div>
+            </div>
+  
+            <div class="block">
+              <h3>${escapeHTML(t("usersPage.recommendations") || "Recommendations")}</h3>
+              ${renderList(tips)}
+            </div>
+  
+            <div class="block">
+              <h3>${escapeHTML(t("usersPage.adminFeedback") || "Admin feedback")}</h3>
+              <p>${escapeHTML(adminFeedback || "—")}</p>
+            </div>
+          </div>
+        </section>
+      `;
+    };
+  
+    const head = `
+      <head>
+        <meta charset="utf-8" />
+        <title>${escapeHTML(fullName)} - ${escapeHTML(t("usersPage.fullAnalysis") || "Full Analysis")}</title>
+        <style>
+          @page { size: A4; margin: 16mm; }
+          * { box-sizing: border-box; }
+          body { font-family: -apple-system, Segoe UI, Roboto, "Vazirmatn", Arial, sans-serif; color: #111; }
+          h1, h2, h3 { margin: 0 0 8px; }
+          .muted { opacity: 0.65; }
+          .page { page-break-after: always; }
+          .cover { display: flex; flex-direction: column; gap: 12px; }
+          .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+          .grid { display: grid; gap: 12px; }
+          .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+          .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
+          .meta { font-size: 12px; color: #444; display: flex; gap: 12px; }
+          table.scores { width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb; }
+          table.scores th, table.scores td { padding: 6px 8px; border-bottom: 1px solid #eee; text-align: left; }
+          ul { margin: 6px 0 0 18px; }
+          header.page-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+          .kicker { color: #666; font-size: 12px; }
+        </style>
+      </head>
+    `;
+  
+    const coverPage = `
+      <section class="page">
+        <div class="cover">
+          <div>
+            <span class="kicker">${escapeHTML(t("usersPage.report") || "Report")}</span>
+            <h1>${escapeHTML(fullName)}</h1>
+          </div>
+          <div class="card">
+            <h3>${escapeHTML(t("usersPage.personalInfo") || "Personal info")}</h3>
+            <div class="row">
+              <div><strong>${escapeHTML(t("usersPage.name") || "Name")}:</strong> ${escapeHTML(fullName)}</div>
+              <div><strong>${escapeHTML(t("usersPage.age") || "Age")}:</strong> ${escapeHTML(String(age))}</div>
+              <div><strong>${escapeHTML(t("usersPage.period") || "Period")}:</strong> ${escapeHTML(period)}</div>
+              <div><strong>${escapeHTML(t("usersPage.role") || "Role")}:</strong> ${escapeHTML(role)}</div>
+              <div><strong>${escapeHTML(t("usersPage.job") || "Job")}:</strong> ${escapeHTML(job)}</div>
+              <div><strong>${escapeHTML(t("usersPage.province") || "Province")}:</strong> ${escapeHTML(province)}</div>
+              <div><strong>${escapeHTML(t("usersPage.createdAt") || "Created at")}:</strong> ${escapeHTML(createdAt)}</div>
+            </div>
+          </div>
+  
+          <div class="card">
+            <h3>${escapeHTML(t("usersPage.sortingSuggestions") || "Sorting suggestions")}</h3>
+            ${
+              dedupSuggestions.length
+                ? `<ul>${dedupSuggestions.map((s) => `<li>${escapeHTML(s)}</li>`).join("")}</ul>`
+                : `<p class="muted">—</p>`
+            }
+          </div>
+  
+          <div class="card">
+            <h3>${escapeHTML(t("usersPage.testsOverview") || "Tests overview")}</h3>
+            <p class="muted">
+              ${escapeHTML(
+                t("usersPage.testsCount", { count: safeResults.length }) ||
+                  `Total tests: ${safeResults.length}`
+              )}
+            </p>
+            <ul>
+              ${safeResults
+                .map((r, i) => {
+                  const tt = r?.testType || `Test #${i + 1}`;
+                  const dt = r?.createdAt ? formatDate(r.createdAt) : "—";
+                  return `<li><strong>${escapeHTML(tt)}</strong> — ${escapeHTML(dt)}</li>`;
+                })
+                .join("")}
+            </ul>
+          </div>
+        </div>
+      </section>
+    `;
+  
+    const testsPages = safeResults.map((r, i) => renderTestPage(r, i)).join("");
+  
+    return `
+      <!doctype html>
+      <html lang="fa">
+        ${head}
+        <body>
+          ${coverPage}
+          ${testsPages}
+        </body>
+      </html>
+    `;
+  }
+
+  const handlePrintOrDownloadAllAnalyses = () => {
+    if (!selectedUser) return;
+  
+    const html = printAllAnalysesReport({
+      user: selectedUser,
+      results: userResults,
+      formatDate,
+      t,
+    });
+  
+    const userWantsToPrint = window.confirm(
+      t("usersPage.choosePrintOrDownload") ||
+        "Click OK to PRINT or Cancel to DOWNLOAD PDF"
+    );
+  
+    if (userWantsToPrint) {
+      // 👉 PRINT
+      const w = window.open("", "_blank");
+      if (!w) {
+        alert(t("usersPage.popupBlocked"));
+        return;
+      }
+      w.document.write(html);
+      w.document.close();
+      w.focus();
+      w.print();
+    } else {
+      // 👉 DOWNLOAD PDF
+      const container = document.createElement("div");
+      container.innerHTML = html;
+  
+      const opt = {
+        margin: 0,
+        filename: `${selectedUser?.profile?.fullName || "report"}.pdf`,
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+  
+      html2pdf().from(container).set(opt).save();
+    }
+  };
+  
+
   if (selectedUser) {
     return (
       <div className="admin-users-container">
@@ -247,7 +572,19 @@ const UsersPage = () => {
             </div>
             
             <div className="user-actions">
-            <button className="btn primary" onClick={handlePrintUserResume}>
+              {/* 🔹 FIX: this was calling print; now runs sequential analysis */}
+              <button
+                style={{ background: "var(--secondary)" }}
+                className="btn"
+                onClick={handleAnalyzeAll}
+                disabled={bulkAnalyzing}
+                title={bulkAnalyzing ? `${bulkProgress.done}/${bulkProgress.total}` : ""}
+              >
+                {bulkAnalyzing
+                  ? `${t("usersPage.analyzing")} ${bulkProgress.done}/${bulkProgress.total}`
+                  : t("usersPage.analyzeAll")}
+              </button>
+              <button className="btn primary" onClick={handlePrintOrDownloadAllAnalyses}>
                 {t("usersPage.printResume")}
               </button>
               <button style={{color: "var(--text)"}}  className="btn danger" onClick={() => setSelectedUser(null)}>

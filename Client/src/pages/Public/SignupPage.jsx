@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n';
@@ -93,7 +93,7 @@ const SignupPage = () => {
         {formError && <div className="error-message">{formError}</div>}
 
         <div className="form-group">
-          <label htmlFor="username">{t('auth.signup.usernameLabel')}</label>
+          <label htmlFor="username" class="required">{t('auth.signup.usernameLabel')}</label>
           <input
             id="username"
             name="username"
@@ -103,6 +103,7 @@ const SignupPage = () => {
             disabled={submitting}
             onChange={handleChange}
             autoComplete="username"
+            required
           />
         </div>
 
@@ -133,7 +134,7 @@ const SignupPage = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="password">{t('auth.signup.passwordLabel')}</label>
+          <label htmlFor="password" class="required">{t('auth.signup.passwordLabel')}</label>
           <div className="password-field">
             <input
               id="password"
@@ -144,6 +145,7 @@ const SignupPage = () => {
               disabled={submitting}
               onChange={handleChange}
               autoComplete="new-password"
+              required
             />
             <button
               type="button"
@@ -158,7 +160,7 @@ const SignupPage = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="confirmPassword">{t('auth.signup.confirmPasswordLabel')}</label>
+          <label htmlFor="confirmPassword" class="required">{t('auth.signup.confirmPasswordLabel')}</label>
           <div className="password-field">
             <input
               id="confirmPassword"
@@ -169,6 +171,7 @@ const SignupPage = () => {
               disabled={submitting}
               onChange={handleChange}
               autoComplete="new-password"
+              required
             />
             <button
               type="button"

@@ -18,14 +18,24 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Clean FRONTEND_URL: remove trailing slash if exists
-const frontendURL = process.env.FRONTEND_URL?.replace(/\/$/, "");
+// Clean and normalize FRONTEND_URL list
+const rawFrontend = process.env.FRONTEND_URL || "";
+const allowedOrigins = rawFrontend
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean);
 
 app.use(helmet());
 
 app.use(
   cors({
-    origin: frontendURL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      console.warn(`Blocked CORS origin: ${origin}`);
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );

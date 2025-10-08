@@ -8,6 +8,10 @@ import * as Dummy from "../config/dummyData.js";
  * @returns {Object} - نتیجه تحلیل کامل تیپ شخصیتی
  */
 function analyzeMBTI(answers, questions = Dummy.Mbti_Test) {
+
+  // Tests 
+  console.log("input answers :", answers);
+  
   // 1. مقداردهی اولیه امتیازات
   const traitScores = {
     EI: { E: 0, I: 0 }, // برون‌گرایی (E) vs درون‌گرایی (I)
@@ -917,7 +921,6 @@ function analyzeClifton(answers, questions = Dummy.Clifton_Test) {
     analyzedAt: new Date().toISOString(),
   };
 }
-
 // مثال خروجی:
 /*
 {

@@ -138,3 +138,8 @@
   min-height: 50vh;
 }
 
+label.required::after {
+  content: " *";
+  color: red;
+  font-weight: bold;
+}
