@@ -36,6 +36,9 @@
     "selectResultError": "Unable to load the selected result.",
     "deleteResultConfirm": "Delete this test result?",
     "deleteResultFailure": "Deleting the result failed.",
+    "deleteAnalysisConfirm": "Remove the analysis for this result?",
+    "deleteAnalysisSuccess": "Analysis removed successfully.",
+    "deleteAnalysisFailure": "Failed to remove the analysis.",
     "analyzeSuccess": "The test analysis completed successfully.",
     "analyzeFailure": "The test analysis failed.",
     "feedbackSuccess": "Feedback submitted successfully.",
@@ -110,7 +113,19 @@
       "delete": "Delete result",
       "feedback": "Leave feedback",
       "analyze": "Analyze",
-      "viewAnalysis": "View analysis"
+      "deleteAnalysis": "Remove analysis",
+      "viewAnalysis": "View analysis",
+      "status": {
+        "pending": "Awaiting analysis",
+        "analysisReady": "Analysis ready",
+        "feedbackSent": "Feedback shared"
+      },
+      "meta": {
+        "total": "{{count}} results",
+        "analyzed": "{{count}} analyzed",
+        "pending": "{{count}} pending",
+        "feedback": "{{count}} with feedback"
+      }
     },
     "feedback": {
       "title": "Leave feedback",

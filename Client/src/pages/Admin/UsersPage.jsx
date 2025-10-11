@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   getUsers,
   deleteUser,
@@ -8,6 +8,7 @@ import {
   getTestResults,
   deleteResult,
   analyzeTests,
+  clearResultAnalysis,
 } from "../../services/api";
 import { useI18n } from "../../i18n";
 
@@ -18,6 +19,8 @@ import UserProfileCard from "./UsersPage/UserProfileCard";
 import ResultsTable from "./UsersPage/ResultsTable";
 import FeedbackPanel from "./UsersPage/FeedbackPanel";
 import { printUserReport } from "./UsersPage/printUserReport.js";
+import { printElementToPDF, printHTMLStringToPDF } from "../../report/printUtils";
+import AllocationReport from "./TestStatus/AllocationReport.jsx";
 
 import "./UsersPage/usersPage.css";
 
@@ -35,12 +38,11 @@ const UsersPage = () => {
   const [error, setError] = useState("");
   const [showAddRow, setShowAddRow] = useState(false);
 
-    // bulk analyze ui
-    const [bulkAnalyzing, setBulkAnalyzing] = useState(false);
-    const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
-    const [bulkErrors, setBulkErrors] = useState([]); // array of {resultId, message}
+  // bulk analyze ui
+  const [bulkAnalyzing, setBulkAnalyzing] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
+  const [bulkErrors, setBulkErrors] = useState([]); // array of {resultId, message}
 
-    
   // search
   const [search, setSearch] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
@@ -204,7 +206,48 @@ const UsersPage = () => {
     }
   };
 
-  // 🔹 NEW: Analyze all results sequentially (one-by-one)
+  const handleRemoveResultAnalysis = async (resultId) => {
+    const confirmMessage =
+      t("usersPage.deleteAnalysisConfirm") ||
+      "Remove the analysis for this result?";
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      await clearResultAnalysis(resultId);
+
+      setUserResults((prev) =>
+        prev.map((entry) => {
+          const id = entry?.resultId || entry?._id;
+          if (id !== resultId) return entry;
+          const next = { ...entry };
+          delete next.analysis;
+          delete next.analyzedAt;
+          delete next.score;
+          return next;
+        })
+      );
+
+      setSelectedResult((prev) => {
+        if (!prev) return prev;
+        const id = prev._id || prev.resultId;
+        if (id !== resultId) return prev;
+        const next = { ...prev };
+        delete next.analysis;
+        delete next.analyzedAt;
+        delete next.score;
+        return next;
+      });
+
+      alert(t("usersPage.deleteAnalysisSuccess") || "Analysis removed.");
+    } catch {
+      alert(
+        t("usersPage.deleteAnalysisFailure") ||
+          "Unable to remove the analysis."
+      );
+    }
+  };
+
+  // ?? NEW: Analyze all results sequentially (one-by-one)
   const handleAnalyzeAll = async () => {
     if (!selectedUser) return;
 
@@ -277,6 +320,160 @@ const UsersPage = () => {
     }
   };
 
+  const buildGroupReportData = (resp, capacitiesObj = {}, usersList = []) => {
+    const userMeta = new Map(
+      (usersList || []).map((u) => {
+        const id = String(u?._id || u?.id || "");
+        return [
+          id,
+          {
+            fullName:
+              u?.profile?.fullName || u?.fullName || u?.username || "",
+            phone: u?.profile?.phone || u?.phone || "",
+            username: u?.username || "",
+          },
+        ];
+      })
+    );
+
+    const allocations = {};
+    const quotas = {};
+    Object.entries(capacitiesObj || {}).forEach(([jobKey, count]) => {
+      quotas[jobKey] = {
+        name: jobRequirements[jobKey]?.name || jobKey,
+        tableCount: Number(count) || 0,
+      };
+    });
+
+    const rows = Array.isArray(resp?.table) ? [...resp.table] : [];
+    const grouped = new Map();
+    rows.forEach((row) => {
+      const job = row?.job;
+      if (!job) return;
+      const bucket = grouped.get(job) || [];
+      bucket.push(row);
+      grouped.set(job, bucket);
+    });
+
+    grouped.forEach((entries, job) => {
+      entries.sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+      allocations[job] = {
+        name: job,
+        persons: entries.map((entry) => {
+          const meta = userMeta.get(String(entry.userId)) || {};
+          return {
+            id: entry.userId,
+            rank: entry.rank,
+            score: entry.score,
+            fullName:
+              entry.fullName || meta.fullName || meta.username || entry.userId,
+            phone: meta.phone || "",
+          };
+        }),
+      };
+    });
+
+    Object.keys(capacitiesObj || {}).forEach((job) => {
+      if (!allocations[job]) {
+        allocations[job] = { name: job, persons: [] };
+      }
+    });
+
+    return { allocations, quotas, selectedUsers: usersList };
+  };
+
+  // eslint-disable-next-line no-unused-vars
+  const handlePrintGroupPrioritization = async (
+    selectedUsersList = [],
+    capacities = {},
+    weights = {}
+  ) => {
+    try {
+      const userIds = (selectedUsersList || [])
+        .map((u) => u?._id || u?.id)
+        .filter(Boolean);
+      if (!userIds.length) {
+        alert(t("usersPage.noUsersSelected") || "No users selected.");
+        return;
+      }
+
+      if (
+        !capacities ||
+        typeof capacities !== "object" ||
+        !Object.keys(capacities).length
+      ) {
+        throw new Error("CAPACITIES_REQUIRED");
+      }
+
+      const response = await fetch("/results/jobs/prioritize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds, capacities, weights }),
+      });
+
+      const data = await response.json();
+      if (!data?.ok) {
+        throw new Error(data?.error || "PRIORITIZE_FAILED");
+      }
+
+      if (data.export?.html) {
+        await printHTMLStringToPDF(data.export.html, "prioritization.pdf");
+      } else {
+        await import("../../report/report.css");
+        const { createRoot } = await import("react-dom/client");
+
+        const host = document.createElement("div");
+        host.style.position = "fixed";
+        host.style.left = "-99999px";
+        host.style.top = "0";
+        host.className = "report-root";
+        host.setAttribute("dir", "rtl");
+        document.body.appendChild(host);
+
+        const root = createRoot(host);
+        const allocationData = buildGroupReportData(
+          data,
+          capacities,
+          selectedUsersList
+        );
+
+        root.render(
+          <AllocationReport
+            selectedUsers={allocationData.selectedUsers}
+            assignmentResult={{
+              allocations: allocationData.allocations,
+              quotas: allocationData.quotas,
+            }}
+          />
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        await printElementToPDF(host, "prioritization.pdf");
+        root.unmount();
+        document.body.removeChild(host);
+      }
+
+      const csvSource =
+        data.export?.csv ||
+        (data.export?.csvBase64 ? atob(data.export.csvBase64) : "");
+      if (csvSource) {
+        const blob = new Blob([csvSource], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "prioritization.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      }
+    } catch (error) {
+      console.error("print prioritization failed:", error);
+      alert("خطا در تولید گزارش اولویت‌بندی");
+    }
+  };
+
   const handlePrintUserResume = () => {
     if (!selectedUser) return;
     if (!selectedUser?.profile?.age) {
@@ -313,13 +510,13 @@ const UsersPage = () => {
    */
   function printAllAnalysesReport({ user, results, formatDate, t }) {
     const profile = user?.profile || {};
-    const fullName = profile.fullName || user?.username || "—";
-    const period = user?.period || "—";
-    const role = user?.role || "—";
-    const age = profile.age != null ? profile.age : "—";
-    const job = profile.jobPosition || "—";
-    const province = profile.province || "—";
-    const createdAt = user?.createdAt ? formatDate(user.createdAt) : "—";
+    const fullName = profile.fullName || user?.username || "�";
+    const period = user?.period || "�";
+    const role = user?.role || "�";
+    const age = profile.age != null ? profile.age : "�";
+    const job = profile.jobPosition || "�";
+    const province = profile.province || "�";
+    const createdAt = user?.createdAt ? formatDate(user.createdAt) : "�";
   
     // Gather suggestions from each test analysis if present
     const allSuggestions = [];
@@ -344,7 +541,7 @@ const UsersPage = () => {
     // Card builder for a test page
     const renderTestPage = (r, idx) => {
       const title = r?.testType || `Test #${idx + 1}`;
-      const when = r?.createdAt ? formatDate(r.createdAt) : "—";
+      const when = r?.createdAt ? formatDate(r.createdAt) : "�";
       const summary =
         r?.analysis?.summary ||
         r?.analysis?.overall ||
@@ -367,10 +564,10 @@ const UsersPage = () => {
           ? `<ul>${items
               .map((x) => `<li>${escapeHTML(typeof x === "string" ? x : x?.title || JSON.stringify(x))}</li>`)
               .join("")}</ul>`
-          : `<p class="muted">—</p>`;
+          : `<p class="muted">�</p>`;
   
       const renderScores = (obj) => {
-        if (!obj || typeof obj !== "object") return `<p class="muted">—</p>`;
+        if (!obj || typeof obj !== "object") return `<p class="muted">�</p>`;
         const rows = Object.entries(obj).map(
           ([k, v]) =>
             `<tr><td>${escapeHTML(k)}</td><td>${escapeHTML(
@@ -394,7 +591,7 @@ const UsersPage = () => {
           <div class="grid">
             <div class="block">
               <h3>${escapeHTML(t("usersPage.analysisSummary") || "Summary")}</h3>
-              <p>${escapeHTML(summary || "—")}</p>
+              <p>${escapeHTML(summary || "�")}</p>
             </div>
   
             <div class="block">
@@ -420,7 +617,7 @@ const UsersPage = () => {
   
             <div class="block">
               <h3>${escapeHTML(t("usersPage.adminFeedback") || "Admin feedback")}</h3>
-              <p>${escapeHTML(adminFeedback || "—")}</p>
+              <p>${escapeHTML(adminFeedback || "�")}</p>
             </div>
           </div>
         </section>
@@ -478,7 +675,7 @@ const UsersPage = () => {
             ${
               dedupSuggestions.length
                 ? `<ul>${dedupSuggestions.map((s) => `<li>${escapeHTML(s)}</li>`).join("")}</ul>`
-                : `<p class="muted">—</p>`
+                : `<p class="muted">�</p>`
             }
           </div>
   
@@ -494,8 +691,8 @@ const UsersPage = () => {
               ${safeResults
                 .map((r, i) => {
                   const tt = r?.testType || `Test #${i + 1}`;
-                  const dt = r?.createdAt ? formatDate(r.createdAt) : "—";
-                  return `<li><strong>${escapeHTML(tt)}</strong> — ${escapeHTML(dt)}</li>`;
+                  const dt = r?.createdAt ? formatDate(r.createdAt) : "�";
+                  return `<li><strong>${escapeHTML(tt)}</strong> � ${escapeHTML(dt)}</li>`;
                 })
                 .join("")}
             </ul>
@@ -534,7 +731,7 @@ const UsersPage = () => {
     );
   
     if (userWantsToPrint) {
-      // 👉 PRINT
+      // ?? PRINT
       const w = window.open("", "_blank");
       if (!w) {
         alert(t("usersPage.popupBlocked"));
@@ -545,7 +742,7 @@ const UsersPage = () => {
       w.focus();
       w.print();
     } else {
-      // 👉 DOWNLOAD PDF
+      // ?? DOWNLOAD PDF
       const container = document.createElement("div");
       container.innerHTML = html;
   
@@ -572,7 +769,7 @@ const UsersPage = () => {
             </div>
             
             <div className="user-actions">
-              {/* 🔹 FIX: this was calling print; now runs sequential analysis */}
+              {/* ?? FIX: this was calling print; now runs sequential analysis */}
               <button
                 style={{ background: "var(--secondary)" }}
                 className="btn"
@@ -606,7 +803,8 @@ const UsersPage = () => {
                 onDelete={handleDeleteUserResult}
                 onSelectResult={handleSelectResult}
                 onAnalyze={handleCheckTest}
-                selectedResultId={selectedResult?._id}
+                onRemoveAnalysis={handleRemoveResultAnalysis}
+                selectedResultId={selectedResult?._id || selectedResult?.resultId}
               />
 
               {selectedResult && (
@@ -682,3 +880,4 @@ const UsersPage = () => {
 };
 
 export default UsersPage;
+

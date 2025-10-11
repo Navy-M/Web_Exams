@@ -1,3 +1,5 @@
+import html2pdf from "html2pdf.js";
+
 export const printUserReport = ({ user, results, formatDate }) => {
   const testTypeMap = {
     PERSONAL_FAVORITES: "اولویت‌های شخصی",
@@ -150,3 +152,29 @@ export const printUserReport = ({ user, results, formatDate }) => {
     </html>
   `;
 };
+
+export const downloadUserReportPDF = async ({ user, results, formatDate, filename = "user-report.pdf" }) => {
+  const html = printUserReport({ user, results, formatDate });
+  const container = document.createElement("div");
+  container.style.position = "fixed";
+  container.style.left = "-99999px";
+  container.style.top = "0";
+  container.innerHTML = html;
+  document.body.appendChild(container);
+
+  try {
+    await html2pdf()
+      .set({
+        margin: [20, 20, 20, 20],
+        filename,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      })
+      .from(container)
+      .save();
+  } finally {
+    document.body.removeChild(container);
+  }
+};
+

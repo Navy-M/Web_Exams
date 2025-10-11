@@ -34,9 +34,12 @@
     "deleteUserFailure": "حذف کاربر انجام نشد.",
     "selectResultError": "دریافت نتیجه آزمون انجام نشد.",
     "deleteResultConfirm": "آیا حذف این نتیجه آزمون انجام شود؟",
-    "deleteResultFailure": "حذف نتیجه آزمون انجام نشد.",
-    "analyzeSuccess": "تحلیل آزمون با موفقیت انجام شد.",
-    "analyzeFailure": "تحلیل آزمون انجام نشد.",
+    "deleteResultFailure": "Deleting the result failed.",
+    "deleteAnalysisConfirm": "Remove the analysis for this result?",
+    "deleteAnalysisSuccess": "Analysis removed successfully.",
+    "deleteAnalysisFailure": "Failed to remove the analysis.",
+    "analyzeSuccess": "The test analysis completed successfully.",
+    "analyzeFailure": "The test analysis failed.",
     "feedbackSuccess": "بازخورد با موفقیت ثبت شد.",
     "feedbackFailure": "ثبت بازخورد با خطا مواجه شد.",
     "resumeMissingAge": "اطلاعات سنی {{name}} هنوز تکمیل نشده است. لطفاً ابتدا پروفایل را کامل کنید.",
@@ -109,7 +112,19 @@
       "noData": "نتیجه‌ای برای نمایش وجود ندارد.",
       "delete": "حذف نتیجه",
       "feedback": "ثبت بازخورد",
-      "analyze": "تحلیل آزمون",
+      "analyze": "Analyze",
+      "deleteAnalysis": "Remove analysis",
+      "status": {
+        "pending": "Awaiting analysis",
+        "analysisReady": "Analysis ready",
+        "feedbackSent": "Feedback shared"
+      },
+      "meta": {
+        "total": "{{count}} results",
+        "analyzed": "{{count}} analyzed",
+        "pending": "{{count}} pending",
+        "feedback": "{{count}} with feedback"
+      },
       "viewAnalysis": "مشاهده تحلیل"
     },
     "feedback": {
@@ -288,3 +303,4 @@
     }
   }
 }
+
