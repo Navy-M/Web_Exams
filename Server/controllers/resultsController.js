@@ -232,6 +232,7 @@ export const deleteResult = async (req, res) => {
 export async function analyze(req, res) {
   try {
     const { resultId } = req.body;
+    
     if (!resultId) {
       return res.status(400).json({ ok: false, error: "MISSING_RESULT_ID" });
     }
@@ -240,6 +241,15 @@ export async function analyze(req, res) {
     if (!result) {
       return res.status(404).json({ ok: false, error: "RESULT_NOT_FOUND" });
     }
+    
+    // console.log("...................................................");
+    // console.log("...................................................");
+    // console.log("...................................................");
+    // console.log("Analyze input Result: ", result);
+    // console.log("...................................................");
+    // console.log("...................................................");
+    // console.log("...................................................");
+
 
     const answers = Array.isArray(result.answers) ? result.answers : [];
     const meta = {
@@ -257,6 +267,15 @@ export async function analyze(req, res) {
 
     result.analysis = analysis;
     result.score = overall;
+
+    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
+    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
+    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
+    // console.log("Analyze output Result: ", result);
+    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
+    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
+    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
+
     await result.save();
 
     if (result.user) {
