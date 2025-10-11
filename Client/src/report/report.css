@@ -1,0 +1,40 @@
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Variable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+.report-root {
+  font-family: "Vazirmatn", system-ui, -apple-system, "Segoe UI", Roboto,
+    Arial, sans-serif;
+  line-height: 1.7;
+}
+
+.report-root[dir="rtl"] {
+  direction: rtl;
+}
+
+.report-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 14mm 16mm;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  margin: 0 auto 8mm;
+  page-break-after: always;
+  box-sizing: border-box;
+}
+
+.report-page:last-child {
+  page-break-after: auto;
+}
+
+@media print {
+  .report-page {
+    border: none;
+    margin: 0;
+  }
+}
+

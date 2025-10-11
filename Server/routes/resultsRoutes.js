@@ -4,26 +4,28 @@ import {
   getResults,
   getResultsByUser,
   getResultById,
-  submitTestResult,
-  analyzeResult,
+  submitUInfo,
+  analyze,
   deleteResult,
   updateTestFeedback,
   prioritizeJobs,
+  clearResultAnalysis,
 } from "../controllers/resultsController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.post("/", createResult);
-router.post("/submitUInfo", submitTestResult);
+router.post("/submitUInfo", submitUInfo);
 
 router.get("/:resultId", getResultById);
 
+router.delete("/:resultId/analysis", protect, admin, clearResultAnalysis);
 router.delete("/:resultId", protect, admin, deleteResult);
 
-router.post("/analyze", analyzeResult);
+router.post("/analyze", analyze);
 
-router.post("/prioritize", protect, admin, prioritizeJobs);
+router.post("/jobs/prioritize", prioritizeJobs);
 
 router.get("/", getResults);
 

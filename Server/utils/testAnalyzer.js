@@ -1194,3 +1194,89 @@ export const getTestAnalysis = (testType, answers) => {
       return { summary: "نوع تست نامعتبر است" };
   }
 };
+
+// ===== Standardized Analysis Helpers (Append at EOF) =====
+function _avg100(vals = []) {
+  const arr = vals.map(Number).filter(Number.isFinite);
+  if (!arr.length) return 0;
+  const v = arr.reduce((a, b) => a + b, 0) / arr.length;
+  return Math.max(0, Math.min(100, v));
+}
+
+export function computeOverallScore(scores = {}) {
+  const vals = Object.values(scores).map(Number).filter(Number.isFinite);
+  return _avg100(vals);
+}
+
+export function standardizeAnalysis(raw = {}, meta = {}) {
+  return {
+    test: raw.test || meta.testType,
+    scores: raw.scores || {},
+    traits: Array.isArray(raw.traits) ? raw.traits : [],
+    strengths: Array.isArray(raw.strengths) ? raw.strengths : [],
+    suggestions: Array.isArray(raw.suggestions) ? raw.suggestions : [],
+    summary: typeof raw.summary === "string" ? raw.summary : "",
+    meta: { ...(raw.meta || {}), ...(meta || {}) },
+  };
+}
+
+/**
+ * Unified analysis entry-point:
+ * - ??? analyzer ??????? ????? ???? ?? ?? ??????? ??????.
+ * - ?? ??? ??? ????? fallback ???? ??????? ?? ????? ???? ????.
+ */
+export function getTestAnalysisUnified({ testType, answers, meta }) {
+  let raw = null;
+  try {
+    switch (testType) {
+      case "MBTI":
+        if (typeof analyzeMBTI === "function") raw = analyzeMBTI(answers);
+        break;
+      case "DISC":
+        if (typeof analyzeDISC === "function") raw = analyzeDISC(answers);
+        break;
+      case "HOLLAND":
+        if (typeof analyzeHolland === "function") raw = analyzeHolland(answers);
+        break;
+      case "GARDNER":
+        if (typeof analyzeGardner === "function") raw = analyzeGardner(answers);
+        break;
+      case "CLIFTON":
+        if (typeof analyzeClifton === "function") raw = analyzeClifton(answers);
+        break;
+      case "GHQ":
+        if (typeof analyzeGHQ === "function") raw = analyzeGHQ(answers);
+        break;
+      case "PERSONAL_FAVORITES":
+        if (typeof analyzePersonalFavorites === "function") raw = analyzePersonalFavorites(answers);
+        break;
+      default:
+        break;
+    }
+  } catch (_) {
+    /* ignore and fallback */
+  }
+
+  if (!raw) {
+    const total = Array.isArray(answers) ? answers.length : 0;
+    const sum = (answers || []).reduce(
+      (s, a) => s + (Number(a?.value) || 0),
+      0
+    );
+    const avg = total ? sum / total : 0;
+    raw = {
+      test: testType,
+      scores: { total, avg: Math.round(avg * 100) / 100 },
+      traits: [],
+      strengths: [],
+      suggestions: [],
+      summary: total
+        ? "????? ???? ?? ???? ???????? ???????."
+        : "????? ??? ???? ???.",
+    };
+  }
+
+  const analysis = standardizeAnalysis(raw, { ...meta, testType });
+  const overall = computeOverallScore(analysis.scores);
+  return { analysis, overall };
+}

@@ -8,6 +8,7 @@ body {
   font-family: 'Segoe UI', sans-serif;
   background: #f0f0f0; /* Replace $background-light with actual color */
   color: #333333;      /* Replace $text-light with actual color */
+  overflow-x: hidden;
 }
 
 body[data-theme='dark'] {

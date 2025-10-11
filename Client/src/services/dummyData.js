@@ -7,7 +7,7 @@ export const Test_Cards = [
     type: "personality",
     questionFormat: "multipleChoiceTrait", // Options with associated traits
     createdAt: "2025-05-29T11:11:16.374+00:00",
-    deadline: "2025-10-09T17:30:00Z",
+    deadline: "2025-10-20T17:30:00Z",
     duration: { from: 8, to: 9 },
   },
 
@@ -19,7 +19,7 @@ export const Test_Cards = [
     type: "interest",
     questionFormat: "yesNo",
     createdAt: "2025-05-13T04:14:16.374+00:00",
-    deadline: "2025-10-09T17:30:00Z",
+    deadline: "2025-10-20T17:30:00Z",
     duration: { from: 11, to: 12 },
   },
 
@@ -31,7 +31,7 @@ export const Test_Cards = [
     type: "intelligence",
     questionFormat: "likert",
     createdAt: "2025-05-05T16:11:16.374+00:00",
-    deadline: "2025-10-09T17:30:00Z",
+    deadline: "2025-10-20T17:30:00Z",
     duration: { from: 13, to: 14 },
   },
 
@@ -43,8 +43,8 @@ export const Test_Cards = [
     type: "personality",
     questionFormat: "eitherOr",
     createdAt: "2025-05-20T23:12:16.374+00:00",
-    deadline: "2025-10-09T17:30:00Z",
-    duration: { from: 15, to: 16 },
+    deadline: "2025-10-20T17:30:00Z",
+    duration: { from: 16, to: 17 },
   },
 
   {
@@ -56,7 +56,7 @@ export const Test_Cards = [
     type: "strengths",
     questionFormat: "pairedStatementChoice", // Two statements per question, choose one
     createdAt: "2025-06-03T11:11:16.374+00:00",
-    deadline: "2025-10-09T17:30:00Z",
+    deadline: "2025-10-20T17:30:00Z",
     duration: { from: 14, to: 15 }, // Typically takes a bit longer than DISC
   },
   {
@@ -68,7 +68,7 @@ export const Test_Cards = [
     type: "psychological",
     questionFormat: "likert", // Likert-scale questions for health assessment
     createdAt: "2025-07-01T10:00:00.000+00:00",
-    deadline: "2025-10-09T17:30:00Z",
+    deadline: "2025-10-20T17:30:00Z",
     duration: { from: 2, to: 3 },
   },
   {
@@ -79,7 +79,7 @@ export const Test_Cards = [
     type: "interest",
     questionFormat: "multipleChoice", // Choose from a list of preferences
     createdAt: "2025-07-10T14:30:00.000+00:00",
-    deadline: "2025-10-09T17:30:00Z",
+    deadline: "2025-10-20T17:30:00Z",
     duration: { from: 2, to: 3 },
   },
 ];

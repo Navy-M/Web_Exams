@@ -44,7 +44,7 @@ export const Test_Cards = [
     questionFormat: "eitherOr",
     createdAt: "2025-05-20T23:12:16.374+00:00",
     deadline: "2026-07-11T20:30:00.000+00:00",
-    duration: { from: 15, to: 16 },
+    duration: { from: 16, to: 17 },
   },
 
   {

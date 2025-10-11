@@ -171,6 +171,16 @@ export const submitTestFeedback = async (feedbackData) => {
   }
 };
 
+export const clearResultAnalysis = async (resultId) => {
+  try {
+    const response = await API.delete(`/results/${resultId}/analysis`);
+    return response.data;
+  } catch (error) {
+    console.error("Error clearing result analysis:", error);
+    throw error;
+  }
+};
+
 // export const submitUserResult = async (miniResultData) => {
 //   try {
 //     const response = await API.post(`/results/${miniResultData.}/userResult`, miniResultData);
