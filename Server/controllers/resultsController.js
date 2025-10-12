@@ -231,83 +231,190 @@ export const deleteResult = async (req, res) => {
 
 export async function analyze(req, res) {
   try {
-    const { resultId } = req.body;
-    
+    // 1) ورودی
+    const { resultId } = req.body || {};
     if (!resultId) {
       return res.status(400).json({ ok: false, error: "MISSING_RESULT_ID" });
     }
+    const debugOn =
+      String(req.query?.debug || "") === "1" ||
+      process.env.NODE_ENV !== "production";
 
+    // 2) واکشی نتیجه
     const result = await Result.findById(resultId);
     if (!result) {
       return res.status(404).json({ ok: false, error: "RESULT_NOT_FOUND" });
     }
-    
-    // console.log("...................................................");
-    // console.log("...................................................");
-    // console.log("...................................................");
-    // console.log("Analyze input Result: ", result);
-    // console.log("...................................................");
-    // console.log("...................................................");
-    // console.log("...................................................");
 
-
+    // 3) پاسخ‌ها (سازگار با داده‌های قدیمی)
     const answers = Array.isArray(result.answers) ? result.answers : [];
+
+    // 4) محاسبه‌ی زمان‌ها (Backward-Compatible)
+    const effectiveSubmittedAt =
+      result.submittedAt ||
+      result.endedAt ||
+      result.updatedAt ||
+      result.createdAt ||
+      new Date();
+    const effectiveStartedAt =
+      result.startedAt ||
+      result.createdAt ||
+      effectiveSubmittedAt;
+
+    let durationSec = 0;
+    if (Number.isFinite(Number(result.durationInSeconds))) {
+      durationSec = Number(result.durationInSeconds);
+    } else if (Number.isFinite(Number(result.duration))) {
+      durationSec = Number(result.duration);
+    } else {
+      const s = new Date(effectiveStartedAt).getTime();
+      const e = new Date(effectiveSubmittedAt).getTime();
+      durationSec =
+        Number.isFinite(s) && Number.isFinite(e) && e >= s
+          ? Math.floor((e - s) / 1000)
+          : 0;
+    }
+    const completedAtISO = (() => {
+      const d = new Date(effectiveSubmittedAt);
+      return Number.isFinite(d.getTime()) ? d.toISOString() : new Date().toISOString();
+    })();
+
+    // 5) متادیتا برای تحلیل
     const meta = {
       answered: answers.length,
       total: answers.length,
-      durationSec: result.durationInSeconds ?? 0,
-      completedAt: result.submittedAt?.toISOString?.(),
+      durationSec,
+      completedAt: completedAtISO,
     };
 
-    const { analysis, overall } = getTestAnalysisUnified({
+    // 6) تحلیل یکپارچه
+    const unified = getTestAnalysisUnified({
       testType: result.testType,
       answers,
       meta,
     });
 
-    result.analysis = analysis;
-    result.score = overall;
+    let analysis = unified?.analysis || unified || {};
+    let overall = Number.isFinite(Number(unified?.overall))
+      ? Number(unified.overall)
+      : (Number.isFinite(Number(analysis?.overall)) ? Number(analysis.overall) : null);
 
-    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
-    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
-    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
-    // console.log("Analyze output Result: ", result);
-    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
-    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
-    // console.log("<><><><><><><><><><><><>>><<><><><><><><><>>><><><><><><><>");
+    // 7) سازگار‌سازی سبک برای UI (بدون تغییر منطق نمره‌دهی)
+    if (!analysis.analyzedAt) analysis.analyzedAt = new Date().toISOString();
 
-    await result.save();
+    // userInfo → فقط پرکردن امن
+    if (!analysis.userInfo) analysis.userInfo = {};
+    if (result.user) analysis.userInfo.id = String(result.user);
+    // اگر لازم بود نام کاربر را نشان بده:
+    if (result.user && !analysis.userInfo.fullName) {
+      const u = await User.findById(result.user).select("profile.fullName username");
+      analysis.userInfo.fullName = u?.profile?.fullName || u?.username || analysis.userInfo.fullName;
+    }
 
+    // normalizedScores برای برخی UIها لازم است
+    if (!analysis.normalizedScores && analysis.scores && typeof analysis.scores === "object") {
+      analysis.normalizedScores = { ...analysis.scores };
+    }
+
+    if (typeof analysis.summary !== "string" || !analysis.summary.trim()) {
+      analysis.summary = "تحلیل انجام شد.";
+    }
+
+    if (overall == null) {
+      const vals = Object.values(analysis.normalizedScores || {}).map(Number).filter(Number.isFinite);
+      overall = vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : 0;
+    }
+
+    if (debugOn) {
+      analysis._debug = {
+        testType: result.testType,
+        answered: answers.length,
+        durationSec,
+        submittedAt: completedAtISO,
+        hasNormalizedScores: !!analysis.normalizedScores,
+      };
+      console.debug("[analyze] Preparing to persist:", {
+        resultId: String(result._id),
+        testType: result.testType,
+        score: overall,
+      });
+    }
+
+    // 8) ذخیره‌سازی اتمیک در Result (قابل‌اعتماد و بدون درگیر شدن با markModified)
+    const setPayload = {
+      analysis,
+      score: overall,
+      // اگر می‌خواهی updatedAt نیز آپدیت شود، می‌توانی اینجا $currentDate بدهی
+    };
+    const updRes = await Result.updateOne(
+      { _id: result._id },
+      { $set: setPayload },
+      { runValidators: false } // از گیر کردن به requiredهای قدیمی جلوگیری می‌کند
+    );
+
+    if (debugOn) {
+      console.debug("[analyze] Result.updateOne:", updRes);
+    }
+
+    // تضمین: دوباره بخوان تا مطمئن شویم در DB نشسته است
+    const persisted = await Result.findById(result._id);
+
+    // 9) آپدیت خلاصه‌ی کاربر (testsAssigned) — اول موضعی، بعد fallback
     if (result.user) {
-      const user = await User.findById(result.user);
-      if (user) {
-        const idx = (user.testsAssigned || []).findIndex(
-          (t) => String(t.resultId) === String(result._id)
-        );
-        if (idx >= 0) {
-          user.testsAssigned[idx].score = result.score;
-          user.testsAssigned[idx].duration = result.durationInSeconds ?? 0;
-          user.testsAssigned[idx].analyzedAt = new Date();
-        } else {
-          user.testsAssigned.push({
-            resultId: result._id,
-          testType: result.testType,
-            completedAt: result.submittedAt,
-            score: result.score,
-            duration: result.durationInSeconds ?? 0,
-            isPublic: false,
-            analyzedAt: new Date(),
-          });
+      // 9-الف) تلاش با عملگر موضعی
+      const positional = await User.updateOne(
+        { _id: result.user, "testsAssigned.resultId": result._id },
+        {
+          $set: {
+            "testsAssigned.$.score": overall,
+            "testsAssigned.$.duration": durationSec,
+            "testsAssigned.$.analyzedAt": new Date(),
+            // اگر لازم داری public را تغییر دهی، همین‌جا:
+            // "testsAssigned.$.isPublic": false
+          },
+        },
+        { runValidators: false }
+      );
+
+      if (debugOn) {
+        console.debug("[analyze] User.updateOne (positional):", positional);
+      }
+
+      // 9-ب) اگر positional چیزی را تغییر نداد، fallback دستی
+      if (positional.modifiedCount === 0) {
+        const userDoc = await User.findById(result.user);
+        if (userDoc && Array.isArray(userDoc.testsAssigned)) {
+          const idx = userDoc.testsAssigned.findIndex(
+            (t) => String(t.resultId) === String(result._id)
+          );
+          if (idx >= 0) {
+            userDoc.testsAssigned[idx].score = overall;
+            userDoc.testsAssigned[idx].duration = durationSec;
+            userDoc.testsAssigned[idx].analyzedAt = new Date();
+            // اگر لازم داری public را هم تنظیم کنی:
+            // userDoc.testsAssigned[idx].isPublic = false;
+            userDoc.markModified("testsAssigned");
+            const uSave = await userDoc.save({ validateBeforeSave: false });
+            if (debugOn) console.debug("[analyze] userDoc.save fallback:", uSave?._id);
+          }
         }
-        await user.save();
       }
     }
 
+    if (debugOn) {
+      console.debug("[analyze] DONE. Persisted result:", {
+        id: String(persisted?._id),
+        score: persisted?.score,
+        hasAnalysis: !!persisted?.analysis,
+      });
+    }
+
+    // 10) پاسخ
     return res.json({
       ok: true,
       resultId: result._id,
-      analysis: result.analysis,
-      score: result.score,
+      analysis: persisted?.analysis || analysis,
+      score: persisted?.score ?? overall,
     });
   } catch (err) {
     console.error("analyze error:", err);
@@ -317,44 +424,88 @@ export async function analyze(req, res) {
 
 export async function clearResultAnalysis(req, res) {
   try {
+    // 1) دریافت و اعتبارسنجی شناسه
     const { resultId } = req.params || {};
-
     if (!resultId || !Types.ObjectId.isValid(resultId)) {
-      return res
-        .status(400)
-        .json({ ok: false, error: "INVALID_RESULT_ID" });
+      return res.status(400).json({ ok: false, error: "INVALID_RESULT_ID" });
     }
+    const rid = new Types.ObjectId(resultId);
 
-    const result = await Result.findById(resultId);
+    // 2) خواندن سبک نتیجه (فقط فیلدهای ضروری برای سرعت)
+    const result = await Result.findById(rid, { _id: 1, user: 1 }).lean();
     if (!result) {
-      return res
-        .status(404)
-        .json({ ok: false, error: "RESULT_NOT_FOUND" });
+      return res.status(404).json({ ok: false, error: "RESULT_NOT_FOUND" });
     }
 
-    result.analysis = {};
-    result.markModified("analysis");
-    result.score = null;
-    await result.save();
+    // 3) پاک‌سازی اتمی روی سند Result
+    //    - analysis را به آبجکت خالی برمی‌گردانیم (بدون نیاز به markModified)
+    //    - score را null می‌کنیم (هم‌راستا با منطق فعلی شما)
+    const updRes = await Result.updateOne(
+      { _id: rid },
+      { $set: { analysis: {}, score: null } }
+    );
 
+    // اگر هیچ تغییری نکرد، اشکالی نیست—ممکن است قبلاً پاک شده باشد.
+    // اما همچنان به سراغ User می‌رویم تا خلاصه‌ی او هم پاک شود.
+
+    // 4) اگر نتیجه به کاربری متصل است، خلاصه‌ی کاربر را هم پاک کنیم
     if (result.user) {
-      const user = await User.findById(result.user);
-      if (user) {
-        const idx = (user.testsAssigned || []).findIndex(
-          (entry) =>
-            entry?.resultId &&
-            entry.resultId.toString() === resultId
-        );
-        if (idx !== -1) {
-          delete user.testsAssigned[idx].analyzedAt;
-          delete user.testsAssigned[idx].score;
-          user.markModified("testsAssigned");
-          await user.save();
+      // 4-الف) تلاش اول: آپدیت موضعی (فرض بر اینکه resultId از نوع ObjectId است)
+      // - analyzedAt حذف می‌شود
+      // - isPublic به false ست می‌شود
+      // - (اختیاری) score هم حذف می‌شود تا اثر تحلیل پاک شود
+      const positional = await User.updateOne(
+        { _id: result.user, "testsAssigned.resultId": rid },
+          {$unset: {
+            "testsAssigned.$[elem].analyzedAt": "",
+            "testsAssigned.$[elem].score": ""
+          },
+          $set: {
+            "testsAssigned.$[elem].isPublic": false
+          }
+        },
+        {
+          arrayFilters: [{ "elem.resultId": rid }]
+        }
+      );
+    
+      if (positional.modifiedCount === 0) {
+        // 4-ب) fallback: احتمالاً resultId در آرایه به‌صورت String ذخیره شده
+        //    → آرایه را بخوان، عضو متناظر را پیدا کن، فیلدها را پاک و isPublic=false کن.
+        const userDoc = await User.findById(result.user);
+        if (userDoc && Array.isArray(userDoc.testsAssigned)) {
+          const idx = userDoc.testsAssigned.findIndex(
+            (entry) => entry?.resultId && String(entry.resultId) === String(rid)
+          );
+          if (idx !== -1) {
+            // حذف وضعیت تحلیل
+            if ("analyzedAt" in userDoc.testsAssigned[idx]) {
+              delete userDoc.testsAssigned[idx].analyzedAt;
+            }
+            // (اختیاری) پاک کردن نمره‌ی وابسته به تحلیل
+            if ("score" in userDoc.testsAssigned[idx]) {
+              delete userDoc.testsAssigned[idx].score;
+            }
+            // اطمینان از عدم انتشار عمومی
+            userDoc.testsAssigned[idx].isPublic = false;
+          
+            userDoc.markModified("testsAssigned");
+            await userDoc.save();
+          }
         }
       }
     }
 
-    return res.json({ ok: true, message: "ANALYSIS_CLEARED" });
+
+    // 5) پاسخ موفق
+    return res.json({
+      ok: true,
+      message: "ANALYSIS_CLEARED",
+      // اطلاعات کمکی برای دیباگ مدیر سیستم:
+      debug: {
+        resultUpdated: Boolean(updRes?.modifiedCount),
+      },
+    });
   } catch (err) {
     console.error("clearResultAnalysis error:", err);
     return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
