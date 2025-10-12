@@ -512,7 +512,6 @@ const UsersPage = () => {
     const profile = user?.profile || {};
     const fullName = profile.fullName || user?.username || "�";
     const period = user?.period || "�";
-    const role = user?.role || "�";
     const age = profile.age != null ? profile.age : "�";
     const job = profile.jobPosition || "�";
     const province = profile.province || "�";
@@ -663,7 +662,6 @@ const UsersPage = () => {
               <div><strong>${escapeHTML(t("usersPage.name") || "Name")}:</strong> ${escapeHTML(fullName)}</div>
               <div><strong>${escapeHTML(t("usersPage.age") || "Age")}:</strong> ${escapeHTML(String(age))}</div>
               <div><strong>${escapeHTML(t("usersPage.period") || "Period")}:</strong> ${escapeHTML(period)}</div>
-              <div><strong>${escapeHTML(t("usersPage.role") || "Role")}:</strong> ${escapeHTML(role)}</div>
               <div><strong>${escapeHTML(t("usersPage.job") || "Job")}:</strong> ${escapeHTML(job)}</div>
               <div><strong>${escapeHTML(t("usersPage.province") || "Province")}:</strong> ${escapeHTML(province)}</div>
               <div><strong>${escapeHTML(t("usersPage.createdAt") || "Created at")}:</strong> ${escapeHTML(createdAt)}</div>
