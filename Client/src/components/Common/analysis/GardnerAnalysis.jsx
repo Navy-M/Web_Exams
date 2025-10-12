@@ -1,4 +1,6 @@
-import React, { useMemo, useRef, useState } from "react";
+// GardnerAnalysis.jsx
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import PropTypes from "prop-types";
 import { Bar, Radar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -26,130 +28,200 @@ ChartJS.register(
   Legend
 );
 
-/**
- * Props:
- * - data: {
- *     topIntelligences?: string[],    // کدهای هوش‌های برتر (e.g. "LING","LOGI"...)
- *     primaryIntelligence?: string,
- *     rawScores?: Record<string, number>,
- *     normalizedScores?: Record<string, number>, // 0..100
- *     intelligenceProfiles?: Record<string, {
- *       name: string,
- *       englishName?: string,
- *       description?: string,
- *       characteristics?: string | string[],
- *       careers?: string | string[],
- *       score?: number,
- *       percentage?: number, // 0..100
- *       isTop?: boolean
- *     }>,
- *     developmentSuggestions?: Array<{ intelligence: string, suggestions: string[] }>,
- *     chartData?: any, // اختیاری
- *     summary?: string,
- *     analyzedAt?: string|number|Date,
- *     userInfo?: { fullName?: string }
- *   }
- * - benchmark?: { label?: string, normalizedScores: Record<string, number> }
- */
-const GardnerAnalysis = ({ data, benchmark }) => {
-  if (!data) return <p className="muted" dir="rtl">داده‌ای برای نمایش موجود نیست.</p>;
+const DEFAULT_ORDER = ["L", "M", "S", "B", "Mu", "I", "In", "N"];
+const DEFAULT_NAMES = {
+  L: "کلامی-زبانی",
+  M: "منطقی-ریاضی",
+  S: "فضایی/دیداری",
+  B: "بدنی-جنبشی",
+  Mu: "موسیقایی",
+  I: "میان‌فردی",
+  In: "درون‌فردی",
+  N: "طبیعت‌گرا",
+};
+
+const toNum = (v, fb = 0) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fb;
+};
+const fmtPct = (v) =>
+  v === null || v === undefined || Number.isNaN(Number(v)) ? "—" : `${Math.round(Number(v))}%`;
+const toList = (val) =>
+  Array.isArray(val)
+    ? val
+    : val
+    ? String(val)
+        .split(/[،,•|-]/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+
+// ــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ
+// برداشت امنِ درصدها:
+// 1) data.dataForUI.normalizedScores  ← اولویت اصلی
+// 2) data.normalizedScores            ← اگر 1 نبود یا صفر بود
+// 3) intelligenceProfiles[code].percentage
+// 4) اگر هیچ‌کدوم نبود، از chartData استفاده نمی‌کنیم و 0 می‌ذاریم
+// نکته: بعضی وقت‌ها normalized در ریشه خامه (مثلاً 37، 44، ...). اگر دیدیم max>100 یا max<=50
+// و هم‌زمان dataForUI.normalizedScores موجود و معتبره، همان dataForUI را می‌گیریم.
+// ــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ
+function pickNormalizedScores(data) {
+  const fromUI = data?.dataForUI?.normalizedScores || null;
+  const fromRoot = data?.normalizedScores || null;
+  const fromProfiles = data?.intelligenceProfiles || data?.dataForUI?.intelligenceProfiles || null;
+
+  const isAllZero = (obj) =>
+    obj && Object.keys(obj).length > 0 && Object.values(obj).every((v) => Number(v) === 0);
+
+  const looksLikePercent = (obj) => {
+    if (!obj || !Object.keys(obj).length) return false;
+    const vals = Object.values(obj).map((x) => Number(x)).filter((x) => Number.isFinite(x));
+    if (!vals.length) return false;
+    const max = Math.max(...vals);
+    const min = Math.min(...vals);
+    // درصد منطقی: داخل [0..100] و حداقل یکی غیرصفر
+    return max <= 100 && max >= 1 && min >= 0;
+  };
+
+  // 1) اگر UI موجود و به نظر درصد است → همین
+  if (fromUI && looksLikePercent(fromUI)) return { ...fromUI };
+
+  // 2) اگر ریشه به نظر درصد است → همین
+  if (fromRoot && looksLikePercent(fromRoot)) return { ...fromRoot };
+
+  // 3) اگر ریشه صفر یا خام باشد ولی پروفایل‌ها درصد دارند → از پروفایل‌ها
+  if (fromProfiles) {
+    const map = {};
+    Object.keys(fromProfiles).forEach((k) => {
+      const p = fromProfiles[k];
+      if (typeof p?.percentage === "number") map[k] = p.percentage;
+    });
+    if (Object.keys(map).length) return map;
+  }
+
+  // 4) fallback: اگر ریشه صفر کامل بود ولی UI صفر نیست (یا برعکس)، یکی را انتخاب کن
+  if (fromRoot && !isAllZero(fromRoot)) return { ...fromRoot };
+  if (fromUI && !isAllZero(fromUI)) return { ...fromUI };
+
+  // تهِFallback
+  return {};
+}
+
+const GardnerAnalysis = ({ data = {}, benchmark = null, debug = false }) => {
+  // اگر دیتایی نیست
+  const hasPayload =
+    !!data &&
+    (data.normalizedScores ||
+      data.rawScores ||
+      data.intelligenceProfiles ||
+      data?.dataForUI?.normalizedScores ||
+      data?.dataForUI?.intelligenceProfiles);
+  if (!hasPayload) return <p className="muted" dir="rtl">داده‌ای برای نمایش موجود نیست.</p>;
 
   const {
-    topIntelligences = [],
-    primaryIntelligence,
-    rawScores = {},
-    normalizedScores = {},
-    intelligenceProfiles = {},
-    developmentSuggestions = [],
-    chartData,
-    summary,
-    analyzedAt,
-    userInfo = {},
-  } = data || {};
+    topIntelligences = data?.dataForUI?.topIntelligences || [],
+    primaryIntelligence = data?.dataForUI?.primaryIntelligence,
+    rawScores = data?.rawScores || data?.dataForUI?.rawScores || {},
+    intelligenceProfiles =
+      data?.intelligenceProfiles || data?.dataForUI?.intelligenceProfiles || {},
+    developmentSuggestions = data?.developmentSuggestions || [],
+    summary = data?.summary || data?.dataForUI?.summary,
+    analyzedAt = data?.analyzedAt || data?.dataForUI?.analyzedAt,
+    userInfo = data?.userInfo || {},
+  } = data;
+
+  // chartData را هم از data، هم از dataForUI چک کن
+  const incomingChartData = data?.chartData || data?.dataForUI?.chartData || null;
+
+  const normalizedMap = useMemo(() => pickNormalizedScores(data), [data]);
 
   const containerRef = useRef(null);
   const barRef = useRef(null);
   const radarRef = useRef(null);
+  const [mode, setMode] = useState(benchmark ? "compare" : "bar");
 
-  const [mode, setMode] = useState(benchmark ? "compare" : "bar"); // 'bar' | 'radar' | 'compare'
+  const dateFa = useMemo(
+    () =>
+      analyzedAt
+        ? new Date(analyzedAt).toLocaleDateString("fa-IR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "—",
+    [analyzedAt]
+  );
 
-  const dateFa = analyzedAt
-    ? new Date(analyzedAt).toLocaleDateString("fa-IR", {
-        year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
-      })
-    : "—";
-
-  // Theme vars for charts (dark/light aware)
-  const getVar = (name) => {
+  const readVar = useCallback((name) => {
     const el = containerRef.current || document.documentElement;
     const v = getComputedStyle(el).getPropertyValue(name);
     return v ? v.trim() : "";
-  };
-  const axisColor = getVar("--chart-axis") || "rgba(2,6,23,.75)";
-  const gridColor = getVar("--chart-grid") || "rgba(148,163,184,.25)";
-  const tooltipBg = getVar("--tooltip-bg") || "#fff";
-  const tooltipBorder = getVar("--tooltip-border") || "#e5e7eb";
-  const textColor = getVar("--text") || "#0f172a";
-  const headBg = getVar("--head-bg") || "rgba(37,99,235,.08)";
+  }, []);
+  const axisColor = readVar("--chart-axis") || "rgba(2,6,23,.75)";
+  const gridColor = readVar("--chart-grid") || "rgba(148,163,184,.25)";
+  const tooltipBg = readVar("--tooltip-bg") || "#fff";
+  const tooltipBorder = readVar("--tooltip-border") || "#e5e7eb";
+  const textColor = readVar("--text") || "#0f172a";
+  const headBg = readVar("--head-bg") || "rgba(37,99,235,.08)";
 
-  // نمره نرمال‌شده بر اساس profile.percentage یا normalizedScores
-  const normMap = useMemo(() => {
-    const m = { ...normalizedScores };
-    Object.entries(intelligenceProfiles).forEach(([code, prof]) => {
-      if (typeof prof.percentage === "number") m[code] = prof.percentage;
-    });
-    return m;
-  }, [normalizedScores, intelligenceProfiles]);
+  useEffect(() => {
+    const root = document.documentElement;
+    const obs = new MutationObserver(() => {});
+    obs.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
 
-  // ترتیب پایدار: بر اساس نمره نزولی، سپس نام
+  // کدها: union + سورت پایدار
   const codes = useMemo(() => {
     const set = new Set([
-      ...Object.keys(normMap),
-      ...Object.keys(intelligenceProfiles),
-      ...Object.keys(rawScores),
+      ...DEFAULT_ORDER,
+      ...Object.keys(normalizedMap || {}),
+      ...Object.keys(intelligenceProfiles || {}),
+      ...Object.keys(rawScores || {}),
       ...(benchmark ? Object.keys(benchmark.normalizedScores || {}) : []),
     ]);
     const arr = Array.from(set);
+
     arr.sort((a, b) => {
-      const dv = (normMap[b] || 0) - (normMap[a] || 0);
+      const dv = (toNum(normalizedMap[b], 0) - toNum(normalizedMap[a], 0)) || 0;
       if (dv !== 0) return dv;
-      const na = intelligenceProfiles[a]?.name || a;
-      const nb = intelligenceProfiles[b]?.name || b;
+      const na = intelligenceProfiles[a]?.name || DEFAULT_NAMES[a] || a;
+      const nb = intelligenceProfiles[b]?.name || DEFAULT_NAMES[b] || b;
       return String(na).localeCompare(String(nb), "fa");
     });
     return arr;
-  }, [normMap, intelligenceProfiles, rawScores, benchmark]);
+  }, [normalizedMap, intelligenceProfiles, rawScores, benchmark]);
 
-  const getName = (code) => intelligenceProfiles?.[code]?.name || code;
-  const fmtPct = (v) =>
-    v === null || v === undefined || Number.isNaN(Number(v))
-      ? "—"
-      : `${Math.round(Number(v))}%`;
+  const getName = useCallback(
+    (code) => intelligenceProfiles?.[code]?.name || DEFAULT_NAMES[code] || code,
+    [intelligenceProfiles]
+  );
 
-  // KPI ها
+  // KPI
   const kpi = useMemo(() => {
-    const entries = codes.map((k) => ({ key: k, val: Number(normMap[k] ?? 0) }));
+    const entries = codes.map((k) => ({ key: k, val: toNum(normalizedMap[k], 0) }));
     if (!entries.length) return { max: null, min: null, spread: 0, balance: "—" };
     const sorted = [...entries].sort((a, b) => b.val - a.val);
     const max = sorted[0];
     const min = sorted[sorted.length - 1];
     const spread = Math.round(max.val - min.val);
-    // تعادل پروفایل: واریانس نسبت به 50
     const variance = entries.reduce((s, e) => s + Math.pow(e.val - 50, 2), 0) / entries.length;
     const balance = variance < 400 ? "متعادل" : variance < 900 ? "نیمه‌متعادل" : "متخصص/نامتعادل";
     return { max, min, spread, balance };
-  }, [codes, normMap]);
+  }, [codes, normalizedMap]);
 
-  // داده‌های نمودار میله‌ای افقی
-  const labels = useMemo(() => codes.map(getName), [codes]);
-  const userVals = useMemo(() => codes.map((k) => Number(normMap[k] ?? 0)), [codes, normMap]);
+  // داده نمودارها
+  const labels = useMemo(() => codes.map(getName), [codes, getName]);
+  const userVals = useMemo(() => codes.map((k) => toNum(normalizedMap[k], 0)), [codes, normalizedMap]);
   const benchVals = useMemo(
-    () => codes.map((k) => Number(benchmark?.normalizedScores?.[k] ?? 0)),
+    () => codes.map((k) => toNum(benchmark?.normalizedScores?.[k], 0)),
     [codes, benchmark]
   );
 
   const barData = useMemo(() => {
-    if (chartData) return chartData;
+    if (incomingChartData) return incomingChartData;
     const datasets = [
       {
         label: userInfo?.fullName ? `پروفایل ${userInfo.fullName}` : "پروفایل فردی",
@@ -175,7 +247,7 @@ const GardnerAnalysis = ({ data, benchmark }) => {
       });
     }
     return { labels, datasets };
-  }, [chartData, labels, userVals, benchVals, mode, benchmark, userInfo]);
+  }, [incomingChartData, labels, userVals, benchVals, mode, benchmark, userInfo]);
 
   const barOptions = useMemo(
     () => ({
@@ -209,7 +281,6 @@ const GardnerAnalysis = ({ data, benchmark }) => {
     [axisColor, gridColor, tooltipBg, tooltipBorder, textColor]
   );
 
-  // داده‌های رادار (تمام هوش‌ها)
   const radarData = useMemo(
     () => ({
       labels,
@@ -270,7 +341,44 @@ const GardnerAnalysis = ({ data, benchmark }) => {
     [axisColor, gridColor, tooltipBg, tooltipBorder, textColor]
   );
 
-  // اکشن‌ها
+  const activeChartRef = () => (mode === "radar" ? radarRef.current : barRef.current);
+
+  const handleDownloadPNG = () => {
+    const chart = activeChartRef();
+    if (!chart) return;
+    const url = chart.toBase64Image?.() || chart.canvas?.toDataURL?.("image/png");
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `gardner_${mode}_${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleExportCSV = () => {
+    const rows = [["code", "name", "rawScore", "normalized(%)"]];
+    codes.forEach((code) => {
+      rows.push([
+        code,
+        (getName(code) || "").replace(/,/g, "،"),
+        rawScores?.[code] ?? intelligenceProfiles?.[code]?.score ?? "",
+        normalizedMap?.[code] ?? intelligenceProfiles?.[code]?.percentage ?? "",
+      ]);
+    });
+    const csvBody = rows.map((r) => r.join(",")).join("\n");
+    const csv = "\uFEFF" + csvBody; // BOM برای Excel
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `gardner_intelligences_${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handlePrint = () => {
     if (!containerRef.current) return;
     const html = containerRef.current.innerHTML;
@@ -297,59 +405,25 @@ const GardnerAnalysis = ({ data, benchmark }) => {
     win.print();
   };
 
-  const activeChartRef = () => (mode === "radar" ? radarRef.current : barRef.current);
+  const debugOn =
+    debug ||
+    (typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("debug") === "1");
 
-  const handleDownloadPNG = () => {
-    const chart = activeChartRef();
-    if (!chart) return;
-    const url = chart.toBase64Image?.() || chart.canvas?.toDataURL?.("image/png");
-    if (!url) return;
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `gardner_${mode}_${Date.now()}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  const handleExportCSV = () => {
-    const rows = [["code", "name", "rawScore", "normalized(%)"]];
-    codes.forEach((code) => {
-      rows.push([
-        code,
-        (getName(code) || "").replace(/,/g, "،"),
-        rawScores?.[code] ?? intelligenceProfiles?.[code]?.score ?? "",
-        normMap?.[code] ?? intelligenceProfiles?.[code]?.percentage ?? "",
-      ]);
-    });
-    const csv = rows.map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `gardner_intelligences_${Date.now()}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  // helpers
-  const toList = (val) =>
-    Array.isArray(val)
-      ? val
-      : (val ? String(val).split(/[،,•|-]/).map((s) => s.trim()).filter(Boolean) : []);
-
-  // Render
   return (
-    <section className="gardner-analysis-container card" ref={containerRef} dir="rtl">
+    <section
+      className="gardner-analysis-container card"
+      ref={containerRef}
+      dir="rtl"
+      aria-label="تحلیل هوش‌های چندگانه گاردنر"
+    >
       <header className="ga-head">
         <div>
           <h2 className="title">تحلیل هوش‌های چندگانه گاردنر</h2>
-          <div className="muted small">
-            {userInfo?.fullName ? `کاربر: ${userInfo.fullName} • ` : null}
-            زمان تحلیل: {dateFa}
-          </div>
+        </div>
+        <div className="meta muted small" aria-label="اطلاعات کاربر و زمان تحلیل">
+          {userInfo?.fullName ? `کاربر: ${userInfo.fullName} • ` : null}
+          زمان تحلیل: {dateFa}
         </div>
         <div className="actions">
           <button className="btn outline" onClick={handleExportCSV}>خروجی CSV</button>
@@ -361,13 +435,13 @@ const GardnerAnalysis = ({ data, benchmark }) => {
       {/* Summary + badges */}
       <section className="summary-section">
         {summary && (
-          <p className="summary-text"><strong>خلاصه:</strong> {summary}</p>
+          <p className="summary-text" data-testid="summary">
+            <strong>خلاصه:</strong> {summary}
+          </p>
         )}
-        <div className="badges">
+        <div className="badges" role="status" aria-live="polite">
           {primaryIntelligence && (
-            <span className="badge primary">
-              هوش اصلی: {getName(primaryIntelligence)}
-            </span>
+            <span className="badge primary">هوش اصلی: {getName(primaryIntelligence)}</span>
           )}
           {topIntelligences?.length > 0 && (
             <span className="badge info">
@@ -381,23 +455,27 @@ const GardnerAnalysis = ({ data, benchmark }) => {
       <section className="kpi-grid">
         <div className="kpi">
           <div className="kpi-label">قوی‌ترین هوش</div>
-          <div className="kpi-value">
+          <div className="kpi-value" data-testid="kpi-max">
             {kpi.max ? `${getName(kpi.max.key)} (${fmtPct(kpi.max.val)})` : "—"}
           </div>
         </div>
         <div className="kpi">
           <div className="kpi-label">ضعیف‌ترین هوش</div>
-          <div className="kpi-value">
+          <div className="kpi-value" data-testid="kpi-min">
             {kpi.min ? `${getName(kpi.min.key)} (${fmtPct(kpi.min.val)})` : "—"}
           </div>
         </div>
         <div className="kpi">
           <div className="kpi-label">پراکندگی نمرات</div>
-          <div className="kpi-value">{kpi.spread || 0} امتیاز</div>
+          <div className="kpi-value" data-testid="kpi-spread">
+            {kpi.spread || 0} امتیاز
+          </div>
         </div>
         <div className="kpi">
           <div className="kpi-label">تعادل کلی</div>
-          <div className="kpi-value">{kpi.balance}</div>
+          <div className="kpi-value" data-testid="kpi-balance">
+            {kpi.balance}
+          </div>
         </div>
       </section>
 
@@ -405,7 +483,7 @@ const GardnerAnalysis = ({ data, benchmark }) => {
       <section className="scores-section">
         <h3>نمرات خام و نرمال‌شده</h3>
         <div className="table-wrap">
-          <table className="scores-table">
+          <table className="scores-table" aria-label="جدول نمرات گاردنر">
             <thead>
               <tr>
                 <th>کُد</th>
@@ -424,7 +502,7 @@ const GardnerAnalysis = ({ data, benchmark }) => {
                     <td>{code}</td>
                     <td>{getName(code)}</td>
                     <td>{rawScores?.[code] ?? prof?.score ?? "—"}</td>
-                    <td>{fmtPct(normMap?.[code] ?? prof?.percentage)}</td>
+                    <td>{fmtPct(normalizedMap?.[code] ?? prof?.percentage)}</td>
                   </tr>
                 );
               })}
@@ -441,12 +519,13 @@ const GardnerAnalysis = ({ data, benchmark }) => {
         <h3>توضیحات هوش‌ها</h3>
         <div className="profiles-list">
           {codes.map((code) => {
-            const p = intelligenceProfiles?.[code] || { name: code };
-            const isTop = p?.isTop || topIntelligences?.includes?.(code) || primaryIntelligence === code;
+            const p = intelligenceProfiles?.[code] || { name: getName(code) };
+            const isTop =
+              p?.isTop || topIntelligences?.includes?.(code) || primaryIntelligence === code;
             const chars = toList(p?.characteristics);
             const careers = toList(p?.careers);
-
-            const suggestions = developmentSuggestions.find((d) => d.intelligence === code)?.suggestions || [];
+            const suggestions =
+              developmentSuggestions.find((d) => d.intelligence === code)?.suggestions || [];
 
             return (
               <article className={`profile-card ${isTop ? "top" : ""}`} key={code}>
@@ -456,13 +535,18 @@ const GardnerAnalysis = ({ data, benchmark }) => {
                 </header>
 
                 {p.englishName && (
-                  <p className="muted small"><strong>نام انگلیسی:</strong> {p.englishName}</p>
+                  <p className="muted small">
+                    <strong>نام انگلیسی:</strong> {p.englishName}
+                  </p>
                 )}
 
                 {p.description && <p className="desc">{p.description}</p>}
 
                 <div className="profile-meta">
-                  <div className="meta-item"><strong>نمره:</strong> {p?.score ?? "—"} {p?.percentage !== undefined && `(${fmtPct(p.percentage)})`}</div>
+                  <div className="meta-item">
+                    <strong>نمره:</strong> {p?.score ?? "—"}{" "}
+                    {p?.percentage !== undefined && `(${fmtPct(p.percentage)})`}
+                  </div>
                 </div>
 
                 {chars.length > 0 && (
@@ -495,26 +579,99 @@ const GardnerAnalysis = ({ data, benchmark }) => {
 
       {/* Charts */}
       <section className="chart-section">
-        <div className="segmented">
-          <button className={`seg-btn ${mode === "bar" ? "active" : ""}`} onClick={() => setMode("bar")}>میله‌ای</button>
-          <button className={`seg-btn ${mode === "radar" ? "active" : ""}`} onClick={() => setMode("radar")}>رادار</button>
+        <div className="segmented" role="tablist" aria-label="انتخاب نوع نمودار">
+          <button
+            className={`seg-btn ${mode === "bar" ? "active" : ""}`}
+            onClick={() => setMode("bar")}
+            role="tab"
+            aria-selected={mode === "bar"}
+          >
+            میله‌ای
+          </button>
+          <button
+            className={`seg-btn ${mode === "radar" ? "active" : ""}`}
+            onClick={() => setMode("radar")}
+            role="tab"
+            aria-selected={mode === "radar"}
+          >
+            رادار
+          </button>
           {benchmark && (
-            <button className={`seg-btn ${mode === "compare" ? "active" : ""}`} onClick={() => setMode("compare")}>مقایسه با میانگین</button>
+            <button
+              className={`seg-btn ${mode === "compare" ? "active" : ""}`}
+              onClick={() => setMode("compare")}
+              role="tab"
+              aria-selected={mode === "compare"}
+            >
+              مقایسه با میانگین
+            </button>
           )}
         </div>
 
-        <div className="chart-wrap">
+        <div className="chart-wrap" data-testid="chart">
           {(mode === "bar" || mode === "compare") && (
             <Bar ref={barRef} data={barData} options={barOptions} />
           )}
-          {mode === "radar" && (
-            <Radar ref={radarRef} data={radarData} options={radarOptions} />
-          )}
+          {mode === "radar" && <Radar ref={radarRef} data={radarData} options={radarOptions} />}
         </div>
+
         <p className="muted small">راهنما: مقیاس نمودارها نرمال‌شده (۰ تا ۱۰۰) است.</p>
+
+        {debugOn && (
+          <pre className="debug-box" dir="ltr">
+            {JSON.stringify(
+              {
+                hasUI: !!data?.dataForUI,
+                pickedFromUI: !!data?.dataForUI?.normalizedScores,
+                pickedFromRoot: !!data?.normalizedScores,
+                codes,
+                topIntelligences,
+                primaryIntelligence,
+                normalizedMap,
+              },
+              null,
+              2
+            )}
+          </pre>
+        )}
       </section>
     </section>
   );
+};
+
+GardnerAnalysis.propTypes = {
+  data: PropTypes.shape({
+    topIntelligences: PropTypes.arrayOf(PropTypes.string),
+    primaryIntelligence: PropTypes.string,
+    rawScores: PropTypes.object,
+    normalizedScores: PropTypes.object,
+    intelligenceProfiles: PropTypes.object,
+    developmentSuggestions: PropTypes.arrayOf(
+      PropTypes.shape({
+        intelligence: PropTypes.string.isRequired,
+        suggestions: PropTypes.arrayOf(PropTypes.string).isRequired,
+      })
+    ),
+    chartData: PropTypes.object,
+    summary: PropTypes.string,
+    analyzedAt: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.instanceOf(Date)]),
+    userInfo: PropTypes.shape({ fullName: PropTypes.string }),
+    dataForUI: PropTypes.shape({
+      normalizedScores: PropTypes.object,
+      intelligenceProfiles: PropTypes.object,
+      rawScores: PropTypes.object,
+      chartData: PropTypes.object,
+      topIntelligences: PropTypes.arrayOf(PropTypes.string),
+      primaryIntelligence: PropTypes.string,
+      summary: PropTypes.string,
+      analyzedAt: PropTypes.string,
+    }),
+  }),
+  benchmark: PropTypes.shape({
+    label: PropTypes.string,
+    normalizedScores: PropTypes.object,
+  }),
+  debug: PropTypes.bool,
 };
 
 export default GardnerAnalysis;

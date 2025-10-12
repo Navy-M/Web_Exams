@@ -1,4 +1,6 @@
-import React, { useMemo, useRef, useState } from "react";
+// DiscAnalysis.jsx
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import PropTypes from "prop-types";
 import { Bar, Radar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -26,31 +28,26 @@ ChartJS.register(
   Legend
 );
 
+// ترتیب معیارها (ثابت) و رنگ‌های پایه
 const ORDER = ["D", "I", "S", "C"];
-const COLORS = { D:"#ef4444", I:"#f59e0b", S:"#10b981", C:"#3b82f6", DEFAULT:"#2563eb" };
+const COLORS = { D: "#ef4444", I: "#f59e0b", S: "#10b981", C: "#3b82f6", DEFAULT: "#2563eb" };
 
-/**
- * Props:
- * - data: {
- *     rawScores?: Record<string, number>,
- *     normalizedScores?: Record<string, number>, // 0..100
- *     dominantTraits?: string[],
- *     primaryTrait?: string,
- *     secondaryTrait?: string,
- *     traits?: Record<string, { name:string, description?:string, score?:number, percentile?:number, strengths?:string[], risks?:string[], advice?:string[] }>,
- *     chartData?: Chart.js dataset (optional),
- *     summary?: string,
- *     analyzedAt?: string|number|Date,
- *     userInfo?: { fullName?:string, id?:string }
- *   }
- * - benchmark?: { // optional for compare mode
- *     label?: string, // e.g. 'میانگین گروه'
- *     normalizedScores: Record<string, number>
- *   }
- */
+// نگهبانِ عدد امن
+const toNum = (v, fallback = 0) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+// فرمت درصد
+const fmtPct = (v) =>
+  v === null || v === undefined || Number.isNaN(Number(v)) ? "—" : `${Math.round(Number(v))}%`;
+
 const DiscAnalysis = ({ data, benchmark }) => {
-  if (!data) return <p className="muted" dir="rtl">داده‌ای برای نمایش موجود نیست.</p>;
+  // ===== 0) گارد داده =====
+  const hasData = !!(data && (data.normalizedScores || data.rawScores));
+  if (!hasData) return <p className="muted" dir="rtl" data-testid="no-data">داده‌ای برای نمایش موجود نیست.</p>;
 
+  // ===== 1) استخراج داده =====
   const {
     rawScores = {},
     normalizedScores = {},
@@ -64,32 +61,54 @@ const DiscAnalysis = ({ data, benchmark }) => {
     userInfo = {},
   } = data || {};
 
+  // ===== 2) رفرنس‌ها/وضعیت‌ها =====
   const containerRef = useRef(null);
-  const barRef = useRef(null);
-  const radarRef = useRef(null);
-
+  const barRef = useRef(null);     // ref به نمونه Chart برای خروجی PNG
+  const radarRef = useRef(null);   // ref به نمونه Chart برای خروجی PNG
   const [mode, setMode] = useState(benchmark ? "compare" : "bar"); // 'bar' | 'radar' | 'compare'
 
-  const dateFa = analyzedAt
-    ? new Date(analyzedAt).toLocaleDateString("fa-IR", {
-        year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
-      })
-    : "—";
+  // تاریخ فارسی
+  const dateFa = useMemo(
+    () =>
+      analyzedAt
+        ? new Date(analyzedAt).toLocaleDateString("fa-IR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "—",
+    [analyzedAt]
+  );
 
-  // read theme CSS vars so charts match dark/light instantly
-  const getVar = (name) => {
+  // ===== 3) هم‌خوانی با تم (CSS Variables) =====
+  // خواندن امن متغیرهای CSS از ریشه یا کانتینر
+  const readVar = useCallback((name) => {
     const el = containerRef.current || document.documentElement;
     const v = getComputedStyle(el).getPropertyValue(name);
     return v ? v.trim() : "";
-  };
-  const axisColor = getVar("--chart-axis") || "rgba(2,6,23,.75)";
-  const gridColor = getVar("--chart-grid") || "rgba(148,163,184,.25)";
-  const tooltipBg = getVar("--tooltip-bg") || "#fff";
-  const tooltipBorder = getVar("--tooltip-border") || "#e5e7eb";
-  const textColor = getVar("--text") || "#0f172a";
-  const headBg = getVar("--head-bg") || "rgba(37,99,235,.08)";
+  }, []);
 
-  // trait keys in canonical order
+  const axisColor = readVar("--chart-axis") || "rgba(2,6,23,.75)";
+  const gridColor = readVar("--chart-grid") || "rgba(148,163,184,.25)";
+  const tooltipBg = readVar("--tooltip-bg") || "#fff";
+  const tooltipBorder = readVar("--tooltip-border") || "#e5e7eb";
+  const textColor = readVar("--text") || "#0f172a";
+  const headBg = readVar("--head-bg") || "rgba(37,99,235,.08)";
+
+  // وقتی تم (class روی html/body) تغییر کند، مقادیر CSS Vars را رفرش کن
+  useEffect(() => {
+    const root = document.documentElement;
+    const obs = new MutationObserver(() => {
+      // با تغییر کلاس تم، ChartJS خودش با رندر مجدد گزینه‌ها را می‌خواند
+      // اینجا نیازی به setState نیست، چون useMemo بر اساس css vars از نو محاسبه می‌شود.
+    });
+    obs.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
+  // ===== 4) ترتیب کلیدها =====
   const traitKeys = useMemo(() => {
     const keys = new Set([
       ...Object.keys(traits || {}),
@@ -106,29 +125,25 @@ const DiscAnalysis = ({ data, benchmark }) => {
     return arr;
   }, [traits, normalizedScores, rawScores, benchmark]);
 
-  const fmtPct = (v) =>
-    v === null || v === undefined || Number.isNaN(Number(v))
-      ? "—"
-      : `${Math.round(Number(v))}%`;
-
-  // Build chart data (bar/radar) if not provided
+  // ===== 5) برچسب‌ها و مقادیر کاربر/بنچمارک =====
   const labels = useMemo(
     () => traitKeys.map((k) => traits?.[k]?.name || k),
     [traitKeys, traits]
   );
 
   const userValues = useMemo(
-    () => traitKeys.map((k) => Number(normalizedScores?.[k] ?? 0)),
+    () => traitKeys.map((k) => toNum(normalizedScores?.[k], 0)),
     [traitKeys, normalizedScores]
   );
 
   const benchValues = useMemo(
-    () => traitKeys.map((k) => Number(benchmark?.normalizedScores?.[k] ?? 0)),
+    () => traitKeys.map((k) => toNum(benchmark?.normalizedScores?.[k], 0)),
     [traitKeys, benchmark]
   );
 
+  // ===== 6) داده نمودارها =====
   const barData = useMemo(() => {
-    if (chartData) return chartData;
+    if (chartData) return chartData; // در صورت تزریق دستی دیتاست
     const colors = traitKeys.map((k) => COLORS[k] || COLORS.DEFAULT);
     const datasets = [
       {
@@ -183,6 +198,7 @@ const DiscAnalysis = ({ data, benchmark }) => {
     return { labels, datasets };
   }, [labels, userValues, benchValues, benchmark, mode, userInfo]);
 
+  // ===== 7) گزینه‌های نمودارها (سازگار با تم) =====
   const barOptions = useMemo(
     () => ({
       responsive: true,
@@ -210,7 +226,7 @@ const DiscAnalysis = ({ data, benchmark }) => {
           bodyColor: textColor,
           borderColor: tooltipBorder,
           borderWidth: 1,
-          callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%` },
+          callbacks: { label: (ctx) => `${ctx.dataset.label}: ${Math.round(ctx.parsed.y)}%` },
         },
       },
     }),
@@ -246,23 +262,24 @@ const DiscAnalysis = ({ data, benchmark }) => {
     [axisColor, gridColor, tooltipBg, tooltipBorder, textColor]
   );
 
-  // KPIs
+  // ===== 8) KPI ها =====
   const kpi = useMemo(() => {
-    const entries = traitKeys.map((k) => ({ key: k, val: Number(normalizedScores[k] ?? 0) }));
+    const entries = traitKeys.map((k) => ({ key: k, val: toNum(normalizedScores[k], 0) }));
     if (!entries.length) return { max: null, min: null, spread: 0, balance: "—" };
     const sorted = [...entries].sort((a, b) => b.val - a.val);
     const max = sorted[0];
     const min = sorted[sorted.length - 1];
     const spread = Math.round(max.val - min.val);
-    const variance =
-      entries.reduce((s, e) => s + Math.pow(e.val - 50, 2), 0) / entries.length;
-    const balance =
-      variance < 400 ? "متعادل" : variance < 900 ? "نیمه‌متعادل" : "نامتعادل";
+    const variance = entries.reduce((s, e) => s + Math.pow(e.val - 50, 2), 0) / entries.length;
+    const balance = variance < 400 ? "متعادل" : variance < 900 ? "نیمه‌متعادل" : "نامتعادل";
     return { max, min, spread, balance };
   }, [traitKeys, normalizedScores]);
 
-  // Actions
-  const handlePrint = () => {
+  // ===== 9) اکشن‌ها =====
+  const canExport = traitKeys.length > 0;
+
+  // چاپ: DOM موجود را در پنجره‌ی جدید با CSS چاپی باز می‌کنیم
+  const handlePrint = useCallback(() => {
     if (!containerRef.current) return;
     const html = containerRef.current.innerHTML;
     const css = `
@@ -286,13 +303,14 @@ const DiscAnalysis = ({ data, benchmark }) => {
     win.document.close();
     win.focus();
     win.print();
-  };
+  }, [headBg]);
 
-  const handleDownloadPNG = () => {
-    const chart =
-      mode === "radar" ? radarRef.current : barRef.current;
-    if (!chart) return;
-    const url = chart.toBase64Image?.() || chart.canvas?.toDataURL?.("image/png");
+  // خروجی تصویر PNG از چارت فعال
+  const handleDownloadPNG = useCallback(() => {
+    const chart = mode === "radar" ? radarRef.current : barRef.current;
+    // react-chartjs-2 v5: ref مستقیم نمونه‌ی Chart را برمی‌گرداند
+    const url =
+      chart?.toBase64Image?.() || chart?.canvas?.toDataURL?.("image/png");
     if (!url) return;
     const a = document.createElement("a");
     a.href = url;
@@ -300,9 +318,10 @@ const DiscAnalysis = ({ data, benchmark }) => {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-  };
+  }, [mode]);
 
-  const handleExportCSV = () => {
+  // خروجی CSV با BOM برای Excel
+  const handleExportCSV = useCallback(() => {
     const rows = [["traitKey", "traitName", "rawScore", "normalized(%)"]];
     traitKeys.forEach((k) => {
       rows.push([
@@ -312,7 +331,8 @@ const DiscAnalysis = ({ data, benchmark }) => {
         normalizedScores?.[k] ?? "",
       ]);
     });
-    const csv = rows.map((r) => r.join(",")).join("\n");
+    const csvBody = rows.map((r) => r.join(",")).join("\n");
+    const csv = "\uFEFF" + csvBody; // BOM
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -322,9 +342,9 @@ const DiscAnalysis = ({ data, benchmark }) => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  }, [traitKeys, traits, rawScores, normalizedScores]);
 
-  // Generic suggestions if trait.advice not provided
+  // ===== 10) پیشنهادهای پیش‌فرض =====
   const defaultAdvice = {
     D: ["اهداف روشن تعیین کنید", "بازخورد مستقیم ولی محترمانه دریافت کنید", "صبوری در تصمیم‌گیری را تمرین کنید"],
     I: ["برنامه‌ریزی و پیگیری را تقویت کنید", "به زمان‌بندی متعهد بمانید", "شنونده‌ی فعال باشید"],
@@ -332,45 +352,51 @@ const DiscAnalysis = ({ data, benchmark }) => {
     C: ["وسواس کمال‌گرایی را مدیریت کنید", "در تصمیم‌گیری چابکی را تمرین کنید", "تبادل نظر غیررسمی را بپذیرید"],
   };
 
-  // Render
+  // ===== 11) رندر =====
   return (
-    <section className="disc-analysis-container card" ref={containerRef} dir="rtl">
+    <section className="disc-analysis-container card" ref={containerRef} dir="rtl" aria-label="تحلیل DISC">
       <header className="disc-head">
         <div>
-          <h2 className="title">تحلیل آزمون DISC</h2>
-          <div className="muted small">
+          <h2 className="title" data-testid="title">تحلیل آزمون DISC</h2>
+          <div className="muted small" aria-label="اطلاعات کاربر و زمان تحلیل">
             {userInfo?.fullName ? `کاربر: ${userInfo.fullName} • ` : null}
             زمان تحلیل: {dateFa}
           </div>
         </div>
         <div className="actions">
-          <button className="btn outline" onClick={handleExportCSV}>خروجی CSV</button>
-          <button className="btn outline" onClick={handleDownloadPNG}>دانلود نمودار</button>
-          <button className="btn primary" onClick={handlePrint}>چاپ گزارش</button>
+          <button className="btn outline" onClick={handleExportCSV} disabled={!canExport} aria-disabled={!canExport}>
+            خروجی CSV
+          </button>
+          <button className="btn outline" onClick={handleDownloadPNG} disabled={!canExport} aria-disabled={!canExport}>
+            دانلود نمودار
+          </button>
+          <button className="btn primary" onClick={handlePrint} disabled={!canExport} aria-disabled={!canExport}>
+            چاپ گزارش
+          </button>
         </div>
       </header>
 
       {/* Badges + summary */}
       <section className="summary-section">
-        <div className="badges">
+        <div className="badges" role="status" aria-live="polite">
           {primaryTrait && (
-            <span className="badge primary">
+            <span className="badge primary" data-testid="primary-badge">
               تیپ اصلی: {traits?.[primaryTrait]?.name || primaryTrait}
             </span>
           )}
           {secondaryTrait && (
-            <span className="badge secondary">
+            <span className="badge secondary" data-testid="secondary-badge">
               تیپ ثانویه: {traits?.[secondaryTrait]?.name || secondaryTrait}
             </span>
           )}
           {Array.isArray(dominantTraits) && dominantTraits.length > 0 && (
-            <span className="badge info">
+            <span className="badge info" data-testid="dominant-list">
               ویژگی‌های غالب: {dominantTraits.map((k) => traits?.[k]?.name || k).join("، ")}
             </span>
           )}
         </div>
         {summary && (
-          <p className="summary-text">
+          <p className="summary-text" data-testid="summary">
             <strong>خلاصه تحلیل:</strong> {summary}
           </p>
         )}
@@ -380,23 +406,23 @@ const DiscAnalysis = ({ data, benchmark }) => {
       <section className="kpi-grid">
         <div className="kpi">
           <div className="kpi-label">قوی‌ترین بُعد</div>
-          <div className="kpi-value">
+          <div className="kpi-value" data-testid="kpi-strongest">
             {kpi.max ? (traits?.[kpi.max.key]?.name || kpi.max.key) : "—"} {kpi.max ? `(${fmtPct(kpi.max.val)})` : ""}
           </div>
         </div>
         <div className="kpi">
           <div className="kpi-label">ضعیف‌ترین بُعد</div>
-          <div className="kpi-value">
+          <div className="kpi-value" data-testid="kpi-weakest">
             {kpi.min ? (traits?.[kpi.min.key]?.name || kpi.min.key) : "—"} {kpi.min ? `(${fmtPct(kpi.min.val)})` : ""}
           </div>
         </div>
         <div className="kpi">
           <div className="kpi-label">پراکندگی نمرات</div>
-          <div className="kpi-value">{kpi.spread || 0} امتیاز</div>
+          <div className="kpi-value" data-testid="kpi-spread">{kpi.spread || 0} امتیاز</div>
         </div>
         <div className="kpi">
           <div className="kpi-label">تعادل کلی</div>
-          <div className="kpi-value">{kpi.balance}</div>
+          <div className="kpi-value" data-testid="kpi-balance">{kpi.balance}</div>
         </div>
       </section>
 
@@ -404,7 +430,7 @@ const DiscAnalysis = ({ data, benchmark }) => {
       <section className="scores-section">
         <h3>نمرات خام و نرمال‌شده</h3>
         <div className="table-wrap">
-          <table className="scores-table">
+          <table className="scores-table" aria-label="جدول نمرات DISC">
             <thead>
               <tr>
                 <th>ویژگی</th>
@@ -498,15 +524,36 @@ const DiscAnalysis = ({ data, benchmark }) => {
 
       {/* Charts */}
       <section className="chart-section">
-        <div className="segmented">
-          <button className={`seg-btn ${mode === "bar" ? "active" : ""}`} onClick={() => setMode("bar")}>ستونی</button>
-          <button className={`seg-btn ${mode === "radar" ? "active" : ""}`} onClick={() => setMode("radar")}>رادار</button>
+        <div className="segmented" role="tablist" aria-label="انتخاب نوع نمودار">
+          <button
+            className={`seg-btn ${mode === "bar" ? "active" : ""}`}
+            onClick={() => setMode("bar")}
+            role="tab"
+            aria-selected={mode === "bar"}
+          >
+            ستونی
+          </button>
+          <button
+            className={`seg-btn ${mode === "radar" ? "active" : ""}`}
+            onClick={() => setMode("radar")}
+            role="tab"
+            aria-selected={mode === "radar"}
+          >
+            رادار
+          </button>
           {benchmark && (
-            <button className={`seg-btn ${mode === "compare" ? "active" : ""}`} onClick={() => setMode("compare")}>مقایسه با میانگین</button>
+            <button
+              className={`seg-btn ${mode === "compare" ? "active" : ""}`}
+              onClick={() => setMode("compare")}
+              role="tab"
+              aria-selected={mode === "compare"}
+            >
+              مقایسه با میانگین
+            </button>
           )}
         </div>
 
-        <div className="chart-wrap">
+        <div className="chart-wrap" data-testid="chart">
           {(mode === "bar" || mode === "compare") && (
             <Bar ref={barRef} data={barData} options={barOptions} />
           )}
@@ -520,6 +567,28 @@ const DiscAnalysis = ({ data, benchmark }) => {
       </section>
     </section>
   );
+};
+
+DiscAnalysis.propTypes = {
+  data: PropTypes.shape({
+    rawScores: PropTypes.object,
+    normalizedScores: PropTypes.object,
+    dominantTraits: PropTypes.arrayOf(PropTypes.string),
+    primaryTrait: PropTypes.string,
+    secondaryTrait: PropTypes.string,
+    traits: PropTypes.object,
+    chartData: PropTypes.object,
+    summary: PropTypes.string,
+    analyzedAt: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.instanceOf(Date)]),
+    userInfo: PropTypes.shape({
+      fullName: PropTypes.string,
+      id: PropTypes.string,
+    }),
+  }),
+  benchmark: PropTypes.shape({
+    label: PropTypes.string,
+    normalizedScores: PropTypes.object,
+  }),
 };
 
 export default DiscAnalysis;

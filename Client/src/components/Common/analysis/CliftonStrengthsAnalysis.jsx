@@ -1,4 +1,6 @@
+// CliftonStrengthsAnalysis.jsx
 import React, { useMemo, useRef, useState } from "react";
+import PropTypes from "prop-types";
 import { Bar, Radar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -26,37 +28,158 @@ ChartJS.register(
   Legend
 );
 
-/**
- * Props:
- * - data: {
- *     topThemes?: string[],                 // e.g. ["Achiever","Learner",...]
- *     signatureTheme?: string,
- *     rawScores?: Record<string, number>,   // by theme key/code
- *     normalizedScores?: Record<string, number>, // 0..100 by theme key
- *     themeDetails?: Array<{
- *        theme: string,                     // key/code
- *        name: string,                      // Farsi name
- *        domain?: "Executing" | "Influencing" | "Relationship" | "Strategic",
- *        score?: number,                    // raw
- *        percentage?: number,               // normalized 0..100
- *        description?: string,
- *        characteristics?: string | string[],
- *        isTop?: boolean
- *     }>,
- *     developmentSuggestions?: Array<{ theme: string, suggestions: string[] }>,
- *     chartData?: any,                      // optional Chart.js dataset
- *     summary?: string,
- *     analyzedAt?: string | number | Date,
- *     userInfo?: { fullName?: string }
- *   }
- * - benchmark?: {                          // optional compare mode
- *     label?: string,                       // e.g. 'میانگین گروه'
- *     normalizedScores: Record<string, number> // by theme key/code (0..100)
- *   }
- */
+/* =========================
+ * ۱) فرهنگ‌لغت و نگاشت‌ها
+ * ========================= */
+
+/** دامنه‌ها → فارسی */
+const DOMAIN_FA = {
+  Executing: "اجرایی",
+  Influencing: "تأثیرگذاری",
+  Relationship: "رابطه‌سازی",
+  Strategic: "تفکر راهبردی",
+  Other: "سایر",
+};
+
+/** متادیتای رسمی ۳۴ تم کلیفتون (نام فارسی + دامنه) */
+const THEME_META = {
+  Achiever: { fa: "موفقیت‌جو", domain: "Executing" },
+  Activator: { fa: "فعال‌کننده", domain: "Influencing" },
+  Adaptability: { fa: "سازگاری", domain: "Relationship" },
+  Analytical: { fa: "تحلیلی", domain: "Strategic" },
+  Arranger: { fa: "تنظیم‌کننده", domain: "Executing" },
+  Belief: { fa: "باور", domain: "Executing" },
+  Command: { fa: "فرماندهی", domain: "Influencing" },
+  Communication: { fa: "ارتباط", domain: "Influencing" },
+  Competition: { fa: "رقابت", domain: "Influencing" },
+  Connectedness: { fa: "پیوندگرا", domain: "Relationship" },
+  Consistency: { fa: "ثبات/یکنواختی", domain: "Executing" },
+  Context: { fa: "زمینه‌گرا", domain: "Strategic" },
+  Deliberative: { fa: "خردمند/دوراندیش", domain: "Executing" },
+  Developer: { fa: "توسعه‌دهنده", domain: "Relationship" },
+  Empathy: { fa: "همدلی", domain: "Relationship" },
+  Focus: { fa: "تمرکز", domain: "Executing" },
+  Futuristic: { fa: "آینده‌گرا", domain: "Strategic" },
+  Harmony: { fa: "هماهنگی", domain: "Relationship" },
+  Ideation: { fa: "ایده‌پردازی", domain: "Strategic" },
+  Includer: { fa: "فراگیر/شامل‌گر", domain: "Relationship" },
+  Individualization: { fa: "فردی‌سازی", domain: "Relationship" },
+  Input: { fa: "ورودی/اطلاعات‌جو", domain: "Strategic" },
+  Intellection: { fa: "اندیشمند", domain: "Strategic" },
+  Learner: { fa: "یادگیرنده", domain: "Strategic" },
+  Maximizer: { fa: "حداکثرکننده", domain: "Influencing" },
+  Positivity: { fa: "مثبت‌اندیش", domain: "Relationship" },
+  Relator: { fa: "رابطه‌گر", domain: "Relationship" },
+  Responsibility: { fa: "مسئولیت‌پذیری", domain: "Executing" },
+  Restorative: { fa: "ترمیم‌بخش", domain: "Executing" },
+  SelfAssurance: { fa: "اعتمادبه‌نفس", domain: "Influencing" },
+  Significance: { fa: "اهمیت/اعتبار", domain: "Influencing" },
+  Strategic: { fa: "استراتژیک", domain: "Strategic" },
+  Woo: { fa: "دوست‌یاب (WOO)", domain: "Influencing" },
+};
+
+/** معادل‌های فارسی/نیمه‌فارسی → کلید استاندارد انگلیسی */
+const ALIASES = {
+  ارتباط: "Communication",
+  "اعتماد_به_نفس": "SelfAssurance",
+  "اعتمادبه‌نفس": "SelfAssurance",
+  "حداکثرکننده": "Maximizer",
+  "ترمیم‌بخش": "Restorative",
+  "فردی‌سازی": "Individualization",
+  "مسئولیت": "Responsibility",
+  "مسئولیت‌پذیری": "Responsibility",
+  "ورودی": "Input",
+  "اندیشمند": "Intellection",
+  "ایده‌پردازی": "Ideation",
+  "مثبت‌اندیش": "Positivity",
+  "رابطه‌گر": "Relator",
+  "هماهنگی": "Harmony",
+  "آینده‌گرا": "Futuristic",
+  "زمینه‌گرا": "Context",
+  "تحلیلی": "Analytical",
+  "تنظیم‌کننده": "Arranger",
+  "فعال‌کننده": "Activator",
+  "فرماندهی": "Command",
+  "رقابت": "Competition",
+  "پیوندگرا": "Connectedness",
+  "ثبات": "Consistency",
+  "خرد": "Deliberative",
+  "توسعه‌دهنده": "Developer",
+  "همدلی": "Empathy",
+  "تمرکز": "Focus",
+  "یادگیرنده": "Learner",
+  "فراگیری": "Includer",
+  "فراگیر": "Includer",
+  "اهمیت": "Significance",
+  "استراتژیک": "Strategic",
+  "وای": "Woo",
+  "خوشحال": "Positivity", // برخی دیتاست‌ها به اشتباه «خوشحال» دارند
+};
+
+/* =========================
+ * ۲) کمک‌تابع‌های امن UI
+ * ========================= */
+
+const toNum = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const clampPct = (v) => Math.max(0, Math.min(100, Math.round(v)));
+
+/** اگر normalized عملاً «خام» باشد (مثلاً حداکثر ≤ 10)، به درصد 0..100 تبدیل می‌کنیم */
+function normalizeTo100(map = {}) {
+  const vals = Object.values(map).map(toNum);
+  if (!vals.length) return {};
+  const max = Math.max(...vals);
+  if (max <= 10) {
+    const scale = max > 0 ? 100 / max : 0;
+    return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, clampPct(toNum(v) * scale)]));
+  }
+  return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, clampPct(toNum(v))]));
+}
+
+/** کلیدهای فارسی/متفرقه را به کلید استاندارد انگلیسی نگاشت می‌کند */
+function normalizeThemeKey(key = "") {
+  if (!key) return key;
+  if (ALIASES[key]) return ALIASES[key];
+  // اصلاح فاصله/زیرخط
+  const k = String(key).replace(/\s+/g, "").replace(/_/g, "");
+  const found = Object.entries(ALIASES).find(([fa, en]) => fa.replace(/\s+/g, "") === k);
+  return found ? found[1] : key;
+}
+
+/** نقشه‌ای جدید با کلید‌های استاندارد */
+function remapKeys(obj = {}) {
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) {
+    out[normalizeThemeKey(k)] = v;
+  }
+  return out;
+}
+
+/** ساخت جزئیات تم‌ها: اگر نیامده باشد، از متادیتا می‌سازیم (تماماً فارسی) */
+function buildThemeDetails(allKeys = [], rawScores = {}, normalized = {}) {
+  return allKeys.map((key) => {
+    const meta = THEME_META[key] || { fa: key, domain: "Other" };
+    return {
+      theme: key,
+      name: meta.fa || key,
+      domain: meta.domain || "Other",
+      score: toNum(rawScores[key]),
+      percentage: toNum(normalized[key]),
+    };
+  });
+}
+
+/* =========================
+ * ۳) کامپوننت اصلی
+ * ========================= */
+
 const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
   if (!data) return <p className="muted" dir="rtl">داده‌ای برای نمایش موجود نیست.</p>;
 
+  // ۳-الف) ورودی‌ها
   const {
     topThemes = [],
     signatureTheme,
@@ -73,7 +196,6 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
   const containerRef = useRef(null);
   const barRef = useRef(null);
   const radarRef = useRef(null);
-
   const [mode, setMode] = useState(benchmark ? "compare" : "bar"); // 'bar' | 'radarDomains' | 'compare'
 
   const dateFa = analyzedAt
@@ -82,84 +204,93 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
       })
     : "—";
 
-  // CSS variables for theme-aware charts
-  const getVar = (name) => {
-    const el = containerRef.current || document.documentElement;
-    const v = getComputedStyle(el).getPropertyValue(name);
-    return v ? v.trim() : "";
-  };
-  const axisColor = getVar("--chart-axis") || "rgba(2,6,23,.75)";
-  const gridColor = getVar("--chart-grid") || "rgba(148,163,184,.25)";
-  const tooltipBg = getVar("--tooltip-bg") || "#fff";
-  const tooltipBorder = getVar("--tooltip-border") || "#e5e7eb";
-  const textColor = getVar("--text") || "#0f172a";
-  const headBg = getVar("--head-bg") || "rgba(37,99,235,.08)";
+  // ۳-ب) نرمال‌سازی کلیدها (فارسی→انگلیسی) و ساخت نقشه‌ها
+  const rawByKey = useMemo(() => remapKeys(rawScores), [rawScores]);
+  const normByKeyRaw = useMemo(() => remapKeys(normalizedScores), [normalizedScores]);
+  const normByKey = useMemo(() => normalizeTo100(normByKeyRaw), [normByKeyRaw]);
 
-  // Normalized map by theme
-  const normByTheme = useMemo(() => {
-    // prefer themeDetails.percentage if present, else normalizedScores
-    const map = { ...normalizedScores };
-    themeDetails.forEach((t) => {
-      if (typeof t.percentage === "number") map[t.theme] = t.percentage;
+  const detailsFromProp = useMemo(() => {
+    return (themeDetails || []).map((t) => {
+      const key = normalizeThemeKey(t.theme);
+      const meta = THEME_META[key] || { fa: t.name || key, domain: t.domain || "Other" };
+      return {
+        theme: key,
+        name: t.name || meta.fa || key,
+        domain: t.domain || meta.domain || "Other",
+        score: toNum(t.score ?? rawByKey[key]),
+        percentage: toNum(t.percentage ?? normByKey[key]),
+        description: t.description,
+        characteristics: t.characteristics,
+        isTop: !!t.isTop,
+      };
     });
-    return map;
-  }, [normalizedScores, themeDetails]);
+  }, [themeDetails, rawByKey, normByKey]);
 
-  // Ensure a stable, readable order: sort themes by normalized desc
-  const orderedThemes = useMemo(() => {
-    const keys = new Set([
-      ...Object.keys(normByTheme),
-      ...themeDetails.map((t) => t.theme),
-      ...Object.keys(rawScores),
-      ...(benchmark ? Object.keys(benchmark.normalizedScores || {}) : []),
+  // کلیدهای موجود از همه‌ی منابع
+  const allKeys = useMemo(() => {
+    const set = new Set([
+      ...Object.keys(rawByKey),
+      ...Object.keys(normByKey),
+      ...detailsFromProp.map((d) => d.theme),
+      ...(benchmark ? Object.keys(remapKeys(benchmark.normalizedScores || {})) : []),
     ]);
-    const arr = Array.from(keys);
-    arr.sort((a, b) => (normByTheme[b] || 0) - (normByTheme[a] || 0));
+    return Array.from(set);
+  }, [rawByKey, normByKey, detailsFromProp, benchmark]);
+
+  // اگر themeDetails نداشتیم، بساز
+  const details = useMemo(() => {
+    if (detailsFromProp.length) return detailsFromProp;
+    return buildThemeDetails(allKeys, rawByKey, normByKey);
+  }, [detailsFromProp, allKeys, rawByKey, normByKey]);
+
+  // امتیاز نهایی هر کلید (اولویت: details.percentage → normByKey)
+  const finalNorm = useMemo(() => {
+    const out = { ...normByKey };
+    details.forEach((d) => {
+      if (typeof d.percentage === "number") out[d.theme] = clampPct(d.percentage);
+    });
+    return out;
+  }, [normByKey, details]);
+
+  // ترتیب: نزولی بر اساس درصد
+  const orderedThemes = useMemo(() => {
+    const arr = [...allKeys];
+    arr.sort((a, b) => (finalNorm[b] || 0) - (finalNorm[a] || 0));
     return arr;
-  }, [normByTheme, themeDetails, rawScores, benchmark]);
+  }, [allKeys, finalNorm]);
 
-  // Lookup helpers
-  const detailsByTheme = useMemo(() => {
-    const m = new Map();
-    themeDetails.forEach((t) => m.set(t.theme, t));
-    return m;
-  }, [themeDetails]);
+  // نام و دامنه فارسی
+  const getName = (key) => THEME_META[key]?.fa || details.find((d) => d.theme === key)?.name || key;
+  const getDomain = (key) => THEME_META[key]?.domain || details.find((d) => d.theme === key)?.domain || "Other";
+  const fmtPct = (v) => (v == null || Number.isNaN(Number(v)) ? "—" : `${Math.round(Number(v))}%`);
 
-  const getName = (key) => detailsByTheme.get(key)?.name || key;
-  const getDomain = (key) => detailsByTheme.get(key)?.domain || "Other";
-
-  const fmtPct = (v) =>
-    v === null || v === undefined || Number.isNaN(Number(v))
-      ? "—"
-      : `${Math.round(Number(v))}%`;
-
-  // KPIs
+  // KPI ها
   const kpi = useMemo(() => {
-    const entries = orderedThemes.map((k) => ({ key: k, val: Number(normByTheme[k] ?? 0) }));
+    const entries = orderedThemes.map((k) => ({ key: k, val: toNum(finalNorm[k]) }));
     if (!entries.length) return { max: null, min: null, spread: 0, topDomain: "—" };
     const sorted = [...entries].sort((a, b) => b.val - a.val);
     const max = sorted[0];
     const min = sorted[sorted.length - 1];
     const spread = Math.round(max.val - min.val);
-    // domain dominance
     const domainAcc = {};
     for (const k of orderedThemes) {
       const d = getDomain(k);
-      domainAcc[d] = (domainAcc[d] || 0) + (normByTheme[k] || 0);
+      domainAcc[d] = (domainAcc[d] || 0) + (finalNorm[k] || 0);
     }
-    const topDomain = Object.entries(domainAcc).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
+    const topDomain = Object.entries(domainAcc).sort((a, b) => b[1] - a[1])[0]?.[0] || "Other";
     return { max, min, spread, topDomain };
-  }, [orderedThemes, normByTheme]);
+  }, [orderedThemes, finalNorm]);
 
-  // BAR data (Horizontal)
+  // داده‌های نمودار میله‌ای
   const labels = useMemo(() => orderedThemes.map(getName), [orderedThemes]);
-  const userValues = useMemo(
-    () => orderedThemes.map((k) => Number(normByTheme[k] ?? 0)),
-    [orderedThemes, normByTheme]
+  const userValues = useMemo(() => orderedThemes.map((k) => toNum(finalNorm[k])), [orderedThemes, finalNorm]);
+
+  const benchMap = useMemo(
+    () => (benchmark?.normalizedScores ? normalizeTo100(remapKeys(benchmark.normalizedScores)) : null),
+    [benchmark]
   );
   const benchValues = useMemo(
-    () => orderedThemes.map((k) => Number(benchmark?.normalizedScores?.[k] ?? 0)),
-    [orderedThemes, benchmark]
+    () => orderedThemes.map((k) => toNum(benchMap?.[k])), [orderedThemes, benchMap]
   );
 
   const barData = useMemo(() => {
@@ -176,9 +307,9 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
         categoryPercentage: 0.9,
       },
     ];
-    if (mode === "compare" && benchmark) {
+    if (mode === "compare" && benchMap) {
       datasets.push({
-        label: benchmark.label || "میانگین گروه",
+        label: benchmark?.label || "میانگین گروه",
         data: benchValues,
         backgroundColor: "rgba(148,163,184,.35)",
         borderColor: "rgba(148,163,184,.65)",
@@ -189,13 +320,19 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
       });
     }
     return { labels, datasets };
-  }, [chartData, labels, userValues, benchValues, mode, benchmark, userInfo]);
+  }, [chartData, labels, userValues, benchValues, mode, benchMap, benchmark, userInfo]);
+
+  const axisColor = "rgba(2,6,23,.75)";
+  const gridColor = "rgba(148,163,184,.25)";
+  const tooltipBg = "#fff";
+  const tooltipBorder = "#e5e7eb";
+  const textColor = "#0f172a";
 
   const barOptions = useMemo(
     () => ({
       responsive: true,
       maintainAspectRatio: false,
-      indexAxis: "y", // horizontal
+      indexAxis: "y",
       scales: {
         x: {
           beginAtZero: true,
@@ -216,50 +353,39 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
           bodyColor: textColor,
           borderColor: tooltipBorder,
           borderWidth: 1,
-          callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${Math.round(ctx.parsed.x)}%`,
-          },
+          callbacks: { label: (ctx) => `${ctx.dataset.label}: ${Math.round(ctx.parsed.x)}%` },
         },
       },
     }),
-    [axisColor, gridColor, tooltipBg, tooltipBorder, textColor]
+    []
   );
 
-  // Radar by domains (aggregate)
-  const DOMAIN_LABELS_FA = {
-    Executing: "اجرایی",
-    Influencing: "تأثیرگذاری",
-    Relationship: "رابطه‌سازی",
-    Strategic: "تفکر راهبردی",
-    Other: "سایر",
-  };
-
+  // رادار دامنه‌ها (میانگین هر دامنه)
   const domainKeys = ["Executing", "Influencing", "Relationship", "Strategic", "Other"];
-  const radarLabels = domainKeys.map((k) => DOMAIN_LABELS_FA[k]);
+  const radarLabels = domainKeys.map((k) => DOMAIN_FA[k]);
 
   const userDomainVals = useMemo(() => {
     const acc = Object.fromEntries(domainKeys.map((k) => [k, 0]));
     const cnt = Object.fromEntries(domainKeys.map((k) => [k, 0]));
     for (const th of orderedThemes) {
       const d = getDomain(th);
-      acc[d] += Number(normByTheme[th] ?? 0);
+      acc[d] += toNum(finalNorm[th]);
       cnt[d] += 1;
     }
-    // average per domain
     return domainKeys.map((d) => (cnt[d] ? Math.round(acc[d] / cnt[d]) : 0));
-  }, [orderedThemes, normByTheme]);
+  }, [orderedThemes, finalNorm]);
 
   const benchDomainVals = useMemo(() => {
-    if (!benchmark) return domainKeys.map(() => 0);
+    if (!benchMap) return domainKeys.map(() => 0);
     const acc = Object.fromEntries(domainKeys.map((k) => [k, 0]));
     const cnt = Object.fromEntries(domainKeys.map((k) => [k, 0]));
     for (const th of orderedThemes) {
       const d = getDomain(th);
-      acc[d] += Number(benchmark.normalizedScores?.[th] ?? 0);
+      acc[d] += toNum(benchMap[th]);
       cnt[d] += 1;
     }
     return domainKeys.map((d) => (cnt[d] ? Math.round(acc[d] / cnt[d]) : 0));
-  }, [orderedThemes, benchmark]);
+  }, [orderedThemes, benchMap]);
 
   const radarData = useMemo(
     () => ({
@@ -274,10 +400,10 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
           pointBorderColor: "#fff",
           fill: true,
         },
-        ...(mode === "compare" && benchmark
+        ...(mode === "compare" && benchMap
           ? [
               {
-                label: benchmark.label || "میانگین گروه",
+                label: benchmark?.label || "میانگین گروه",
                 data: benchDomainVals,
                 backgroundColor: "rgba(148,163,184,.18)",
                 borderColor: "rgba(148,163,184,.8)",
@@ -289,7 +415,7 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
           : []),
       ],
     }),
-    [radarLabels, userDomainVals, benchDomainVals, userInfo, mode, benchmark]
+    [radarLabels, userDomainVals, benchDomainVals, userInfo, mode, benchMap, benchmark]
   );
 
   const radarOptions = useMemo(
@@ -318,10 +444,50 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
         },
       },
     }),
-    [axisColor, gridColor, tooltipBg, tooltipBorder, textColor]
+    []
   );
 
-  // actions
+  // اکشن‌ها
+  const headBg = "rgba(37,99,235,.08)";
+  const activeChartRef = () => (mode === "radarDomains" ? radarRef.current : barRef.current);
+
+  const handleDownloadPNG = () => {
+    const chart = activeChartRef();
+    if (!chart) return;
+    const url = chart.toBase64Image?.() || chart.canvas?.toDataURL?.("image/png");
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `clifton_${mode}_${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleExportCSV = () => {
+    const rows = [["themeKey", "themeNameFa", "domainFa", "rawScore", "normalized(%)"]];
+    orderedThemes.forEach((k) => {
+      rows.push([
+        k,
+        (getName(k) || "").replace(/,/g, "،"),
+        DOMAIN_FA[getDomain(k)] || getDomain(k),
+        rawByKey?.[k] ?? "",
+        finalNorm?.[k] ?? "",
+      ]);
+    });
+    const csvBody = rows.map((r) => r.join(",")).join("\n");
+    const csv = "\uFEFF" + csvBody; // BOM برای Excel
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `clifton_strengths_${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handlePrint = () => {
     if (!containerRef.current) return;
     const html = containerRef.current.innerHTML;
@@ -348,54 +514,17 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
     win.print();
   };
 
-  const activeChartRef = () => (mode === "radarDomains" ? radarRef.current : barRef.current);
-
-  const handleDownloadPNG = () => {
-    const chart = activeChartRef();
-    if (!chart) return;
-    const url = chart.toBase64Image?.() || chart.canvas?.toDataURL?.("image/png");
-    if (!url) return;
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `clifton_${mode}_${Date.now()}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  const handleExportCSV = () => {
-    const rows = [["themeKey", "themeName", "rawScore", "normalized(%)", "domain"]];
-    orderedThemes.forEach((k) => {
-      rows.push([
-        k,
-        (getName(k) || "").replace(/,/g, "،"),
-        rawScores?.[k] ?? detailsByTheme.get(k)?.score ?? "",
-        normByTheme?.[k] ?? detailsByTheme.get(k)?.percentage ?? "",
-        getDomain(k),
-      ]);
-    });
-    const csv = rows.map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `clifton_strengths_${Date.now()}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  // suggestions map for quick lookup
+  // پیشنهادها (در صورت وجود)
   const suggestMap = useMemo(() => {
     const m = new Map();
-    developmentSuggestions.forEach((x) => m.set(x.theme, x.suggestions || []));
+    (developmentSuggestions || []).forEach((x) => m.set(normalizeThemeKey(x.theme), x.suggestions || []));
     return m;
   }, [developmentSuggestions]);
 
-  // characteristics normalizer
-  const toList = (val) => (Array.isArray(val) ? val : (val ? String(val).split(/[،,•|-]/).map(s => s.trim()).filter(Boolean) : []));
+  const toList = (val) =>
+    Array.isArray(val) ? val : (val ? String(val).split(/[،,•|-]/).map(s => s.trim()).filter(Boolean) : []);
 
+  // ۳-ج) رندر
   return (
     <section className="clifton-container card" ref={containerRef} dir="rtl">
       <header className="clifton-head">
@@ -416,17 +545,18 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
       {/* Summary + badges */}
       <section className="summary-section">
         {summary && (
-          <p className="summary-text">
-            <strong>خلاصه:</strong> {summary}
-          </p>
+          <p className="summary-text"><strong>خلاصه:</strong> {summary}</p>
         )}
-
         <div className="badges">
           {signatureTheme && (
-            <span className="badge primary">تم اصلی: {getName(signatureTheme)}</span>
+            <span className="badge primary">
+              تم اصلی: {getName(normalizeThemeKey(signatureTheme))}
+            </span>
           )}
           {topThemes?.length > 0 && (
-            <span className="badge info">تم‌های برتر: {topThemes.map(getName).join("، ")}</span>
+            <span className="badge info">
+              تم‌های برتر: {topThemes.map((k) => getName(normalizeThemeKey(k))).join("، ")}
+            </span>
           )}
         </div>
       </section>
@@ -451,7 +581,7 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
         </div>
         <div className="kpi">
           <div className="kpi-label">دامنه‌ی غالب</div>
-          <div className="kpi-value">{DOMAIN_LABELS_FA[kpi.topDomain] || kpi.topDomain}</div>
+          <div className="kpi-value">{DOMAIN_FA[kpi.topDomain] || kpi.topDomain}</div>
         </div>
       </section>
 
@@ -471,15 +601,16 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
             </thead>
             <tbody>
               {orderedThemes.map((k) => {
-                const det = detailsByTheme.get(k);
-                const isTop = det?.isTop || topThemes?.includes?.(k) || signatureTheme === k;
+                const isTop =
+                  (topThemes || []).map(normalizeThemeKey).includes(k) ||
+                  normalizeThemeKey(signatureTheme) === k;
                 return (
                   <tr key={k} className={isTop ? "top-theme-row" : ""}>
                     <td>{k}</td>
                     <td>{getName(k)}</td>
-                    <td>{DOMAIN_LABELS_FA[getDomain(k)] || getDomain(k)}</td>
-                    <td>{rawScores?.[k] ?? det?.score ?? "—"}</td>
-                    <td>{fmtPct(normByTheme?.[k] ?? det?.percentage)}</td>
+                    <td>{DOMAIN_FA[getDomain(k)] || getDomain(k)}</td>
+                    <td>{rawByKey?.[k] ?? "—"}</td>
+                    <td>{fmtPct(finalNorm?.[k])}</td>
                   </tr>
                 );
               })}
@@ -496,18 +627,32 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
         <h3>توضیحات تم‌ها</h3>
         <div className="themes-list">
           {orderedThemes.map((key) => {
-            const det = detailsByTheme.get(key) || { theme: key, name: key };
-            const isTop = det?.isTop || topThemes?.includes?.(key) || signatureTheme === key;
+            const meta = THEME_META[key] || { fa: key, domain: "Other" };
+            const det = details.find((d) => d.theme === key) || { name: meta.fa, domain: meta.domain };
+            const isTop =
+              (topThemes || []).map(normalizeThemeKey).includes(key) ||
+              normalizeThemeKey(signatureTheme) === key;
             const chars = toList(det?.characteristics);
-            const sugg = suggestMap.get(key) || [];
+            const sugg = (developmentSuggestions || [])
+              .find((x) => normalizeThemeKey(x.theme) === key)?.suggestions || [];
 
             return (
               <article className={`theme-card ${isTop ? "top" : ""}`} key={key}>
                 <header className="theme-head">
-                  <h4>{det.name}</h4>
+                  <h4>{det.name || meta.fa || key}</h4>
                   {isTop && <span className="top-label">تم برتر</span>}
                 </header>
+
                 {det.description && <p className="desc">{det.description}</p>}
+
+                <div className="theme-meta">
+                  <div className="meta-item">
+                    <strong>دامنه:</strong> {DOMAIN_FA[getDomain(key)] || getDomain(key)}
+                  </div>
+                  <div className="meta-item">
+                    <strong>نمره:</strong> {rawByKey?.[key] ?? "—"} ({fmtPct(finalNorm?.[key])})
+                  </div>
+                </div>
 
                 {chars.length > 0 && (
                   <div className="theme-list">
@@ -530,11 +675,32 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
 
       {/* Charts */}
       <section className="chart-section">
-        <div className="segmented">
-          <button className={`seg-btn ${mode === "bar" ? "active" : ""}`} onClick={() => setMode("bar")}>میله‌ای (تم‌ها)</button>
-          <button className={`seg-btn ${mode === "radarDomains" ? "active" : ""}`} onClick={() => setMode("radarDomains")}>رادار (دامنه‌ها)</button>
-          {benchmark && (
-            <button className={`seg-btn ${mode === "compare" ? "active" : ""}`} onClick={() => setMode("compare")}>مقایسه با میانگین</button>
+        <div className="segmented" role="tablist" aria-label="انتخاب نوع نمودار">
+          <button
+            className={`seg-btn ${mode === "bar" ? "active" : ""}`}
+            onClick={() => setMode("bar")}
+            role="tab"
+            aria-selected={mode === "bar"}
+          >
+            میله‌ای (تم‌ها)
+          </button>
+          <button
+            className={`seg-btn ${mode === "radarDomains" ? "active" : ""}`}
+            onClick={() => setMode("radarDomains")}
+            role="tab"
+            aria-selected={mode === "radarDomains"}
+          >
+            رادار (دامنه‌ها)
+          </button>
+          {benchMap && (
+            <button
+              className={`seg-btn ${mode === "compare" ? "active" : ""}`}
+              onClick={() => setMode("compare")}
+              role="tab"
+              aria-selected={mode === "compare"}
+            >
+              مقایسه با میانگین
+            </button>
           )}
         </div>
 
@@ -546,10 +712,41 @@ const CliftonStrengthsAnalysis = ({ data, benchmark }) => {
             <Radar ref={radarRef} data={radarData} options={radarOptions} />
           )}
         </div>
+
         <p className="muted small">راهنما: مقیاس همه نمودارها نرمال‌شده (۰ تا ۱۰۰) است.</p>
       </section>
     </section>
   );
+};
+
+CliftonStrengthsAnalysis.propTypes = {
+  data: PropTypes.shape({
+    topThemes: PropTypes.arrayOf(PropTypes.string),
+    signatureTheme: PropTypes.string,
+    rawScores: PropTypes.object,
+    normalizedScores: PropTypes.object,
+    themeDetails: PropTypes.arrayOf(PropTypes.shape({
+      theme: PropTypes.string.isRequired,
+      name: PropTypes.string,
+      domain: PropTypes.string,
+      score: PropTypes.number,
+      percentage: PropTypes.number,
+      description: PropTypes.string,
+      characteristics: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string), PropTypes.string]),
+      isTop: PropTypes.bool,
+    })),
+    developmentSuggestions: PropTypes.arrayOf(
+      PropTypes.shape({ theme: PropTypes.string.isRequired, suggestions: PropTypes.arrayOf(PropTypes.string).isRequired })
+    ),
+    chartData: PropTypes.object,
+    summary: PropTypes.string,
+    analyzedAt: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.instanceOf(Date)]),
+    userInfo: PropTypes.shape({ fullName: PropTypes.string }),
+  }),
+  benchmark: PropTypes.shape({
+    label: PropTypes.string,
+    normalizedScores: PropTypes.object,
+  }),
 };
 
 export default CliftonStrengthsAnalysis;
