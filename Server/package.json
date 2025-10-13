@@ -31,8 +31,9 @@
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.16.0",
+    "mongodb": "^6.20.0",
     "mongoose": "^8.15.1",
+    "mongosh": "^2.5.8",
     "prisma": "^6.8.2",
     "sqlite3": "^5.1.7"
   },
