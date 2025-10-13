@@ -90,7 +90,7 @@ const ResultsTable = ({
             <thead>
               <tr>
                 <th>{t("usersPage.results.headers.testType")}</th>
-                <th>{t("usersPage.results.headers.completedAt")}</th>
+                {/* <th>{t("usersPage.results.headers.completedAt")}</th> */}
                 <th>{t("usersPage.results.headers.duration")}</th>
                 <th>{t("usersPage.results.headers.feedback")}</th>
                 <th>{t("usersPage.results.headers.actions")}</th>
@@ -140,11 +140,11 @@ const ResultsTable = ({
                         <span className="result-test__name">{r.testType}</span>
                       </div>
                     </td>
-                    <td data-label={t("usersPage.results.headers.completedAt")}>
+                    {/* <td data-label={t("usersPage.results.headers.completedAt")}>
                       {r.completedAt
                         ? formatDate(r.completedAt)
                         : t("usersPage.profile.missing")}
-                    </td>
+                    </td> */}
                     <td data-label={t("usersPage.results.headers.duration")}>
                       {duration}
                     </td>

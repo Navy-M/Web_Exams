@@ -73,3 +73,29 @@
 @media (max-width: 720px){
   .sum-grid{ grid-template-columns: 1fr; }
 }
+
+.ts-modal { max-width: 980px; width: 96%; }
+.ts-modal-block { margin: 14px 0; }
+.ts-modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap: 10px; }
+.quota-row { display: contents; }
+.quota-row label { grid-column: span 1; align-self: center; }
+.quota-row input { grid-column: span 1; }
+
+.row { display:flex; align-items:center; }
+.gap8 { gap:8px; }
+.gap12 { gap:12px; }
+.align-center { align-items:center; }
+.center { text-align:center; }
+
+.criteria-table-wrap { overflow:auto; border:1px solid #e5e7eb; border-radius:8px; }
+.criteria-table { width: 100%; border-collapse: collapse; min-width: 720px; }
+.criteria-table th, .criteria-table td { border-bottom:1px solid #e5e7eb; padding:8px; text-align: center; }
+
+.badge { display:inline-block; padding:2px 8px; border-radius:9999px; background:#f1f5f9; font-size:12px; }
+.badge.ok { background:#dcfce7; color:#166534; }
+.badge.warn { background:#fff7ed; color:#9a3412; }
+
+.muted { color:#64748b; }
+.small { font-size:12px; }
+
+.ts-modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }

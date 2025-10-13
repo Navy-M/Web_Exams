@@ -23,7 +23,7 @@ const UserStat = ({ u }) => {
 
   return (
     <div className="u-stat">
-      <span className="chip">کل: {stats.count}</span>
+      <span className="chip total">کل: {stats.count}</span>
       <span className="chip good">تحلیل: {stats.analyzed}</span>
       <span className="chip info">بازخورد: {stats.feedback}</span>
       <span className="muted small">آخرین فعالیت: {stats.lastAt}</span>

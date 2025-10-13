@@ -26,7 +26,7 @@
     "title": "مدیریت کاربران",
     "selectedTitle": "جزئیات کاربر انتخاب‌شده:",
     "back": "بازگشت به فهرست",
-    "printResume": "چاپ پرونده",
+    "printResume": "کارنامه",
     "loadError": "بارگذاری فهرست کاربران با خطا مواجه شد.",
     "addSuccess": "کاربر جدید با موفقیت ایجاد شد.",
     "addFailure": "خطا در ایجاد کاربر جدید.",
@@ -34,12 +34,12 @@
     "deleteUserFailure": "حذف کاربر انجام نشد.",
     "selectResultError": "دریافت نتیجه آزمون انجام نشد.",
     "deleteResultConfirm": "آیا حذف این نتیجه آزمون انجام شود؟",
-    "deleteResultFailure": "Deleting the result failed.",
-    "deleteAnalysisConfirm": "Remove the analysis for this result?",
-    "deleteAnalysisSuccess": "Analysis removed successfully.",
-    "deleteAnalysisFailure": "Failed to remove the analysis.",
-    "analyzeSuccess": "The test analysis completed successfully.",
-    "analyzeFailure": "The test analysis failed.",
+    "deleteResultFailure": "حذف نتیجه ناموفق بود.",
+    "deleteAnalysisConfirm": "آیا تحلیل این نتیجه حذف می‌شود؟",
+    "deleteAnalysisSuccess": "تحلیل با موفقیت حذف شد.",
+    "deleteAnalysisFailure": "حذف تحلیل ناموفق بود.",
+    "analyzeSuccess": "تحلیل آزمون با موفقیت انجام شد.",
+    "analyzeFailure": "تحلیل آزمون با شکست مواجه شد.",
     "feedbackSuccess": "بازخورد با موفقیت ثبت شد.",
     "feedbackFailure": "ثبت بازخورد با خطا مواجه شد.",
     "resumeMissingAge": "اطلاعات سنی {{name}} هنوز تکمیل نشده است. لطفاً ابتدا پروفایل را کامل کنید.",
@@ -112,20 +112,20 @@
       "noData": "نتیجه‌ای برای نمایش وجود ندارد.",
       "delete": "حذف نتیجه",
       "feedback": "ثبت بازخورد",
-      "analyze": "Analyze",
-      "deleteAnalysis": "Remove analysis",
+      "analyze": "تحلیل نتایج",
+      "deleteAnalysis": "حذف تحلیل",
       "status": {
-        "pending": "Awaiting analysis",
-        "analysisReady": "Analysis ready",
-        "feedbackSent": "Feedback shared"
+        "pending": "در انتظار تحلیل",
+        "analysisReady": "تحلیل آماده است",
+        "feedbackSent": "بازخورد ارسال شد"
       },
       "meta": {
-        "total": "{{count}} results",
-        "analyzed": "{{count}} analyzed",
-        "pending": "{{count}} pending",
-        "feedback": "{{count}} with feedback"
+        "total": "{{count}} نتیجه ثبت‌شده",
+        "analyzed": "{{count}} تحلیل‌شده",
+        "pending": "{{count}} در انتظار تحلیل",
+        "feedback": "{{count}} دارای بازخورد"
       },
-      "viewAnalysis": "مشاهده تحلیل"
+      "viewAnalysis": "مشاهده‌ی تحلیل"
     },
     "feedback": {
       "title": "ثبت بازخورد",
