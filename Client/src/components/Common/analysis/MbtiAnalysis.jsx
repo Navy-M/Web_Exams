@@ -67,6 +67,9 @@ const MbtiAnalysis = ({ data, benchmark }) => {
     functions,
   } = data || {};
 
+  console.log("incoming Analysis MBTI data: ", data);
+  
+
   const containerRef = useRef(null);
   const barRef = useRef(null);
   const radarRef = useRef(null);
@@ -486,10 +489,9 @@ const MbtiAnalysis = ({ data, benchmark }) => {
 
       {/* Summary & badges */}
       <section className="summary-section">
-        {summary && <p className="summary-text"><strong>خلاصه:</strong> {summary}</p>}
         <div className="badges">
           <span className="badge primary">
-            نوع شما: <span className="mbti-type">{mbtiType}</span>{typeName ? ` — ${typeName}` : ""}
+            نوع شما: <span className="mbti-type">{mbtiType}</span>{summary ? ` ${summary}` : ""}
           </span>
           {functions && (
             <span className="badge info">

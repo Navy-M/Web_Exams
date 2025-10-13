@@ -10,7 +10,8 @@
     "seedDBAdmin": "node seedAdmin.js",
     "seedDBUser": "node seedUser.js",
     "testDB": "node testMongo.js",
-    "backupDB": "node backupMongo.js"
+    "backupDB": "node backupMongo.js",
+    "exportJsonDB":"node exportCollections.mjs"
   },
   "author": "",
   "license": "ISC",

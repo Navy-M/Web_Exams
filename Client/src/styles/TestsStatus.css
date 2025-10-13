@@ -53,6 +53,7 @@
 /* user stat chips */
 .u-stat{ display:flex; align-items:center; gap:.4rem; flex-wrap: wrap; }
 .chip{ border:1px solid var(--border); border-radius:999px; padding:.15rem .5rem; font-size:.85rem; background: var(--bg); color: var(--muted); }
+.chip.total{ color:#a3a116; border-color: rgba(163, 161, 22, 0.35); }
 .chip.good{ color:#16a34a; border-color: rgba(22,163,74,.35); }
 .chip.info{ color:#0ea5e9; border-color: rgba(14,165,233,.35); }
 

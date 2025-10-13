@@ -38,6 +38,7 @@
     "deleteAnalysisConfirm": "آیا تحلیل این نتیجه حذف می‌شود؟",
     "deleteAnalysisSuccess": "تحلیل با موفقیت حذف شد.",
     "deleteAnalysisFailure": "حذف تحلیل ناموفق بود.",
+    "analyzing":"در حال تصحیح",
     "analyzeSuccess": "تحلیل آزمون با موفقیت انجام شد.",
     "analyzeFailure": "تحلیل آزمون با شکست مواجه شد.",
     "feedbackSuccess": "بازخورد با موفقیت ثبت شد.",
@@ -122,7 +123,7 @@
       "meta": {
         "total": "{{count}} نتیجه ثبت‌شده",
         "analyzed": "{{count}} تحلیل‌شده",
-        "pending": "{{count}} در انتظار تحلیل",
+        "pending": "{{count}} در انتظار بازخورد",
         "feedback": "{{count}} دارای بازخورد"
       },
       "viewAnalysis": "مشاهده‌ی تحلیل"
