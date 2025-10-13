@@ -21,6 +21,7 @@ const ResultsTable = ({
   const total = results?.length || 0;
   const analyzedCount = (results || []).filter((r) => !!r?.analyzedAt).length;
   const feedbackCount = (results || []).filter((r) => !!r?.adminFeedback).length;
+  const pendingFeedbackCount = ((results || []).filter((r) => !!r?.analyzedAt) || []).filter((r) => !!r?.adminFeedback).length;
   const pendingCount = total - analyzedCount;
 
   const statusLabels = {
@@ -49,12 +50,12 @@ const ResultsTable = ({
     ),
     analyzed: resolveLabel(
       "usersPage.results.meta.analyzed",
-      { count: analyzedCount },
+      { count: pendingCount },
       `${analyzedCount} analyzed`
     ),
     pending: resolveLabel(
       "usersPage.results.meta.pending",
-      { count: pendingCount },
+      { count: pendingFeedbackCount },
       `${pendingCount} pending`
     ),
     feedback: resolveLabel(
@@ -104,7 +105,7 @@ const ResultsTable = ({
                 const hasId = Boolean(rowId);
                 const lockOthers = !!selectedResultId && !isSelected;
                 const disabled = !hasId || lockOthers;
-                const durationSeconds = Number(r.duration);
+                const durationSeconds = Number(r.duration/1000);
                 const hasAnalysis =
                   !!r?.analyzedAt ||
                   (r?.analysis &&

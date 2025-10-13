@@ -210,9 +210,10 @@
   border:1px solid rgba(148,163,184,.25);
 }
 .results-meta__item.analyzed{
-  background: rgba(34,197,94,.12);
-  border-color: rgba(34,197,94,.25);
-  color: #0f5132;
+    background: rgba(59,130,246,.12);
+  border-color: rgba(59,130,246,.25);
+  color: #1d4ed8;
+
 }
 .results-meta__item.pending{
   background: rgba(234,179,8,.12);
@@ -220,9 +221,9 @@
   color: #8a6d15;
 }
 .results-meta__item.feedback{
-  background: rgba(59,130,246,.12);
-  border-color: rgba(59,130,246,.25);
-  color: #1d4ed8;
+  background: rgba(34,197,94,.12);
+  border-color: rgba(34,197,94,.25);
+  color: #0f5132;
 }
 .results-table td.actions{
   white-space: nowrap;
@@ -266,19 +267,20 @@
   width: max-content;
 }
 .status-pill.pending{
-  background: rgba(234,179,8,.16);
+  background: rgba(234,179,8,.08);
   border-color: rgba(234,179,8,.35);
   color: #8a6d15;
 }
+
 .status-pill.analysisReady{
-  background: rgba(59,130,246,.16);
+  background: rgba(59,130,246,.08);
   border-color: rgba(59,130,246,.35);
   color: #1d4ed8;
 }
 .status-pill.feedbackSent{
-  background: rgba(34,197,94,.16);
+  background: rgba(34,197,94,.09);
   border-color: rgba(34,197,94,.35);
-  color: #0f5132;
+  color: #1e8c59;
 }
 .results-actions{
   display:flex;
@@ -482,4 +484,28 @@
   .results-table tbody td{ flex-direction: column; align-items:flex-start; gap:.25rem; }
   .admin-users-table tbody td::before,
   .results-table tbody td::before{ font-size:.75rem; opacity:.85; }
+}
+
+
+
+/* print rules */
+
+#print-root { display: none; }
+
+@media print {
+  /* hide everything except #print-root */
+  body * {
+    visibility: hidden !important;
+  }
+  #print-root, #print-root * {
+    visibility: visible !important;
+  }
+  #print-root {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+  }
+
+  /* optional: A4 */
+  @page { size: A4; margin: 14mm; }
 }
