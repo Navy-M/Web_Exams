@@ -173,7 +173,7 @@ const UsersPage = () => {
     });
   }, [users, search, searchFilter]);
 
-  // actions
+  //#region // actions
   const handleAddUser = async () => {
     try {
       const res = await createUser({
@@ -286,6 +286,7 @@ const UsersPage = () => {
       );
     }
   };
+//#endregion
 
   // analyze all
   const handleAnalyzeAll = async () => {
@@ -376,10 +377,12 @@ const UsersPage = () => {
             user={selectedUser}
             results={resultsReady}
             formatDate={formatDate}
-            jobsHTML={buildJobsHTML(resultsReady)}
+            jobsHTML={buildJobsHTML.length >= 2 ? buildJobsHTML(resultsReady, selectedUser)
+                                    : buildJobsHTML(resultsReady)}
+
           />
         );
-      });
+      }, { title: (selectedUser?.profile?.fullName || "report") } );
     } catch (e) {
       alert(t("usersPage.pdfExportFailed") || "خطا در چاپ");
       console.error(e);
@@ -401,7 +404,7 @@ const UsersPage = () => {
             user={selectedUser}
             results={resultsReady}
             formatDate={formatDate}
-            jobsHTML={buildJobsHTML(resultsReady)}
+            jobsHTML={buildJobsHTML(resultsReady,selectedUser)}
           />
         );
       }, filename);

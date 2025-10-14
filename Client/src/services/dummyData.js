@@ -141,6 +141,7 @@ export const DEFAULT_WEIGHTS = {
   pf: 0.05,     // Personal Favorites
 };
 
+
 export const jobRequirements = {
   "ناوبری و فرماندهی کشتی": {
     summary: "رهبری عملیات پل فرماندهی، ناوبری امن، تصمیم‌گیری سریع در شرایط بحرانی.",

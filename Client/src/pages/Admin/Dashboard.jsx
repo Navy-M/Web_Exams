@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+// src/pages/Admin/Dashboard.jsx
+import { useMemo } from "react";
 import AdminSidebar from "../../components/Admin/AdminSidebar";
 import "../../styles/admin.css";
 import { useAuth } from "../../context/AuthContext";
@@ -6,41 +7,26 @@ import { Test_Cards, jobRequirements } from "../../services/dummyData";
 import UsersPage from "./UsersPage";
 import AdminTestsManager from "./AdminTestsManager";
 import TestsStatus from "./TestsStatus";
+import { useSyncedTab } from "../../hooks/useSyncedTab";
 
 const ALLOWED_TABS = ["dashboard", "users", "tests"];
-const TAB_KEY = "admin:activeTab";
+
+const TITLES_FA = {
+  dashboard: "داشبورد",
+  users: "کاربران",
+  tests: "تست‌ها",
+};
 
 const AdminDashboard = () => {
   const { user } = useAuth();
 
-  // initial tab: ?tab -> localStorage -> 'users'
-  const getInitialTab = () => {
-    const q = new URLSearchParams(window.location.search).get("tab");
-    if (q && ALLOWED_TABS.includes(q)) return q;
-    const saved = localStorage.getItem(TAB_KEY);
-    return ALLOWED_TABS.includes(saved) ? saved : "users";
-  };
-
-  const [activeTab, _setActiveTab] = useState(getInitialTab);
-
-  // guard: only allow known tabs
-  const setActiveTab = useCallback((next) => {
-    if (ALLOWED_TABS.includes(next)) _setActiveTab(next);
-  }, []);
-
-  // keep URL + localStorage in sync
-  useEffect(() => {
-    localStorage.setItem(TAB_KEY, activeTab);
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", activeTab);
-    window.history.replaceState({}, "", url);
-  }, [activeTab]);
-
-  // nicer title
-  useEffect(() => {
-    const map = { dashboard: "داشبورد", users: "کاربران", tests: "تست‌ها" };
-    document.title = `Admin · ${map[activeTab] || ""}`;
-  }, [activeTab]);
+  const { tab, switchTab } = useSyncedTab({
+    allowed: ALLOWED_TABS,
+    defaultTab: "users",
+    storageKey: "admin:activeTab",
+    queryKey: "tab",
+    titles: TITLES_FA,
+  });
 
   const displayName = useMemo(
     () => user?.profile?.fullName || user?.username || "ادمین",
@@ -48,7 +34,7 @@ const AdminDashboard = () => {
   );
 
   const content = useMemo(() => {
-    switch (activeTab) {
+    switch (tab) {
       case "dashboard":
         return <TestsStatus />;
       case "users":
@@ -63,18 +49,15 @@ const AdminDashboard = () => {
       default:
         return null;
     }
-  }, [activeTab]);
+  }, [tab]);
 
   return (
     <div className="admin-dashboard" dir="rtl">
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-
+      <AdminSidebar activeTab={tab} setActiveTab={switchTab} />
       <main className="admin-main" role="main" aria-live="polite">
         <header className="admin-header">
-          <h1 className="admin-greet">Hi {displayName}</h1>
+          <h1 className="admin-greet">سلام {displayName}</h1>
         </header>
-
-        {/* main content */}
         {content}
       </main>
     </div>

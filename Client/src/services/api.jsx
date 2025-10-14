@@ -206,14 +206,14 @@ export const analyzeTests = async (Data) => {
   }
 }
 
-export const prioritizeUsers = async (people, quotas, weights) => {
-  try {
-    const response = await API.post("/results/prioritize",  people, quotas, weights );
-    return response.data; // This will be { job1: [...], job2: [...] }
-  } catch (error) {
-    console.error("Error prioritizing users:", error);
-    throw error.response?.data || error.message;
-  }
+export const prioritizeUsers = async ({ userIds, capacities, weights }) => {
+  // توجه: پیشوند '/api' را اگر در baseURL ست کردید، اینجا دوباره نزنید
+  const { data } = await API.post("/jobs/prioritize", {
+    userIds,   // array of strings
+    capacities, // { "ناوبری و فرماندهی کشتی": 5, ...}
+    weights,    // { MBTI:1, DISC:1, ... } (اختیاری)
+  });
+  return data; // { ok:true, assignments, waitlist, table, export }
 };
 
 export default API;

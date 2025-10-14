@@ -1,315 +1,444 @@
-import React, { useMemo, useRef } from "react";
+// src/pages/TestStatus/JobQuotaModal.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import "./AllocationReport.css";
 
 /**
  * Props:
- * - selectedUsers: [{ _id|id, username?, profile:{ fullName, phone } }, ...]
- * - assignmentResult: {
- *     allocations: {
- *       [jobKey]: {
- *         name?: string,
- *         persons: Array<
- *           string | number | {
- *             id?: string, _id?: string,  // used only for matching (never shown/exported)
- *             rank?: number, score?: number, fullName?: string, phone?: string
- *           }
- *         >
- *       }
- *     },
- *     quotas?: {
- *       [jobKey]: { name?: string, tableCount: number }
- *     }
- *   }
+ * - open: boolean
+ * - quotas: Record<string, { name: string, tableCount: number }>
+ * - onChange: (key, value:number) => void
+ * - onSubmit: (payload: {
+ *     jobKey: string,
+ *     quotas,
+ *     criteria,              // نهایی‌شده (با enabled و weight)
+ *     normalizedWeights,     // جمع 100 برای معیارهای فعال
+ *     unavailableCriteria    // لیست معیارهایی که به‌خاطر نبود آزمون غیرفعال ماندند
+ *   }) => void
+ * - onClose: () => void
+ * - jobRequirements: Record<string, any>
+ * - tests: Array<{ id, name, type }>
  */
-const AllocationReport = ({ selectedUsers = [], assignmentResult }) => {
-  const containerRef = useRef(null);
-  const todayFa = new Date().toLocaleDateString("fa-IR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 
-  // Quick lookup for user meta (fullName + phone)
-  const usersMap = useMemo(() => {
-    const m = new Map();
-    selectedUsers.forEach((u) => {
-      const id = u?._id || u?.id;
-      if (!id) return;
-      const profile = u?.profile || {};
-      m.set(id, {
-        id,
-        fullName: profile.fullName || u?.fullName || u?.username || "بدون نام",
-        phone: profile.phone || u?.phone || "بدون شماره",
-      });
+const TEST_TYPE_KEYS = {
+  MBTI: "MBTI",
+  DISC: "DISC",
+  HOLLAND: "HOLLAND",
+  GARDNER: "GARDNER",
+  CLIFTON: "CLIFTON",
+  PERSONAL_FAVORITES: "PERSONAL_FAVORITES",
+};
+
+const WEIGHT_SUM_OK_RANGE = [95, 105];
+
+// helpers
+function rid() { return Math.random().toString(36).slice(2, 9); }
+function clamp01(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+const lc = (s) => String(s || "").trim().toLowerCase();
+
+function buildTestsInventory(tests = []) {
+  const has = new Set((tests || []).map(t => (t?.type || "").toUpperCase()));
+  return {
+    hasMBTI: has.has(TEST_TYPE_KEYS.MBTI),
+    hasDISC: has.has(TEST_TYPE_KEYS.DISC),
+    hasHOLLAND: has.has(TEST_TYPE_KEYS.HOLLAND),
+    hasGARDNER: has.has(TEST_TYPE_KEYS.GARDNER),
+    hasCLIFTON: has.has(TEST_TYPE_KEYS.CLIFTON),
+    hasPF: has.has(TEST_TYPE_KEYS.PERSONAL_FAVORITES),
+  };
+}
+
+/** اگر jobReq.criteria نبود، از فیلدهای کلاسیک بساز */
+function deriveCriteriaFromClassic(jobReq = {}) {
+  const DEFAULT_W = {
+    BENCHMARK_DISTANCE: 25,
+    CLIFTON_DOMAIN_MATCH: 20,
+    HOLLAND_TOP3: 15,
+    MBTI_PREF: 10,
+    DISC_PATTERN: 15,
+    GARDNER_TOP: 10,
+    PF_KEYS: 5,
+  };
+  const W = { ...DEFAULT_W, ...(jobReq?.weightsDefault || {}) };
+  const out = [];
+
+  if (jobReq?.benchmark || jobReq?.benchmarkNormalized) {
+    out.push({
+      id: rid(),
+      key: "BENCHMARK_DISTANCE",
+      title: "فاصله تا بنچمارک شغل",
+      enabled: true,
+      weight: W.BENCHMARK_DISTANCE,
+      method: "distance",
+      args: { norm: "min" },
+      sourceTest: null,
     });
-    return m;
-  }, [selectedUsers]);
+  }
 
-  // Normalize allocations -> [{jobKey, jobName, persons:[{fullName, phone, rank, score}]}]
-  const allocations = useMemo(() => {
-    const a = assignmentResult?.allocations || {};
-    return Object.entries(a).map(([jobKey, jobData]) => {
-      const jobName = jobData?.name || jobKey;
-      const persons = (jobData?.persons || []).map((p, idx) => {
-        const id =
-          typeof p === "string" || typeof p === "number" ? p : p?.id || p?._id;
-
-        // meta from selectedUsers or fallbacks from person object
-        const metaFromUsers = usersMap.get(id);
-        const fullName =
-          metaFromUsers?.fullName ||
-          (typeof p === "object" ? p?.fullName : "") ||
-          "بدون نام";
-        const phone =
-          metaFromUsers?.phone ||
-          (typeof p === "object" ? p?.phone : "") ||
-          "بدون شماره";
-
-        return {
-          // id is intentionally NOT displayed/exported; only used for keys
-          id,
-          fullName,
-          phone,
-          rank: typeof p === "object" ? p?.rank : undefined,
-          score: typeof p === "object" ? p?.score : undefined,
-          idx,
-        };
+  if (Array.isArray(jobReq?.clifton) && jobReq.clifton.length) {
+    const domains = jobReq.clifton.filter((x) =>
+      ["executing","influencing","relationship","strategic"].includes(lc(x))
+    );
+    if (domains.length) {
+      out.push({
+        id: rid(),
+        key: "CLIFTON_DOMAIN_MATCH",
+        title: "هم‌خوانی دامنه‌های کلیفتون",
+        enabled: true,
+        weight: W.CLIFTON_DOMAIN_MATCH,
+        method: "score",
+        args: { domains },
+        sourceTest: TEST_TYPE_KEYS.CLIFTON,
       });
-      return { jobKey, jobName, persons };
+    } else {
+      out.push({
+        id: rid(),
+        key: "CLIFTON_THEME_MATCH",
+        title: "انطباق تم‌های کلیفتون",
+        enabled: true,
+        weight: W.CLIFTON_DOMAIN_MATCH,
+        method: "score",
+        args: { themes: jobReq.clifton },
+        sourceTest: TEST_TYPE_KEYS.CLIFTON,
+      });
+    }
+  }
+
+  if (Array.isArray(jobReq?.holland) && jobReq.holland.length) {
+    out.push({
+      id: rid(),
+      key: "HOLLAND_TOP3",
+      title: "انطباق Holland (Top-3)",
+      enabled: true,
+      weight: W.HOLLAND_TOP3,
+      method: "score",
+      args: { allowed: jobReq.holland },
+      sourceTest: TEST_TYPE_KEYS.HOLLAND,
     });
-  }, [assignmentResult, usersMap]);
+  }
 
-  const quotas = assignmentResult?.quotas || null;
+  if (Array.isArray(jobReq?.mbti) && jobReq.mbti.length) {
+    out.push({
+      id: rid(),
+      key: "MBTI_PREF",
+      title: "سازگاری MBTI با شغل",
+      enabled: true,
+      weight: W.MBTI_PREF,
+      method: "boolean",
+      args: { allow: jobReq.mbti },
+      sourceTest: TEST_TYPE_KEYS.MBTI,
+    });
+  }
 
-  // Stats
-  const assignedIds = useMemo(() => {
-    const set = new Set();
-    allocations.forEach((j) => j.persons.forEach((p) => set.add(p.id)));
-    return set;
-  }, [allocations]);
+  if (Array.isArray(jobReq?.disc) && jobReq.disc.length) {
+    const requireHigh = jobReq.disc
+      .map(s => String(s || "").toUpperCase())
+      .filter(s => s.includes("HIGH"))
+      .map(s => s.replace("HIGH","").trim())
+      .filter(Boolean); // ["D","C"]
+    out.push({
+      id: rid(),
+      key: "DISC_PATTERN",
+      title: "الگوی DISC موردنیاز",
+      enabled: true,
+      weight: W.DISC_PATTERN,
+      method: "boolean",
+      args: { requireHigh, minHigh: 65 },
+      sourceTest: TEST_TYPE_KEYS.DISC,
+    });
+  }
 
-  const unassigned = useMemo(() => {
-    return selectedUsers
-      .filter((u) => !assignedIds.has(u?._id || u?.id))
-      .map((u) => u?.profile?.fullName || u?.fullName || u?.username || "بدون نام");
-  }, [selectedUsers, assignedIds]);
+  if (Array.isArray(jobReq?.gardner) && jobReq.gardner.length) {
+    out.push({
+      id: rid(),
+      key: "GARDNER_TOP",
+      title: "هوش‌های برتر گاردنر",
+      enabled: true,
+      weight: W.GARDNER_TOP,
+      method: "score",
+      args: { allowed: jobReq.gardner },
+      sourceTest: TEST_TYPE_KEYS.GARDNER,
+    });
+  }
 
-  const totals = useMemo(() => {
-    const perJob = allocations.map((j) => ({
-      jobKey: j.jobKey,
-      jobName: j.jobName,
-      assigned: j.persons.length,
-      quota: quotas?.[j.jobKey]?.tableCount ?? null,
-      remaining:
-        typeof quotas?.[j.jobKey]?.tableCount === "number"
-          ? Math.max(quotas[j.jobKey].tableCount - j.persons.length, 0)
-          : null,
+  if (Array.isArray(jobReq?.PF) && jobReq.PF.length) {
+    out.push({
+      id: rid(),
+      key: "PF_KEYS",
+      title: "ترجیحات شخصی (PF)",
+      enabled: true,
+      weight: W.PF_KEYS,
+      method: "score",
+      args: { keys: jobReq.PF },
+      sourceTest: TEST_TYPE_KEYS.PERSONAL_FAVORITES,
+    });
+  }
+
+  return out;
+}
+
+/** معیارهای شغل انتخابی */
+function buildCriteriaFromJob(jobReq = {}) {
+  if (Array.isArray(jobReq?.criteria) && jobReq.criteria.length) {
+    return jobReq.criteria.map((c) => ({
+      id: c.id || rid(),
+      key: c.key,
+      title: c.title || c.key,
+      enabled: c.enabled !== false,
+      weight: Number.isFinite(c.weight) ? c.weight : 10,
+      method: c.method || "score",
+      args: c.args || {},
+      sourceTest: c.sourceTest || guessSourceByKey(c.key),
     }));
-    const assignedTotal = perJob.reduce((s, r) => s + r.assigned, 0);
-    return { perJob, assignedTotal };
-  }, [allocations, quotas]);
+  }
+  return deriveCriteriaFromClassic(jobReq);
+}
 
-  const totalSelected = selectedUsers.length;
+function guessSourceByKey(key = "") {
+  const k = String(key).toUpperCase();
+  if (k.includes("MBTI")) return TEST_TYPE_KEYS.MBTI;
+  if (k.includes("DISC")) return TEST_TYPE_KEYS.DISC;
+  if (k.includes("HOLLAND")) return TEST_TYPE_KEYS.HOLLAND;
+  if (k.includes("GARDNER")) return TEST_TYPE_KEYS.GARDNER;
+  if (k.includes("CLIFTON")) return TEST_TYPE_KEYS.CLIFTON;
+  if (k.includes("PF")) return TEST_TYPE_KEYS.PERSONAL_FAVORITES;
+  return null;
+}
 
-  // Print
-  const handlePrint = () => {
-    if (!containerRef.current) return;
-    const contents = containerRef.current.innerHTML;
-    const win = window.open("", "", "width=1024,height=720");
-    if (!win) return;
+function attachAvailability(criteria = [], inv) {
+  return (criteria || []).map((c) => {
+    let available = true;
+    if (c.sourceTest === TEST_TYPE_KEYS.MBTI) available = !!inv.hasMBTI;
+    else if (c.sourceTest === TEST_TYPE_KEYS.DISC) available = !!inv.hasDISC;
+    else if (c.sourceTest === TEST_TYPE_KEYS.HOLLAND) available = !!inv.hasHOLLAND;
+    else if (c.sourceTest === TEST_TYPE_KEYS.GARDNER) available = !!inv.hasGARDNER;
+    else if (c.sourceTest === TEST_TYPE_KEYS.CLIFTON) available = !!inv.hasCLIFTON;
+    else if (c.sourceTest === TEST_TYPE_KEYS.PERSONAL_FAVORITES) available = !!inv.hasPF;
+    return { ...c, available };
+  });
+}
 
-    const inlineCSS = `
-      @page { size: A4; margin: 14mm; }
-      body { font-family: Tahoma, Vazir, Arial, sans-serif; direction: rtl; color: #111; }
-      .rep-wrap { max-width: 100%; }
-      .rep-head { display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; }
-      .rep-title { margin:0; font-size: 18pt; }
-      .muted { color:#555; font-size: 10pt; }
-      .rep-summary, .rep-quotas, .rep-unassigned { margin: 8px 0 14px; }
-      .sum-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:6px; }
-      .sum-item { padding: 8px 10px; border:1px solid #ccc; border-radius: 8px; }
-      table { width:100%; border-collapse: collapse; font-size: 11pt; }
-      th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-      thead th { background: #f0f3f8; }
-      .group-row th { background: #e6eefc; text-align: right; font-size: 12pt; }
-      .badge { display:inline-block; border:1px solid #ccc; border-radius: 999px; padding: 1px 8px; font-size: 9pt; }
-      .totals-table { margin-top: 12px; }
-      .unassigned-box { border:1px dashed #bbb; border-radius:8px; padding:10px; }
-    `;
+const JobQuotaModal = ({
+  open,
+  quotas = {},
+  onChange,
+  onSubmit,
+  onClose,
+  jobRequirements = {},
+  tests = [],
+}) => {
+  if (!open) return null;
 
-    win.document.write(`
-      <html>
-        <head>
-          <meta charset="UTF-8" />
-          <title>گزارش اولویت‌بندی</title>
-          <style>${inlineCSS}</style>
-        </head>
-        <body>
-          ${contents}
-        </body>
-      </html>
-    `);
-    win.document.close();
-    win.focus();
-    win.print();
-    // win.close(); // optional
+  const jobKeys = Object.keys(jobRequirements);
+  const [jobKey, setJobKey] = useState(jobKeys[0] || "");
+
+  useEffect(() => {
+    if (!jobKey && jobKeys.length) setJobKey(jobKeys[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobKeys.join("|")]);
+
+  const inv = useMemo(() => buildTestsInventory(tests), [tests]);
+
+  // معیارها + وضعیت دسترسی، وزن نرمال
+  const { criteria, weightSum, weightOk, normalizedWeights, unavailableCriteria } = useMemo(() => {
+    const req = jobRequirements[jobKey] || {};
+    const base = buildCriteriaFromJob(req);
+    const attached = attachAvailability(base, inv);
+
+    const enabledOnes = attached.filter((c) => c.enabled && c.available);
+    const sum = enabledOnes.reduce((s, c) => s + (Number(c.weight) || 0), 0);
+
+    const normalized = Object.fromEntries(
+      attached.map((c) => [
+        c.key,
+        c.enabled && c.available && sum > 0 ? +(100 * (Number(c.weight)||0) / sum).toFixed(2) : 0,
+      ])
+    );
+
+    const wSum = Math.round(sum);
+    const ok = wSum >= WEIGHT_SUM_OK_RANGE[0] && wSum <= WEIGHT_SUM_OK_RANGE[1];
+
+    const unavailable = attached
+      .filter((c) => !c.available)
+      .map((c) => ({ key: c.key, title: c.title, sourceTest: c.sourceTest }));
+
+    return {
+      criteria: attached,
+      weightSum: wSum,
+      weightOk: ok,
+      normalizedWeights: normalized,
+      unavailableCriteria: unavailable,
+    };
+  }, [jobRequirements, jobKey, inv]);
+
+  const [localCriteria, setLocalCriteria] = useState([]);
+  useEffect(() => { setLocalCriteria(criteria); }, [criteria]);
+
+  const handleToggle = (id, enabled) => {
+    setLocalCriteria((prev) => prev.map(c => c.id === id ? { ...c, enabled } : c));
+  };
+  const handleWeight = (id, weight) => {
+    setLocalCriteria((prev) => prev.map(c => c.id === id ? { ...c, weight: clamp01(weight) } : c));
   };
 
-  // CSV (job, fullName, phone, rank, score) — no ID at all
-  const handleExportCSV = () => {
-    const rows = [["job", "fullName", "phone", "rank", "score"]];
-    allocations.forEach((j) => {
-      j.persons.forEach((p) => {
-        rows.push([
-          (j.jobName || "").replace(/,/g, "،"),
-          (p.fullName || "").replace(/,/g, "،"),
-          (p.phone || "").replace(/,/g, "،"),
-          p.rank ?? "",
-          p.score ?? "",
-        ]);
-      });
+  const { finalSum, finalOk, finalNorm } = useMemo(() => {
+    const enabled = localCriteria.filter(c => c.enabled && c.available);
+    const sum = enabled.reduce((s, c) => s + (Number(c.weight) || 0), 0);
+    const norm = Object.fromEntries(
+      localCriteria.map(c => [
+        c.key,
+        c.enabled && c.available && sum > 0 ? +(100 * (Number(c.weight)||0) / sum).toFixed(2) : 0,
+      ])
+    );
+    return {
+      finalSum: Math.round(sum),
+      finalOk: Math.round(sum) >= WEIGHT_SUM_OK_RANGE[0] && Math.round(sum) <= WEIGHT_SUM_OK_RANGE[1],
+      finalNorm: norm,
+    };
+  }, [localCriteria]);
+
+  const submit = () => {
+    onSubmit?.({
+      jobKey,
+      quotas,
+      criteria: localCriteria,
+      normalizedWeights: finalNorm,
+      unavailableCriteria,
     });
-    const csv = rows.map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `اولویت بندی_${Date.now()}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   return (
-    <section className="allocation-report" dir="rtl">
-      <header className="allocation-header">
-        <div className="allocation-title-wrap">
-          <h2 className="allocation-title">گزارش اولویت‌بندی مشاغل</h2>
-          <div className="allocation-sub muted">تاریخ: {todayFa}</div>
-        </div>
-        <div className="allocation-actions">
-          <button className="btn outline" onClick={handleExportCSV}>خروجی CSV</button>
-          <button className="btn primary" onClick={handlePrint}>چاپ گزارش</button>
-        </div>
-      </header>
+    <div className="ts-modal-overlay" role="dialog" aria-modal="true">
+      <div className="ts-modal card" dir="rtl">
+        <h3>تنظیمات تخصیص و اولویت‌بندی</h3>
 
-      <div ref={containerRef} className="allocation-container">
-        {/* Summary */}
-        <section className="rep-summary">
-          <div className="sum-grid">
-            <div className="sum-item">
-              <strong>تعداد انتخاب‌شده:</strong> {totalSelected}
-            </div>
-            <div className="sum-item">
-              <strong>تخصیص‌یافته:</strong> {totals.assignedTotal}
-            </div>
-            <div className="sum-item">
-              <strong>بدون تخصیص:</strong> {Math.max(totalSelected - totals.assignedTotal, 0)}
-            </div>
+        {/* انتخاب شغل */}
+        <section className="ts-modal-block">
+          <div className="row gap8 align-center">
+            <label htmlFor="jobKey"><b>شغل/رسته:</b></label>
+            <select id="jobKey" value={jobKey} onChange={(e) => setJobKey(e.target.value)}>
+              {jobKeys.map((k) => <option key={k} value={k}>{k}</option>)}
+            </select>
+          </div>
+          {!jobKey && <p className="muted small">هیچ شغلی تعریف نشده است.</p>}
+        </section>
+
+        {/* سهمیه‌ها */}
+        <section className="ts-modal-block">
+          <h4>۱) تعداد افراد مورد نیاز برای هر رسته</h4>
+          <div className="ts-modal-grid">
+            {Object.keys(quotas).map((key) => (
+              <div className="quota-row" key={key}>
+                <label htmlFor={`quota-${key}`}>{quotas[key].name}</label>
+                <input
+                  id={`quota-${key}`}
+                  type="number"
+                  min="0"
+                  value={quotas[key].tableCount}
+                  onChange={(e) => onChange?.(key, parseInt(e.target.value || "0", 10))}
+                />
+              </div>
+            ))}
+            {Object.keys(quotas).length === 0 && <p className="muted">رسته‌ای تعریف نشده است.</p>}
           </div>
         </section>
 
-        {/* Quotas vs assigned (if provided) */}
-        {quotas && (
-          <section className="rep-quotas">
-            <table className="totals-table">
+        {/* معیارها */}
+        <section className="ts-modal-block">
+          <h4>۲) مولفه‌های مؤثر در اولویت‌بندی (اتوماتیک از نیازمندی‌های شغل)</h4>
+
+          <div className="criteria-table-wrap">
+            <table className="criteria-table">
               <thead>
                 <tr>
-                  <th>رسته شغلی</th>
-                  <th>سهمیه</th>
-                  <th>تخصیص</th>
-                  <th>باقیمانده</th>
+                  <th>فعال</th>
+                  <th>عنوان معیار</th>
+                  <th>منبع آزمون</th>
+                  <th>وضعیت آزمون</th>
+                  <th style={{minWidth:160}}>وزن</th>
                 </tr>
               </thead>
               <tbody>
-                {totals.perJob.map((r) => (
-                  <tr key={r.jobKey}>
-                    <td>{r.jobName}</td>
-                    <td>{r.quota ?? "—"}</td>
-                    <td>{r.assigned}</td>
-                    <td>{typeof r.remaining === "number" ? r.remaining : "—"}</td>
-                  </tr>
-                ))}
+                {localCriteria.map((c) => {
+                  const isAvailable = c.available;
+                  return (
+                    <tr key={c.id}>
+                      <td className="center">
+                        <input
+                          type="checkbox"
+                          checked={!!c.enabled}
+                          onChange={(e) => handleToggle(c.id, e.target.checked)}
+                          disabled={!isAvailable}
+                          title={!isAvailable ? "این معیار به دلیل نبود آزمون مربوطه قابل‌فعال‌سازی نیست" : ""}
+                        />
+                      </td>
+                      <td>{c.title}</td>
+                      <td>{sourceTestFa(c.sourceTest)}</td>
+                      <td>
+                        {isAvailable
+                          ? <span className="badge ok">آزمون موجود</span>
+                          : <span className="badge warn">آزمون موجود نیست</span>}
+                      </td>
+                      <td>
+                        <div className="row gap8">
+                          <input
+                            type="range"
+                            min="0" max="100"
+                            value={c.weight ?? 0}
+                            onChange={(e) => handleWeight(c.id, e.target.value)}
+                            disabled={!isAvailable || !c.enabled}
+                          />
+                          <span style={{width:40, textAlign:"center"}}>{c.weight ?? 0}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {localCriteria.length === 0 && (
+                  <tr><td colSpan="5" className="muted center">معیاری تعریف نشده است.</td></tr>
+                )}
               </tbody>
             </table>
-          </section>
-        )}
+          </div>
 
-        {/* Allocations grouped by job */}
-        <section className="rep-wrap">
-          <table className="allocation-table">
-            <thead>
-              <tr>
-                <th>ردیف</th>
-                <th>رسته شغلی</th>
-                <th>نام کاربر</th>
-                <th>شماره تماس</th>
-                <th>رتبه</th>
-                <th>امتیاز</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allocations.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="muted">اطلاعات تخصیص وجود ندارد</td>
-                </tr>
-              ) : (
-                allocations.map((job, jIndex) => {
-                  if (!job.persons.length) {
-                    return (
-                      <React.Fragment key={job.jobKey}>
-                        <tr className="group-row">
-                          <th colSpan="6">
-                            {job.jobName} <span className="badge">بدون تخصیص</span>
-                          </th>
-                        </tr>
-                      </React.Fragment>
-                    );
-                  }
+          <div className="row gap12 align-center" style={{marginTop:8}}>
+            <span className={`badge ${finalOk ? "ok" : "warn"}`}>جمع وزن معیارهای فعال: {finalSum}%</span>
+            {!finalOk && <span className="muted small">پیشنهاد: مجموع به ۱۰۰% نزدیک باشد.</span>}
+          </div>
 
-                  return (
-                    <React.Fragment key={job.jobKey}>
-                      <tr className="group-row">
-                        <th colSpan="6">
-                          {job.jobName}{" "}
-                          {typeof quotas?.[job.jobKey]?.tableCount === "number" && (
-                            <span className="badge">
-                              سهمیه: {quotas[job.jobKey].tableCount} | تخصیص: {job.persons.length}
-                            </span>
-                          )}
-                        </th>
-                      </tr>
-                      {job.persons.map((p, i) => (
-                        <tr key={`${job.jobKey}-${p.id}`}>
-                          <td>{jIndex + 1}.{i + 1}</td>
-                          <td>{job.jobName}</td>
-                          <td>{p.fullName}</td>
-                          <td>{p.phone}</td>
-                          <td>{p.rank ?? "—"}</td>
-                          <td>{p.score ?? "—"}</td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+          {unavailableCriteria.length > 0 && (
+            <div className="muted small" style={{marginTop:6}}>
+              برخی معیارها غیرفعال مانده‌اند چون آزمون مربوطه در موجودی شما نیست:
+              {" "}
+              {unavailableCriteria.map(u => u.title).join("، ")}
+            </div>
+          )}
         </section>
 
-        {/* Unassigned list */}
-        {unassigned.length > 0 && (
-          <section className="rep-unassigned">
-            <h3>کاربران بدون تخصیص</h3>
-            <div className="unassigned-box">
-              {unassigned.join("، ")}
-            </div>
-          </section>
-        )}
+        <div className="ts-modal-actions">
+          <button className="btn primary" onClick={submit}>شروع</button>
+          <button className="btn ghost" onClick={onClose}>انصراف</button>
+        </div>
       </div>
-    </section>
+    </div>
   );
 };
 
-export default AllocationReport;
+export default JobQuotaModal;
+
+/* ====== helpers ====== */
+function sourceTestFa(key) {
+  switch (key) {
+    case "MBTI": return "MBTI";
+    case "DISC": return "DISC";
+    case "HOLLAND": return "Holland (RIASEC)";
+    case "GARDNER": return "Gardner";
+    case "CLIFTON": return "CliftonStrengths";
+    case "PERSONAL_FAVORITES": return "Personal Favorites";
+    case null: return "تجمیعی/بنچمارک";
+    default: return key || "—";
+  }
+}
