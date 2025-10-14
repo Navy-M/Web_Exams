@@ -140,6 +140,26 @@ const GardnerAnalysis = ({ data = {}, benchmark = null, debug = false }) => {
   const radarRef = useRef(null);
   const [mode, setMode] = useState(benchmark ? "compare" : "bar");
 
+    /* ✅ NEW: keep a solid chart container height so Chart.js can measure */
+    const GardchartWrapRef = useRef(null);
+
+    // ✅ ارتفاع قطعی برای ظرف نمودار + تحریک resize پس از mount/تعویض مود
+  useEffect(() => {
+    const el = GardchartWrapRef.current;
+    if (!el) return;
+    // اگر ارتفاع نداشت، تعیینش کن تا Chart.js صفر×صفر رندر نشه
+    if (el.clientHeight < 220) {
+      el.style.minHeight = "320px";
+      el.style.height = "320px";
+    }
+    // یک تِیک بعد از رندر، رویداد resize تا چارت بازاندازه‌گیری شود
+    const t = setTimeout(() => {
+      try { window.dispatchEvent(new Event("resize")); } catch {}
+    }, 60);
+    return () => clearTimeout(t);
+  }, [mode]);
+
+
   const dateFa = useMemo(
     () =>
       analyzedAt
@@ -419,10 +439,10 @@ const GardnerAnalysis = ({ data = {}, benchmark = null, debug = false }) => {
     >
       <header className="ga-head">
         <div>
-          <h2 className="title">تحلیل هوش‌های چندگانه گاردنر</h2>
+          <h2 className="title ignorePrint">تحلیل هوش‌های چندگانه گاردنر</h2>
         </div>
         <div className="meta muted small" aria-label="اطلاعات کاربر و زمان تحلیل">
-          {userInfo?.fullName ? `کاربر: ${userInfo.fullName} • ` : null}
+          {/* {userInfo?.fullName ? `کاربر: ${userInfo.fullName} • ` : null} */}
           زمان تحلیل: {dateFa}
         </div>
         <div className="actions">
@@ -515,7 +535,7 @@ const GardnerAnalysis = ({ data = {}, benchmark = null, debug = false }) => {
       </section>
 
       {/* Profiles detail */}
-      <section className="profiles-section">
+      <section className="profiles-section ignorePrint">
         <h3>توضیحات هوش‌ها</h3>
         <div className="profiles-list">
           {codes.map((code) => {
@@ -608,7 +628,7 @@ const GardnerAnalysis = ({ data = {}, benchmark = null, debug = false }) => {
           )}
         </div>
 
-        <div className="chart-wrap" data-testid="chart">
+        <div className="chart-wrap" ref={GardchartWrapRef} data-testid="chart">
           {(mode === "bar" || mode === "compare") && (
             <Bar ref={barRef} data={barData} options={barOptions} />
           )}

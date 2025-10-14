@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState,useEffect  } from "react";
 import { Bar, Radar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -58,11 +58,34 @@ const GHQAnalysis = ({ data, benchmark }) => {
     userInfo = {},
   } = data || {};
 
+    console.log("incoming Analysis GHQ data: ", data);
+
+  
   const containerRef = useRef(null);
   const barRef = useRef(null);
   const radarRef = useRef(null);
 
   const [mode, setMode] = useState(benchmark ? "compare" : "bar"); // 'bar' | 'radar' | 'compare'
+
+    /* ✅ NEW: keep a solid chart container height so Chart.js can measure */
+    const GHQchartWrapRef = useRef(null);
+
+    // ✅ ارتفاع قطعی برای ظرف نمودار + تحریک resize پس از mount/تعویض مود
+  useEffect(() => {
+    const el = GHQchartWrapRef.current;
+    if (!el) return;
+    // اگر ارتفاع نداشت، تعیینش کن تا Chart.js صفر×صفر رندر نشه
+    if (el.clientHeight < 220) {
+      el.style.minHeight = "320px";
+      el.style.height = "320px";
+    }
+    // یک تِیک بعد از رندر، رویداد resize تا چارت بازاندازه‌گیری شود
+    const t = setTimeout(() => {
+      try { window.dispatchEvent(new Event("resize")); } catch {}
+    }, 60);
+    return () => clearTimeout(t);
+  }, [mode]);
+
 
   const dateFa = analyzedAt
     ? new Date(analyzedAt).toLocaleDateString("fa-IR", {
@@ -365,7 +388,7 @@ const GHQAnalysis = ({ data, benchmark }) => {
     <section className="ghq-analysis-container card" ref={containerRef} dir="rtl">
       <header className="ghq-head">
         <div>
-          <h2 className="title">تحلیل آزمون سلامت عمومی (GHQ)</h2>
+          <h2 className="title ignorePrint">تحلیل آزمون سلامت عمومی (GHQ)</h2>
           <div className="muted small">
             {userInfo?.fullName ? `کاربر: ${userInfo.fullName} • ` : null}
             زمان تحلیل: {dateFa}
@@ -381,16 +404,19 @@ const GHQAnalysis = ({ data, benchmark }) => {
       {/* خلاصه و نشان ریسک */}
       <section className="summary-section">
         <div className="badges">
-          <span className={`risk-badge ${riskClass}`}>
+          {/* <span className={`risk-badge ${riskClass}`}>
             سطح خطر: {riskLevel === "High" ? "بالا (نیاز به توجه)" : riskLevel === "Moderate" ? "متوسط" : "پایین (خوب)"}
+          </span> */}
+          <span className={`risk-badge ${riskClass}`}>
+            {summary}
           </span>
           {normalizedTotal !== null && (
             <span className="badge info">امتیاز کل نرمال: {fmtPct(normalizedTotal)}</span>
           )}
         </div>
-        {summary && (
+        {/* {summary && (
           <p className="summary-text"><strong>خلاصه:</strong> {summary}</p>
-        )}
+        )} */}
       </section>
 
       {/* KPI */}
@@ -453,7 +479,7 @@ const GHQAnalysis = ({ data, benchmark }) => {
       </section>
 
       {/* توضیحات ابعاد */}
-      <section className="profiles-section">
+      <section className="profiles-section ignorePrint">
         <h3>توضیحات ویژگی‌ها</h3>
         <div className="profiles-list">
           {keys.map((k) => {
@@ -478,7 +504,7 @@ const GHQAnalysis = ({ data, benchmark }) => {
       </section>
 
       {/* پیشنهادهای رشد */}
-      <section className="development-section">
+      <section className="development-section ignorePrint">
         <h3>پیشنهادات بهبود سلامت روان</h3>
         {developmentSuggestions.length > 0 ? (
           developmentSuggestions.map(({ trait, suggestions }) => (
@@ -504,7 +530,7 @@ const GHQAnalysis = ({ data, benchmark }) => {
           )}
         </div>
 
-        <div className="chart-wrap">
+        <div className="chart-wrap" ref={GHQchartWrapRef} aria-live="polite">
           {(mode === "bar" || mode === "compare") && (
             <Bar ref={barRef} data={barData} options={barOptions} />
           )}

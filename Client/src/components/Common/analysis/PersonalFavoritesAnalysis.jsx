@@ -1,5 +1,5 @@
 // PersonalFavoritesAnalysis.jsx
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState,useEffect  } from "react";
 import PropTypes from "prop-types";
 import { Bar } from "react-chartjs-2";
 import {
@@ -50,6 +50,26 @@ const PersonalFavoritesAnalysis = ({ data = {}, benchmark = null }) => {
   const containerRef = useRef(null);
   const chartRef = useRef(null);
   const [mode] = useState("bar"); // فعلاً فقط میله‌ای کافی است
+
+    /* ✅ NEW: keep a solid chart container height so Chart.js can measure */
+    const PFchartWrapRef = useRef(null);
+
+    // ✅ ارتفاع قطعی برای ظرف نمودار + تحریک resize پس از mount/تعویض مود
+  useEffect(() => {
+    const el = PFchartWrapRef.current;
+    if (!el) return;
+    // اگر ارتفاع نداشت، تعیینش کن تا Chart.js صفر×صفر رندر نشه
+    if (el.clientHeight < 220) {
+      el.style.minHeight = "320px";
+      el.style.height = "320px";
+    }
+    // یک تِیک بعد از رندر، رویداد resize تا چارت بازاندازه‌گیری شود
+    const t = setTimeout(() => {
+      try { window.dispatchEvent(new Event("resize")); } catch {}
+    }, 60);
+    return () => clearTimeout(t);
+  }, [mode]);
+
 
   const dateFa = analyzedAt
     ? new Date(analyzedAt).toLocaleDateString("fa-IR", {
@@ -225,7 +245,7 @@ const PersonalFavoritesAnalysis = ({ data = {}, benchmark = null }) => {
     <section className="pf-analysis card" ref={containerRef} dir="rtl" aria-label="تحلیل Personal Favorites">
       <header className="pf-head">
         <div>
-          <h2 className="title">تحلیل ترجیحات شخصی (Personal Favorites)</h2>
+          <h2 className="title ignorePrint">تحلیل ترجیحات شخصی (Personal Favorites)</h2>
           <div className="muted small">زمان تحلیل: {dateFa}</div>
         </div>
         <div className="actions">
@@ -309,7 +329,7 @@ const PersonalFavoritesAnalysis = ({ data = {}, benchmark = null }) => {
 
       {/* نمودار */}
       <section className="chart-section">
-        <div className="chart-wrap">
+        <div className="chart-wrap" ref={PFchartWrapRef} >
           <Bar ref={chartRef} data={barData} options={barOptions} />
         </div>
       <br/>

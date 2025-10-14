@@ -94,3 +94,22 @@
 @media (max-width: 480px){
   .chart-wrap{ height: 300px; }
 }
+
+
+/* MbtiAnalysis.css */
+.mbti-analysis-container .chart-wrap {
+  min-height: 320px;
+  height: 320px;
+  position: relative;
+}
+.mbti-analysis-container .chart-wrap canvas,
+.mbti-analysis-container .chart-wrap svg {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+@media print {
+  .mbti-analysis-container .chart-wrap {
+    height: 320px !important;
+  }
+}

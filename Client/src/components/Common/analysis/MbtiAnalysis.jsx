@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect  } from "react";
 import { Bar, Radar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -65,6 +65,7 @@ const MbtiAnalysis = ({ data, benchmark }) => {
     summary,
     userInfo = {},
     functions,
+    dataForUI
   } = data || {};
 
   console.log("incoming Analysis MBTI data: ", data);
@@ -75,6 +76,69 @@ const MbtiAnalysis = ({ data, benchmark }) => {
   const radarRef = useRef(null);
 
   const [mode, setMode] = useState(benchmark ? "compare" : "diverging"); // 'diverging' | 'radar' | 'compare'
+
+    /* ✅ NEW: keep a solid chart container height so Chart.js can measure */
+    const MbtichartWrapRef = useRef(null);
+
+    // ✅ ارتفاع قطعی برای ظرف نمودار + تحریک resize پس از mount/تعویض مود
+  useEffect(() => {
+    const el = MbtichartWrapRef.current;
+    if (!el) return;
+    // اگر ارتفاع نداشت، تعیینش کن تا Chart.js صفر×صفر رندر نشه
+    if (el.clientHeight < 220) {
+      el.style.minHeight = "320px";
+      el.style.height = "320px";
+    }
+    // یک تِیک بعد از رندر، رویداد resize تا چارت بازاندازه‌گیری شود
+    const t = setTimeout(() => {
+      try { window.dispatchEvent(new Event("resize")); } catch {}
+    }, 60);
+    return () => clearTimeout(t);
+  }, [mode]);
+
+  // ⬇️ put this helper inside the component (above handlePrint), or extract it nearby.
+const rasterizeForPrint = async (node) => {
+  // give Chart.js a tick to paint if needed
+  await new Promise(r => requestAnimationFrame(() => r()));
+  await new Promise(r => setTimeout(r, 40));
+
+  // clone the subtree we want to print
+  const clone = node.cloneNode(true);
+
+  // ---- Canvas → IMG
+  const srcCanvases = node.querySelectorAll("canvas");
+  const dstCanvases = clone.querySelectorAll("canvas");
+  srcCanvases.forEach((c, i) => {
+    // skip hidden/zero-size
+    const rect = c.getBoundingClientRect();
+    if (rect.width < 5 || rect.height < 5) return;
+    const img = document.createElement("img");
+    img.src = c.toDataURL("image/png");
+    img.style.display = "block";
+    img.style.width = (c.style.width || rect.width + "px");
+    img.style.height = (c.style.height || rect.height + "px");
+    dstCanvases[i]?.replaceWith(img);
+  });
+
+  // ---- SVG → IMG (in case you ever render Recharts/SVGs here)
+  const srcSvgs = node.querySelectorAll("svg");
+  const dstSvgs = clone.querySelectorAll("svg");
+  srcSvgs.forEach((s, i) => {
+    const rect = s.getBoundingClientRect();
+    if (rect.width < 5 || rect.height < 5) return;
+    const xml = new XMLSerializer().serializeToString(s);
+    const b64 = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+    const img = document.createElement("img");
+    img.src = b64;
+    img.style.display = "block";
+    img.style.width = rect.width + "px";
+    img.style.height = rect.height + "px";
+    dstSvgs[i]?.replaceWith(img);
+  });
+
+  return clone;
+};
+
 
   const dateFa = analyzedAt
     ? new Date(analyzedAt).toLocaleDateString("fa-IR", {
@@ -418,31 +482,45 @@ const MbtiAnalysis = ({ data, benchmark }) => {
     URL.revokeObjectURL(url);
   };
 
-  const handlePrint = () => {
-    if (!containerRef.current) return;
-    const html = containerRef.current.innerHTML;
-    const css = `
-      @page { size: A4; margin: 14mm; }
-      body { direction: rtl; font-family: Tahoma, Vazir, Arial, sans-serif; color: #111; }
-      .title { margin: 0 0 8px 0; }
-      .muted { color: #555; }
-      table { width:100%; border-collapse: collapse; font-size: 11pt; }
-      th, td { border:1px solid #ccc; padding:8px; text-align:center; }
-      thead th { background: ${headBg}; }
-      .kpi-grid div { border: 1px solid #ddd; padding: 6px 10px; border-radius: 8px; }
-    `;
-    const win = window.open("", "", "width=1024,height=720");
-    if (!win) return;
-    win.document.write(`
-      <html>
-        <head><meta charset="UTF-8"/><title>گزارش MBTI</title><style>${css}</style></head>
-        <body>${html}</body>
-      </html>
-    `);
-    win.document.close();
-    win.focus();
+  const handlePrint = async () => {
+  if (!containerRef.current) return;
+
+  // 1) Make a print-ready clone with canvases rasterized
+  const clone = await rasterizeForPrint(containerRef.current);
+
+  // 2) Basic print CSS (your original, unchanged)
+  const css = `
+    @page { size: A4; margin: 14mm; }
+    body { direction: rtl; font-family: -apple-system, Segoe UI, Roboto, "Vazirmatn", Arial, sans-serif; color: #111; }
+    .muted { color: #555; }
+    table { width:100%; border-collapse: collapse; font-size: 11pt; }
+    th, td { border:1px solid #e5e7eb; padding:8px; text-align:center; }
+    thead th { background: rgba(37,99,235,.08); }
+    .top-theme-row { background: rgba(245,158,11,.12); }
+    /* ensure images (rasterized charts) scale correctly */
+    img { max-width: 100%; height: auto; display:block; }
+  `;
+
+  // 3) Open print window and inject the *clone*’s HTML
+  const win = window.open("", "", "width=1024,height=720");
+  if (!win) return;
+  win.document.write(`
+    <html lang="fa" dir="rtl">
+      <head><meta charset="UTF-8"/><title>گزارش MBTI</title><style>${css}</style></head>
+      <body>${clone.innerHTML}</body>
+    </html>
+  `);
+  win.document.close();
+
+  // 4) Nudge layout and print
+  try { win.focus(); } catch {}
+  // give images a tick to load
+  setTimeout(() => {
     win.print();
-  };
+    win.onafterprint = () => { try { win.close(); } catch {} };
+  }, 60);
+};
+
 
   // ===== Suggestions library (per side) =====
   const suggestLib = {
@@ -474,7 +552,7 @@ const MbtiAnalysis = ({ data, benchmark }) => {
     <section className="mbti-analysis-container card" ref={containerRef} dir="rtl">
       <header className="mbti-head">
         <div>
-          <h2 className="title">تحلیل آزمون MBTI</h2>
+          <h2 className="title ignorePrint">تحلیل آزمون MBTI</h2>
           <div className="muted small">
             {userInfo?.fullName ? `کاربر: ${userInfo.fullName} • ` : null}
             زمان تحلیل: {dateFa}
@@ -574,19 +652,21 @@ const MbtiAnalysis = ({ data, benchmark }) => {
       </section>
 
       {/* Dimension descriptions (if provided) */}
-      {dimensions?.length > 0 && (
+      {dataForUI.dimensions?.length > 0 && (
         <section className="dimensions-section">
           <h3>توضیحات ابعاد شخصیتی</h3>
           <div className="dimensions-list">
-            {dimensions.map(({ dimension, yourSide, difference, description }) => (
+            {dataForUI?.dimensions.map(({ dimension, yourSide, difference, description }) => (
               <article key={dimension} className="dimension-card">
                 <h4>
                   بعد {dimension}: سمت غالب شما <span className="your-side">{yourSide}</span>
                 </h4>
-                {description && <p className="desc">{description}</p>}
+                <div style={{ display: "flex" }}>
+                {description && <p className="desc">{description}</p>} __
                 {difference !== undefined && (
                   <p className="muted small"><strong>تفاوت نمرات:</strong> {fmtPct(difference)}</p>
                 )}
+                </div>
               </article>
             ))}
           </div>
@@ -618,13 +698,13 @@ const MbtiAnalysis = ({ data, benchmark }) => {
           )}
         </div>
 
-        <div className="chart-wrap">
+        <div className="chart-wrap" ref={MbtichartWrapRef} aria-live="polite">
           {(mode === "diverging" || mode === "compare") && (
-            <Bar ref={barRef} data={barData} options={barOptions} />
-          )}
-          {mode === "radar" && (
-            <Radar ref={radarRef} data={radarData} options={radarOptions} />
-          )}
+  <Bar ref={barRef} data={barData} options={barOptions} />
+)}
+{mode === "radar" && (
+  <Radar ref={radarRef} data={radarData} options={radarOptions} />
+)}
         </div>
         <p className="muted small">راهنما: در نمودار دو‌سویه، مقادیر سمت دوم با علامت منفی نمایش داده می‌شوند تا تقارن حول صفر حفظ شود (مقیاس ۰ تا ۱۰۰).</p>
       </section>

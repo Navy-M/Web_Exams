@@ -148,6 +148,26 @@ const HollandAnalysis = ({ data = null, benchmark = null, debug = false }) => {
   const radarRef = useRef(null);
   const [mode, setMode] = useState(benchmark ? "compare" : "bar"); // 'bar' | 'radar' | 'compare'
 
+    /* ✅ NEW: keep a solid chart container height so Chart.js can measure */
+    const HollandchartWrapRef = useRef(null);
+
+    // ✅ ارتفاع قطعی برای ظرف نمودار + تحریک resize پس از mount/تعویض مود
+  useEffect(() => {
+    const el = HollandchartWrapRef.current;
+    if (!el) return;
+    // اگر ارتفاع نداشت، تعیینش کن تا Chart.js صفر×صفر رندر نشه
+    if (el.clientHeight < 220) {
+      el.style.minHeight = "320px";
+      el.style.height = "320px";
+    }
+    // یک تِیک بعد از رندر، رویداد resize تا چارت بازاندازه‌گیری شود
+    const t = setTimeout(() => {
+      try { window.dispatchEvent(new Event("resize")); } catch {}
+    }, 60);
+    return () => clearTimeout(t);
+  }, [mode]);
+
+
   const readVar = useCallback((name) => {
     const el = containerRef.current || document.documentElement;
     const v = getComputedStyle(el).getPropertyValue(name);
@@ -487,7 +507,7 @@ const HollandAnalysis = ({ data = null, benchmark = null, debug = false }) => {
     <section className="holland-analysis-container card" ref={containerRef} dir="rtl" aria-label="تحلیل هالند (RIASEC)">
       <header className="hol-head">
         <div>
-          <h2 className="title">تحلیل آزمون هالند (RIASEC)</h2>
+          <h2 className="title ignorePrint">تحلیل آزمون هالند (RIASEC)</h2>
         </div>
         <div className="meta muted small" aria-label="اطلاعات کاربر و زمان تحلیل">
           {userInfo?.fullName ? `کاربر: ${userInfo.fullName} • ` : null}
@@ -503,7 +523,7 @@ const HollandAnalysis = ({ data = null, benchmark = null, debug = false }) => {
       {/* خلاصه + بج‌ها */}
       <section className="summary-section">
         {summary && (
-          <p className="summary-text" data-testid="summary">
+          <p className="summary-text ignorePrint" data-testid="summary">
             <strong>خلاصه:</strong> {summary}
           </p>
         )}
@@ -576,7 +596,7 @@ const HollandAnalysis = ({ data = null, benchmark = null, debug = false }) => {
       </section>
 
       {/* توضیحات ویژگی‌ها */}
-      <section className="traits-details-section">
+      <section className="traits-details-section ignorePrint">
         <h3>توضیحات ویژگی‌ها</h3>
         <div className="traits-list">
           {codes.map((k) => {
@@ -618,7 +638,7 @@ const HollandAnalysis = ({ data = null, benchmark = null, debug = false }) => {
       </section>
 
       {/* پیشنهادات شغلی (تجمیع‌شده) */}
-      <section className="career-suggestions-section">
+      <section className="career-suggestions-section ignorePrint">
         <h3>پیشنهادات شغلی</h3>
         {autoCareerSuggestions.length > 0 ? (
           <ul className="career-list">
@@ -662,7 +682,7 @@ const HollandAnalysis = ({ data = null, benchmark = null, debug = false }) => {
 
         {/* اگر داده‌ی عددی نداریم، نمودار را نشان نده و هشدار بده */}
         {hasNumeric ? (
-          <div className="chart-wrap" data-testid="chart">
+          <div className="chart-wrap" ref={HollandchartWrapRef} aria-live="polite" data-testid="chart">
             {(mode === "bar" || mode === "compare") && <Bar ref={barRef} data={barData} options={barOptions} />}
             {mode === "radar" && <Radar ref={radarRef} data={radarData} options={radarOptions} />}
           </div>
