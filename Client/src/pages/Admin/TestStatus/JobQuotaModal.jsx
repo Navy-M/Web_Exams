@@ -1,5 +1,7 @@
 // src/pages/Admin/TestStatus/JobQuotaModal.jsx
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import PropTypes from "prop-types";
+import "../../../styles/neomarine.css";
 
 /* ===================== ثابت‌ها ===================== */
 const TEST_TYPE_KEYS = {
@@ -196,31 +198,41 @@ const JobQuotaModal = ({
   jobRequirements = {},            // { "ناوبری و ...": {...}, ... }
   tests = [],                      // لیست آزمون‌های موجود سیستم (اختیاری)
 }) => {
-  if (!open) return null;
+
+  // ❗️بدون early-return — همیشه هوک‌ها اجرا شوند
+  const overlayRef = useRef(null);
 
   /* ---------- Job selector ---------- */
   const jobKeys = useMemo(() => Object.keys(jobRequirements), [jobRequirements]);
   const [jobKey, setJobKey] = useState(jobKeys[0] || "");
 
-  // فقط وقتی open شد یا لیست شغل‌ها عوض شد و jobKey فعلی نامعتبر است
+  // وقتی open شد یا لیست‌ها تغییر کرد، مقدار معتبر انتخاب کن
   useEffect(() => {
-    if (!jobKey || !jobKeys.includes(jobKey)) {
-      setJobKey(jobKeys[0] || "");
-    }
+    if (!jobKey || !jobKeys.includes(jobKey)) setJobKey(jobKeys[0] || "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, jobKeys]);
+
+  /* ---------- ESC/Click-outside to close ---------- */
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    const onClick = (e) => {
+      if (overlayRef.current && e.target === overlayRef.current) onClose?.();
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("click", onClick);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("click", onClick); };
+  }, [open, onClose]);
 
   /* ---------- Tests inventory ---------- */
   const inv = useMemo(() => buildTestsInventory(tests), [tests]);
 
-  /* ---------- Criteria: فقط هنگام تغییر jobKey محاسبه/ست می‌شود ---------- */
+  /* ---------- Criteria ---------- */
   const baseCriteria = useMemo(() => {
     const req = jobRequirements[jobKey] || {};
     return buildCriteriaFromJob(req);
-    // وابسته فقط به jobKey و jobRequirements
   }, [jobKey, jobRequirements]);
 
-  // به availability وصل می‌کنیم (بدون ایجاد لوپ)
   const criteriaWithAvailability = useMemo(() => {
     const availability = (c) => {
       const st = c.sourceTest;
@@ -231,10 +243,7 @@ const JobQuotaModal = ({
   }, [baseCriteria, inv]);
 
   const [localCriteria, setLocalCriteria] = useState(criteriaWithAvailability);
-  // وقتی jobKey عوض شد، یکبار localCriteria ست می‌شود
-  useEffect(() => {
-    setLocalCriteria(criteriaWithAvailability);
-  }, [criteriaWithAvailability]);
+  useEffect(() => { setLocalCriteria(criteriaWithAvailability); }, [criteriaWithAvailability]);
 
   const handleToggle = useCallback((id, enabled) => {
     setLocalCriteria((prev) => prev.map((c) => (c.id === id ? { ...c, enabled } : c)));
@@ -255,18 +264,15 @@ const JobQuotaModal = ({
     return { finalSum: Math.round(sum), finalNorm: norm };
   }, [localCriteria]);
 
-  /* ---------- انتخاب آزمون‌ها + معدل/رشته ---------- */
+  /* ---------- انتخاب منابع ارزیابی ---------- */
   const [testToggles, setTestToggles] = useState({
     MBTI: true, DISC: true, HOLLAND: true, GARDNER: true, CLIFTON: true, PERSONAL_FAVORITES: true,
   });
 
-  // اگر آزمونی موجود نیست، یکبار خاموشش کنیم (فقط وقتی open یا inv تغییر کرد)
   useEffect(() => {
     setTestToggles((prev) => {
       const next = { ...prev };
-      Object.keys(TEST_TYPE_KEYS).forEach((k) => {
-        if (inv[k] === false && prev[k] === true) next[k] = false;
-      });
+      Object.keys(TEST_TYPE_KEYS).forEach((k) => { if (inv[k] === false && prev[k] === true) next[k] = false; });
       return next;
     });
   }, [open, inv]);
@@ -287,7 +293,6 @@ const JobQuotaModal = ({
 
   /* ---------- Quotas → capacities برای سرور ---------- */
   const capacities = useMemo(() => {
-    // سرور شما انتظار دارد: { "نام شغل": capacityNumber }
     const map = {};
     Object.values(quotas || {}).forEach((q) => {
       const cap = Number(q?.tableCount || 0);
@@ -298,10 +303,9 @@ const JobQuotaModal = ({
 
   /* ---------- Weights ساده برای سرور ---------- */
   const serverWeights = useMemo(() => {
-    // فقط همان تست‌هایی که روشن شدند، وزن برابر می‌گیرند (سرور خودش نرمال می‌کند)
     const on = Object.entries(testToggles).filter(([, v]) => !!v).map(([k]) => k);
     if (!on.length) return {};
-    const w = 1; // همه برابر؛ اگر خواستید UI وزن‌دهی جدا اضافه کنید
+    const w = 1;
     return Object.fromEntries(on.map((k) => [k, w]));
   }, [testToggles]);
 
@@ -309,233 +313,247 @@ const JobQuotaModal = ({
   const submit = useCallback(() => {
     onSubmit?.({
       jobKey,
-      quotas,                        // برای گزارش/فالبک
-      capacities,                    // برای API (server)
-      criteria: localCriteria,       // برای فالبک (و شفافیت)
-      normalizedWeights: finalNorm,  // برای فالبک/شفافیت
+      quotas,
+      capacities,
+      criteria: localCriteria,
+      normalizedWeights: finalNorm,
       unavailableCriteria: localCriteria.filter((c) => !c.available).map((c) => ({ key: c.key, title: c.title })),
       selectedTests: { ...testToggles },
-      education: {
-        useGPA, gpaWeight, gpaScale,
-        useMajor, majorWeight, majorMode,
-      },
-      serverWeights,                 // برای API
+      education: { useGPA, gpaWeight, gpaScale, useMajor, majorWeight, majorMode },
+      serverWeights,
     });
   }, [
-    jobKey, quotas, capacities,
-    localCriteria, finalNorm,
+    jobKey, quotas, capacities, localCriteria, finalNorm,
     testToggles, useGPA, gpaWeight, gpaScale, useMajor, majorWeight, majorMode,
     serverWeights, onSubmit
   ]);
 
   /* ===================== UI ===================== */
   return (
-    <div className="ts-modal-overlay" role="dialog" aria-modal="true">
-      <div className="ts-modal card" dir="rtl">
-        <h3>تنظیمات تخصیص و اولویت‌بندی</h3>
-
-        {/* انتخاب شغل */}
-        <section className="ts-modal-block">
-          <div className="row gap8 align-center">
-            <label htmlFor="jobKey"><b>شغل/رسته:</b></label>
-            <select
-              id="jobKey"
-              value={jobKey}
-              onChange={(e) => setJobKey(e.target.value)}
-            >
-              {jobKeys.map((k) => (
-                <option key={k} value={k}>{k}</option>
-              ))}
-            </select>
-          </div>
-          {!jobKey && <p className="muted small">هیچ شغلی تعریف نشده است.</p>}
-        </section>
-
-        {/* سهمیه‌ها */}
-        <section className="ts-modal-block">
-          <h4>۱) تعداد افراد مورد نیاز برای هر رسته</h4>
-          <div className="ts-modal-grid">
-            {Object.keys(quotas).map((key) => (
-              <div className="quota-row" key={key}>
-                <label htmlFor={`quota-${key}`}>{quotas[key].name}</label>
-                <input
-                  id={`quota-${key}`}
-                  type="number"
-                  min="0"
-                  value={quotas[key].tableCount}
-                  onChange={(e) => onChange?.(key, parseInt(e.target.value || "0", 10))}
-                />
+    <>
+      {open && (
+        <div className="ts-modal-overlay" ref={overlayRef} role="dialog" aria-modal="true" aria-labelledby="quota-title">
+          <div className="ts-modal" dir="rtl">
+            {/* Header */}
+            <header className="allocation-header" style={{ marginBottom: 8 }}>
+              <div>
+                <h2 id="quota-title" className="allocation-title">تنظیمات تخصیص و اولویت‌بندی</h2>
+                <div className="allocation-sub muted small">انتخاب رسته، معیارها، وزن‌ها و منابع ارزیابی گروه</div>
               </div>
-            ))}
-            {Object.keys(quotas).length === 0 && <p className="muted">رسته‌ای تعریف نشده است.</p>}
-          </div>
-          {/* نمایش capacities برای شفافیت */}
-          <div className="row gap12" style={{ marginTop: 8 }}>
-            <span className="badge">رسته‌های با ظرفیت: {Object.keys(capacities).length}</span>
-          </div>
-        </section>
+              <div className="allocation-actions">
+                <button className="btn ghost" onClick={onClose} aria-label="بستن">بستن</button>
+                <button className="btn primary" onClick={submit} aria-label="شروع اولویت‌بندی">شروع اولویت‌بندی</button>
+              </div>
+            </header>
 
-        {/* معیارهای خودکار از نیازمندی شغل */}
-        <section className="ts-modal-block">
-          <h4>۲) مولفه‌های مؤثر (اتوماتیک از نیازمندی‌های شغل)</h4>
+            {/* انتخاب شغل */}
+            <section className="ts-modal-block">
+              <div className="row gap8 align-center">
+                <label htmlFor="jobKey"><b>شغل/رسته:</b></label>
+                <select id="jobKey" value={jobKey} onChange={(e) => setJobKey(e.target.value)}>
+                  {jobKeys.map((k) => (<option key={k} value={k}>{k}</option>))}
+                </select>
+                {!jobKey && <span className="muted small">هیچ شغلی تعریف نشده است.</span>}
+              </div>
+            </section>
 
-          <div className="criteria-table-wrap">
-            <table className="criteria-table">
-              <thead>
-                <tr>
-                  <th>فعال</th>
-                  <th>عنوان معیار</th>
-                  <th>منبع آزمون</th>
-                  <th>وضعیت آزمون</th>
-                  <th style={{ minWidth: 160 }}>وزن</th>
-                </tr>
-              </thead>
-              <tbody key={jobKey /* جلوگیری از حفظ رندر قبلی */}>
-                {localCriteria.map((c) => {
-                  const isAvailable = c.available !== false;
-                  return (
-                    <tr key={c.id}>
-                      <td className="center">
-                        <input
-                          type="checkbox"
-                          checked={!!c.enabled}
-                          onChange={(e) => handleToggle(c.id, e.target.checked)}
-                          disabled={!isAvailable}
-                          title={!isAvailable ? "این معیار به دلیل نبود آزمون مربوطه قابل‌فعال‌سازی نیست" : ""}
-                        />
-                      </td>
-                      <td>{c.title}</td>
-                      <td>{sourceTestFa(c.sourceTest)}</td>
-                      <td>
-                        {isAvailable
-                          ? <span className="badge ok">آزمون موجود</span>
-                          : <span className="badge warn">آزمون موجود نیست</span>}
-                      </td>
-                      <td>
-                        <div className="row gap8">
-                          <input
-                            type="range" min="0" max="100"
-                            value={c.weight ?? 0}
-                            onChange={(e) => handleWeight(c.id, e.target.value)}
-                            disabled={!isAvailable || !c.enabled}
-                          />
-                          <span style={{ width: 40, textAlign: "center" }}>{c.weight ?? 0}%</span>
-                        </div>
-                      </td>
+            {/* سهمیه‌ها */}
+            <section className="ts-modal-block">
+              <h4>۱) تعداد افراد مورد نیاز برای هر رسته</h4>
+              <div className="ts-modal-grid" role="group" aria-label="سهمیه رسته‌ها">
+                {Object.keys(quotas).map((key) => (
+                  <div className="quota-row" key={key}>
+                    <label htmlFor={`quota-${key}`}>{quotas[key].name}</label>
+                    <input
+                      id={`quota-${key}`}
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      value={quotas[key].tableCount}
+                      onChange={(e) => onChange?.(key, parseInt(e.target.value || "0", 10))}
+                    />
+                  </div>
+                ))}
+                {Object.keys(quotas).length === 0 && <p className="muted">رسته‌ای تعریف نشده است.</p>}
+              </div>
+              <div className="row gap12" style={{ marginTop: 8 }}>
+                <span className="badge">رسته‌های با ظرفیت: {Object.keys(capacities).length}</span>
+              </div>
+            </section>
+
+            {/* معیارها */}
+            <section className="ts-modal-block">
+              <h4>۲) مولفه‌های مؤثر (اتوماتیک از نیازمندی‌های شغل)</h4>
+              <div className="criteria-table-wrap" aria-live="polite">
+                <table className="criteria-table" key={jobKey}>
+                  <thead>
+                    <tr>
+                      <th>فعال</th>
+                      <th>عنوان معیار</th>
+                      <th>منبع آزمون</th>
+                      <th>وضعیت آزمون</th>
+                      <th style={{ minWidth: 200 }}>وزن</th>
                     </tr>
+                  </thead>
+                  <tbody>
+                    {localCriteria.map((c) => {
+                      const isAvailable = c.available !== false;
+                      return (
+                        <tr key={c.id}>
+                          <td className="center">
+                            <input
+                              type="checkbox"
+                              checked={!!c.enabled}
+                              onChange={(e) => handleToggle(c.id, e.target.checked)}
+                              disabled={!isAvailable}
+                              title={!isAvailable ? "این معیار به دلیل نبود آزمون مربوطه قابل‌فعال‌سازی نیست" : ""}
+                            />
+                          </td>
+                          <td style={{ textAlign: "right" }}>{c.title}</td>
+                          <td>{sourceTestFa(c.sourceTest)}</td>
+                          <td>
+                            {isAvailable
+                              ? <span className="badge ok">آزمون موجود</span>
+                              : <span className="badge warn">آزمون موجود نیست</span>}
+                          </td>
+                          <td>
+                            <div className="row gap8" style={{ justifyContent: "center" }}>
+                              <input
+                                type="range" min="0" max="100"
+                                value={c.weight ?? 0}
+                                onChange={(e) => handleWeight(c.id, e.target.value)}
+                                disabled={!isAvailable || !c.enabled}
+                                aria-label={`وزن ${c.title}`}
+                              />
+                              <span style={{ width: 44, textAlign: "center" }}>{c.weight ?? 0}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {localCriteria.length === 0 && (
+                      <tr><td colSpan="5" className="muted center">معیاری تعریف نشده است.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="row gap12 align-center" style={{ marginTop: 8 }}>
+                <span className={`badge ${finalSum >= WEIGHT_SUM_OK_RANGE[0] && finalSum <= WEIGHT_SUM_OK_RANGE[1] ? "ok" : "warn"}`}>
+                  جمع وزن معیارهای فعال: {finalSum}%
+                </span>
+                {Math.abs(finalSum - 100) > 5 && (
+                  <span className="muted small">پیشنهاد: مجموع به ۱۰۰% نزدیک باشد.</span>
+                )}
+              </div>
+            </section>
+
+            {/* منابع ارزیابی + معدل/رشته */}
+            <section className="ts-modal-block">
+              <h4>۳) انتخاب منابع ارزیابی برای گروه</h4>
+
+              <div className="ts-modal-grid">
+                {Object.keys(TEST_TYPE_KEYS).map((key) => {
+                  const available = inv[key] !== false;
+                  return (
+                    <div key={key} className="row gap8">
+                      <label style={{ minWidth: 180 }}>{sourceTestFa(key)}</label>
+                      <input
+                        type="checkbox"
+                        checked={!!testToggles[key]}
+                        onChange={(e) => toggleTest(key, e.target.checked)}
+                        disabled={!available}
+                        title={!available ? "آزمون در سیستم موجود نیست" : ""}
+                      />
+                      <span className={`badge ${available ? "ok" : "warn"}`}>
+                        {available ? "فعال" : "ناموجود"}
+                      </span>
+                    </div>
                   );
                 })}
-                {localCriteria.length === 0 && (
-                  <tr><td colSpan="5" className="muted center">معیاری تعریف نشده است.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              </div>
 
-          <div className="row gap12 align-center" style={{ marginTop: 8 }}>
-            <span className={`badge ${finalSum >= WEIGHT_SUM_OK_RANGE[0] && finalSum <= WEIGHT_SUM_OK_RANGE[1] ? "ok" : "warn"}`}>
-              جمع وزن معیارهای فعال: {finalSum}%
-            </span>
-            {Math.abs(finalSum - 100) > 5 && (
-              <span className="muted small">پیشنهاد: مجموع به ۱۰۰% نزدیک باشد.</span>
-            )}
-          </div>
-        </section>
+              <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "10px 0" }} />
 
-        {/* انتخاب منابع ارزیابی */}
-        <section className="ts-modal-block">
-          <h4>۳) انتخاب منابع ارزیابی برای گروه</h4>
-
-          <div className="ts-modal-grid">
-            {Object.keys(TEST_TYPE_KEYS).map((key) => {
-              const available = inv[key] !== false; // اگر tests خالی باشد، همه قابل انتخاب‌اند
-              return (
-                <div key={key} className="row gap8">
-                  <label style={{ minWidth: 180 }}>{sourceTestFa(key)}</label>
-                  <input
-                    type="checkbox"
-                    checked={!!testToggles[key]}
-                    onChange={(e) => toggleTest(key, e.target.checked)}
-                    disabled={!available}
-                    title={!available ? "آزمون در سیستم موجود نیست" : ""}
-                  />
-                  <span className={`badge ${available ? "ok" : "warn"}`}>
-                    {available ? "فعال" : "ناموجود"}
-                  </span>
+              {/* معدل */}
+              <div className="row gap12" style={{ flexWrap: "wrap" }}>
+                <div className="row gap8">
+                  <label style={{ minWidth: 120 }}>معدل لحاظ شود؟</label>
+                  <input type="checkbox" checked={useGPA} onChange={(e) => setUseGPA(e.target.checked)} />
                 </div>
-              );
-            })}
+
+                <div className="row gap8">
+                  <label>مقیاس معدل</label>
+                  <select value={gpaScale} onChange={(e) => setGpaScale(e.target.value)} disabled={!useGPA}>
+                    <option value="0-20">۰–۲۰</option>
+                    <option value="0-4">۰–۴</option>
+                  </select>
+                </div>
+
+                <div className="row gap8">
+                  <label>وزن معدل</label>
+                  <input
+                    type="range" min="0" max="100"
+                    value={gpaWeight}
+                    onChange={(e) => setGpaWeight(clamp01(e.target.value))}
+                    disabled={!useGPA}
+                  />
+                  <span style={{ width: 40, textAlign: "center" }}>{useGPA ? gpaWeight : 0}%</span>
+                </div>
+              </div>
+
+              {/* رشته */}
+              <div className="row gap12" style={{ flexWrap: "wrap", marginTop: 8 }}>
+                <div className="row gap8">
+                  <label style={{ minWidth: 120 }}>رشته تحصیلی لحاظ شود؟</label>
+                  <input type="checkbox" checked={useMajor} onChange={(e) => setUseMajor(e.target.checked)} />
+                </div>
+
+                <div className="row gap8">
+                  <label>روش تطبیق</label>
+                  <select value={majorMode} onChange={(e) => setMajorMode(e.target.value)} disabled={!useMajor}>
+                    <option value="exact">دقیقا مطابق لیست شغل</option>
+                    <option value="family">خانواده‌ی رشته (نزدیک)</option>
+                  </select>
+                </div>
+
+                <div className="row gap8">
+                  <label>وزن رشته</label>
+                  <input
+                    type="range" min="0" max="100"
+                    value={majorWeight}
+                    onChange={(e) => setMajorWeight(clamp01(e.target.value))}
+                    disabled={!useMajor}
+                  />
+                  <span style={{ width: 40, textAlign: "center" }}>{useMajor ? majorWeight : 0}%</span>
+                </div>
+              </div>
+
+              <p className="muted small" style={{ marginTop: 6 }}>
+                نکته: لیست رشته‌های قابل‌قبول برای هر شغل از <code>education</code> داخل <code>jobRequirements</code> خوانده می‌شود.
+              </p>
+            </section>
+
+            {/* اکشن‌ها پایین مودال */}
+            <div className="ts-modal-actions">
+              <button className="btn ghost" onClick={onClose}>انصراف</button>
+              <button className="btn primary" onClick={submit}>شروع اولویت‌بندی</button>
+            </div>
           </div>
-
-          <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "10px 0" }} />
-
-          {/* معدل */}
-          <div className="row gap12" style={{ flexWrap: "wrap" }}>
-            <div className="row gap8">
-              <label style={{ minWidth: 120 }}>معدل لحاظ شود؟</label>
-              <input type="checkbox" checked={useGPA} onChange={(e) => setUseGPA(e.target.checked)} />
-            </div>
-
-            <div className="row gap8">
-              <label>مقیاس معدل</label>
-              <select value={gpaScale} onChange={(e) => setGpaScale(e.target.value)} disabled={!useGPA}>
-                <option value="0-20">۰–۲۰</option>
-                <option value="0-4">۰–۴</option>
-              </select>
-            </div>
-
-            <div className="row gap8">
-              <label>وزن معدل</label>
-              <input
-                type="range" min="0" max="100"
-                value={gpaWeight}
-                onChange={(e) => setGpaWeight(clamp01(e.target.value))}
-                disabled={!useGPA}
-              />
-              <span style={{ width: 40, textAlign: "center" }}>{useGPA ? gpaWeight : 0}%</span>
-            </div>
-          </div>
-
-          {/* رشته */}
-          <div className="row gap12" style={{ flexWrap: "wrap", marginTop: 8 }}>
-            <div className="row gap8">
-              <label style={{ minWidth: 120 }}>رشته تحصیلی لحاظ شود؟</label>
-              <input type="checkbox" checked={useMajor} onChange={(e) => setUseMajor(e.target.checked)} />
-            </div>
-
-            <div className="row gap8">
-              <label>روش تطبیق</label>
-              <select value={majorMode} onChange={(e) => setMajorMode(e.target.value)} disabled={!useMajor}>
-                <option value="exact">دقیقا مطابق لیست شغل</option>
-                <option value="family">خانواده‌ی رشته (نزدیک)</option>
-              </select>
-            </div>
-
-            <div className="row gap8">
-              <label>وزن رشته</label>
-              <input
-                type="range" min="0" max="100"
-                value={majorWeight}
-                onChange={(e) => setMajorWeight(clamp01(e.target.value))}
-                disabled={!useMajor}
-              />
-              <span style={{ width: 40, textAlign: "center" }}>{useMajor ? majorWeight : 0}%</span>
-            </div>
-          </div>
-
-          <p className="muted small" style={{ marginTop: 6 }}>
-            نکته: لیست رشته‌های قابل‌قبول برای هر شغل از <code>education</code> داخل <code>jobRequirements</code> خوانده می‌شود.
-          </p>
-        </section>
-
-        {/* اکشن‌ها */}
-        <div className="ts-modal-actions">
-          <button className="btn primary" onClick={submit}>شروع اولویت‌بندی</button>
-          <button className="btn ghost" onClick={onClose}>انصراف</button>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
+};
+
+JobQuotaModal.propTypes = {
+  open: PropTypes.bool,
+  quotas: PropTypes.object,
+  onChange: PropTypes.func,
+  onSubmit: PropTypes.func,
+  onClose: PropTypes.func,
+  jobRequirements: PropTypes.object,
+  tests: PropTypes.array,
 };
 
 export default JobQuotaModal;
