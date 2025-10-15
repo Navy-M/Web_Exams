@@ -13,6 +13,7 @@ const UsersTable = ({
   selectedIds = [],
   onToggleSelect,
   onToggleSelectAll,
+  openPrintDialog
 }) => {
   const { t } = useI18n();
   const selectionEnabled =
@@ -116,6 +117,7 @@ const UsersTable = ({
                   >
                     {t("common.buttons.delete")}
                   </button>
+                  
                 </td>
               </tr>
             );

@@ -3868,7 +3868,6 @@ export const jobRequirements = {
       "مدیریت ریسک و BRM/CRM",
     ],
     softSkills: ["تصمیم‌گیری", "رهبری", "هوشیاری موقعیتی", "ارتباط مؤثر"],
-    mustHave: ["ECDIS", "GMDSS", "آشنایی با COLREG"],
     niceToHave: ["DP Awareness", "Polar Code Awareness"],
 
     // --- الزامات روان‌سنجی/ترجیحات ---

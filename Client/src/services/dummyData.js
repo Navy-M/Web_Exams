@@ -127,8 +127,8 @@ export const Test_Cards = [
 
 /** پیش‌فرض‌های تفسیر "High/Low" در DISC */
 export const DISC_THRESHOLDS = {
-  high: 65,   // ≥ 65% یعنی High
-  low:  35,   // ≤ 35% یعنی Low
+  high: 65, // ≥ 65% یعنی High
+  low: 35,  // ≤ 35% یعنی Low (فعلاً استفاده نمی‌کنیم اما نگه دارید)
 };
 
 /** وزن‌دهی کلی تست‌ها در محاسبه‌ی FitScore (قابل override per job) */
@@ -138,10 +138,12 @@ export const DEFAULT_WEIGHTS = {
   holland: 0.20,
   gardner: 0.10,
   clifton: 0.25,
-  pf: 0.05,     // Personal Favorites
+  pf: 0.05, // Personal Favorites
 };
 
 
+
+/* ===================== DATA ===================== */
 export const jobRequirements = {
   "ناوبری و فرماندهی کشتی": {
     summary: "رهبری عملیات پل فرماندهی، ناوبری امن، تصمیم‌گیری سریع در شرایط بحرانی.",
@@ -184,27 +186,23 @@ export const jobRequirements = {
     holland: { top3: ["I", "C", "E"] },
     gardner: { prefer: ["S", "M", "L"] }, // فضایی، منطقی-ریاضی، کلامی
     clifton: {
-      // می‌تونی theme یا domain بدی؛ هر دو پشتیبانی می‌شوند
       domainsPrefer: ["Executing", "Influencing", "Strategic"],
       themesPrefer: ["Responsibility", "Command", "Analytical", "Context", "Discipline"],
-      themesAvoid: ["Harmony"], // برای پل فرماندهی همیشه لازم نیست ولی گاهی مفید است
+      themesAvoid: ["Harmony"],
     },
     pf: {
-      // اگر سوالات PF به‌صورت Work-only هستند، IDها کافیست؛ در آینده می‌تونی کلمات کلیدی هم بدی
       itemIdsPrefer: [3, 4, 12],
       keywords: ["ناوبری", "مسئولیت", "تصمیم‌گیری", "شیفت شب"],
     },
 
     weights: { ...DEFAULT_WEIGHTS, disc: 0.28, clifton: 0.27, holland: 0.2, mbti: 0.15, gardner: 0.07, pf: 0.03 },
 
-    // بنچمارک نمونه (میانگین مناسب برای تطبیق و مقایسه)
     benchmark: {
       disc: { D: 72, I: 45, S: 48, C: 66 },
       mbti: ["INTJ", "ENTJ", "ISTJ"],
       holland: { R: 45, I: 70, A: 35, S: 40, E: 60, C: 68 },
       gardner: { L: 65, M: 78, S: 75, B: 55, Mu: 40, I: 58, In: 62, N: 45 },
       clifton: {
-        // درصدهای نرمال‌شده‌ی تم‌های تیپیک (نمونه)
         themes: { Command: 80, Responsibility: 78, Context: 70, Analytical: 72, Discipline: 68 },
         domains: { Executing: 75, Influencing: 68, Strategic: 70, Relationship: 55 },
       },
@@ -227,7 +225,7 @@ export const jobRequirements = {
       "Refrigeration/Air-Condition",
       "Medical First Aid",
     ],
-    education: ["فنی حرفه ای", "ریاضی", "تجربی"],
+    education: ["فنی حرفه ای", "ریاضی فیزیک", "علوم تجربی"],
     experienceMinYears: 1,
     languages: [{ lang: "English", level: "B1+" }],
     tools: ["CMMS", "Vibration Analysis", "Alignment Tools", "Boroscope"],
@@ -277,7 +275,7 @@ export const jobRequirements = {
       "GMDSS Maintenance (مزیت)",
       "Automation/PLC (مزیت)",
     ],
-    education: ["فنی حرفه ای", "ریاضی", "تجربی"],
+    education: ["فنی حرفه ای", "ریاضی فیزیک", "علوم تجربی"],
     experienceMinYears: 1,
     languages: [{ lang: "English", level: "B2+" }],
     tools: ["Multimeter", "Insulation Tester", "Oscilloscope", "PLC Software"],
@@ -327,7 +325,7 @@ export const jobRequirements = {
       "First Aid/TRAUMA",
       "Use of Force (شرکتی/محلی)",
     ],
-    education: [ "انسانی"],
+    education: ["انسانی"],
     experienceMinYears: 0,
     languages: [{ lang: "English", level: "B1+" }],
     tools: ["Comms", "Non-lethal equipment", "Surveillance"],
@@ -341,7 +339,7 @@ export const jobRequirements = {
     clifton: {
       domainsPrefer: ["Executing", "Influencing"],
       themesPrefer: ["Achiever", "SelfAssurance", "Command", "Consistency", "Responsibility"],
-      themesAvoid: ["Harmony"], // در نقش‌های تاکتیکی می‌تواند مزاحم سرعت تصمیم شود
+      themesAvoid: ["Harmony"],
     },
     pf: { keywords: ["امنیت", "گشت", "واکنش سریع"], itemIdsPrefer: [] },
 
@@ -372,7 +370,7 @@ export const jobRequirements = {
       "Crowd Management (برای کشتی‌های مسافربری)",
       "Food Safety/HACCP (مزیت)",
     ],
-    education: ["Hospitality/Business (مزیت)"],
+    education: [],
     experienceMinYears: 1,
     languages: [{ lang: "English", level: "B2+" }],
     tools: ["Inventory/POS", "Crew Management Systems"],
