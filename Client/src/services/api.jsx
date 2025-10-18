@@ -208,11 +208,13 @@ export const analyzeTests = async (Data) => {
 
 export const prioritizeUsers = async ({ userIds, capacities, weights }) => {
   // توجه: پیشوند '/api' را اگر در baseURL ست کردید، اینجا دوباره نزنید
-  const { data } = await API.post("/jobs/prioritize", {
+  const { data } = await API.post("/results/jobs/prioritize", {
     userIds,   // array of strings
     capacities, // { "ناوبری و فرماندهی کشتی": 5, ...}
     weights,    // { MBTI:1, DISC:1, ... } (اختیاری)
   });
+  // console.log("data :" , data);
+  
   return data; // { ok:true, assignments, waitlist, table, export }
 };
 
