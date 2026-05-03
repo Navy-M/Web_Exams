@@ -575,37 +575,90 @@ export const updateTestFeedback = async (req, res) => {
   }
 };
 
+// export async function prioritizeJobs(req, res) {
+//   try {
+//     const { userIds, capacities, weights } = req.body || {};
+
+//     if (!Array.isArray(userIds) || !userIds.length) {
+//       return res
+//         .status(400)
+//         .json({ ok: false, error: "userIds (array) is required" });
+//     }
+
+//     if (!capacities || typeof capacities !== "object" || !Object.keys(capacities).length) {
+//       return res
+//         .status(400)
+//         .json({ ok: false, error: "capacities (object) is required" });
+//     }
+
+//     const jobRequirements =
+//       dummy.jobRequirements || dummy.default?.jobRequirements || dummy;
+
+//     const out = await prioritizeCandidates({
+//       userIds,
+//       capacities,
+//       weights: weights || {},
+//       jobRequirements,
+//     });
+
+//     return res.json({ ok: true, ...out });
+//   } catch (err) {
+//     console.error("prioritizeJobs error:", err);
+//     return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+//   }
+// }
+
 export async function prioritizeJobs(req, res) {
   try {
-    const { userIds, capacities, weights } = req.body || {};
+    const { userIds, capacities, weights, jobRequirements, quotas } = req.body || {};
 
     if (!Array.isArray(userIds) || !userIds.length) {
-      return res
-        .status(400)
-        .json({ ok: false, error: "userIds (array) is required" });
+      return res.status(400).json({ ok: false, error: "userIds (array) is required" });
     }
-
     if (!capacities || typeof capacities !== "object" || !Object.keys(capacities).length) {
-      return res
-        .status(400)
-        .json({ ok: false, error: "capacities (object) is required" });
+      return res.status(400).json({ ok: false, error: "capacities (object) is required" });
     }
 
-    const jobRequirements =
-      dummy.jobRequirements || dummy.default?.jobRequirements || dummy;
-
+    // Run core algorithm (returns: assignments, waitlist, unassigned, table, allocations, export)
     const out = await prioritizeCandidates({
       userIds,
       capacities,
       weights: weights || {},
-      jobRequirements,
+      jobRequirements: jobRequirements || {},
     });
 
-    return res.json({ ok: true, ...out });
+    // Build the exact envelope AllocationReport needs:
+    const meta = {
+      source: "api",
+      receivedAt: new Date().toISOString(),
+    };
+
+    // If the frontend expects the original quotas object for the summary,
+    // pass it through. If you don’t have it, you can reconstruct from capacities.
+    const quotasOut = quotas && Object.keys(quotas).length
+      ? quotas
+      : Object.fromEntries(
+          Object.keys(capacities).map((name, i) => [
+            `job${i + 1}`,
+            { name, tableCount: Number(capacities[name]) || 0 },
+          ])
+        );
+
+    return res.json({
+      ok: true,
+      // what AllocationReport expects:
+      allocations: out.allocations || {},   // legacy map: { [jobName]: { name, persons: [...] } }
+      quotas: quotasOut,                     // keep original UI quotas format if you have it
+      meta,
+      assignments: out.assignments || [],
+      waitlist: out.waitlist || [],
+      unassigned: out.unassigned || [],
+      table: out.table || [],
+      export: out.export || {},
+    });
   } catch (err) {
     console.error("prioritizeJobs error:", err);
     return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
   }
 }
-
 
