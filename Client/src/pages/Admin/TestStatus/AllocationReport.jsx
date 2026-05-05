@@ -1,444 +1,577 @@
-// src/pages/TestStatus/JobQuotaModal.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import "./AllocationReport.css";
+// src/components/Reports/AllocationReport.jsx
+import React, { useMemo } from "react";
+import PropTypes from "prop-types";
 
 /**
- * Props:
- * - open: boolean
- * - quotas: Record<string, { name: string, tableCount: number }>
- * - onChange: (key, value:number) => void
- * - onSubmit: (payload: {
- *     jobKey: string,
- *     quotas,
- *     criteria,              // نهایی‌شده (با enabled و weight)
- *     normalizedWeights,     // جمع 100 برای معیارهای فعال
- *     unavailableCriteria    // لیست معیارهایی که به‌خاطر نبود آزمون غیرفعال ماندند
- *   }) => void
- * - onClose: () => void
- * - jobRequirements: Record<string, any>
- * - tests: Array<{ id, name, type }>
+ * پشتیبانی از هر دو مدل داده:
+ * Legacy: { allocations:{ [job]:{ name, persons:[{id,rank,score,fullName,phone,field}] } }, quotas:{...}, meta? }
+ * New   : { assignments:[{job,slots:[{userId,username,score}]}],
+ *           waitlist:[{job,queue:[{userId,username,score}]}],
+ *           unassigned?:[{userId,username,fullName,field?}],
+ *           table?:[{job,rank,assigned,assignedJob,userId,username,fullName,field?,score,...}],
+ *           quotas?:{...}, meta? }
  */
-
-const TEST_TYPE_KEYS = {
-  MBTI: "MBTI",
-  DISC: "DISC",
-  HOLLAND: "HOLLAND",
-  GARDNER: "GARDNER",
-  CLIFTON: "CLIFTON",
-  PERSONAL_FAVORITES: "PERSONAL_FAVORITES",
-};
-
-const WEIGHT_SUM_OK_RANGE = [95, 105];
-
-// helpers
-function rid() { return Math.random().toString(36).slice(2, 9); }
-function clamp01(v) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return 0;
-  return Math.max(0, Math.min(100, Math.round(n)));
-}
-const lc = (s) => String(s || "").trim().toLowerCase();
-
-function buildTestsInventory(tests = []) {
-  const has = new Set((tests || []).map(t => (t?.type || "").toUpperCase()));
-  return {
-    hasMBTI: has.has(TEST_TYPE_KEYS.MBTI),
-    hasDISC: has.has(TEST_TYPE_KEYS.DISC),
-    hasHOLLAND: has.has(TEST_TYPE_KEYS.HOLLAND),
-    hasGARDNER: has.has(TEST_TYPE_KEYS.GARDNER),
-    hasCLIFTON: has.has(TEST_TYPE_KEYS.CLIFTON),
-    hasPF: has.has(TEST_TYPE_KEYS.PERSONAL_FAVORITES),
-  };
-}
-
-/** اگر jobReq.criteria نبود، از فیلدهای کلاسیک بساز */
-function deriveCriteriaFromClassic(jobReq = {}) {
-  const DEFAULT_W = {
-    BENCHMARK_DISTANCE: 25,
-    CLIFTON_DOMAIN_MATCH: 20,
-    HOLLAND_TOP3: 15,
-    MBTI_PREF: 10,
-    DISC_PATTERN: 15,
-    GARDNER_TOP: 10,
-    PF_KEYS: 5,
-  };
-  const W = { ...DEFAULT_W, ...(jobReq?.weightsDefault || {}) };
-  const out = [];
-
-  if (jobReq?.benchmark || jobReq?.benchmarkNormalized) {
-    out.push({
-      id: rid(),
-      key: "BENCHMARK_DISTANCE",
-      title: "فاصله تا بنچمارک شغل",
-      enabled: true,
-      weight: W.BENCHMARK_DISTANCE,
-      method: "distance",
-      args: { norm: "min" },
-      sourceTest: null,
-    });
-  }
-
-  if (Array.isArray(jobReq?.clifton) && jobReq.clifton.length) {
-    const domains = jobReq.clifton.filter((x) =>
-      ["executing","influencing","relationship","strategic"].includes(lc(x))
-    );
-    if (domains.length) {
-      out.push({
-        id: rid(),
-        key: "CLIFTON_DOMAIN_MATCH",
-        title: "هم‌خوانی دامنه‌های کلیفتون",
-        enabled: true,
-        weight: W.CLIFTON_DOMAIN_MATCH,
-        method: "score",
-        args: { domains },
-        sourceTest: TEST_TYPE_KEYS.CLIFTON,
-      });
-    } else {
-      out.push({
-        id: rid(),
-        key: "CLIFTON_THEME_MATCH",
-        title: "انطباق تم‌های کلیفتون",
-        enabled: true,
-        weight: W.CLIFTON_DOMAIN_MATCH,
-        method: "score",
-        args: { themes: jobReq.clifton },
-        sourceTest: TEST_TYPE_KEYS.CLIFTON,
-      });
-    }
-  }
-
-  if (Array.isArray(jobReq?.holland) && jobReq.holland.length) {
-    out.push({
-      id: rid(),
-      key: "HOLLAND_TOP3",
-      title: "انطباق Holland (Top-3)",
-      enabled: true,
-      weight: W.HOLLAND_TOP3,
-      method: "score",
-      args: { allowed: jobReq.holland },
-      sourceTest: TEST_TYPE_KEYS.HOLLAND,
-    });
-  }
-
-  if (Array.isArray(jobReq?.mbti) && jobReq.mbti.length) {
-    out.push({
-      id: rid(),
-      key: "MBTI_PREF",
-      title: "سازگاری MBTI با شغل",
-      enabled: true,
-      weight: W.MBTI_PREF,
-      method: "boolean",
-      args: { allow: jobReq.mbti },
-      sourceTest: TEST_TYPE_KEYS.MBTI,
-    });
-  }
-
-  if (Array.isArray(jobReq?.disc) && jobReq.disc.length) {
-    const requireHigh = jobReq.disc
-      .map(s => String(s || "").toUpperCase())
-      .filter(s => s.includes("HIGH"))
-      .map(s => s.replace("HIGH","").trim())
-      .filter(Boolean); // ["D","C"]
-    out.push({
-      id: rid(),
-      key: "DISC_PATTERN",
-      title: "الگوی DISC موردنیاز",
-      enabled: true,
-      weight: W.DISC_PATTERN,
-      method: "boolean",
-      args: { requireHigh, minHigh: 65 },
-      sourceTest: TEST_TYPE_KEYS.DISC,
-    });
-  }
-
-  if (Array.isArray(jobReq?.gardner) && jobReq.gardner.length) {
-    out.push({
-      id: rid(),
-      key: "GARDNER_TOP",
-      title: "هوش‌های برتر گاردنر",
-      enabled: true,
-      weight: W.GARDNER_TOP,
-      method: "score",
-      args: { allowed: jobReq.gardner },
-      sourceTest: TEST_TYPE_KEYS.GARDNER,
-    });
-  }
-
-  if (Array.isArray(jobReq?.PF) && jobReq.PF.length) {
-    out.push({
-      id: rid(),
-      key: "PF_KEYS",
-      title: "ترجیحات شخصی (PF)",
-      enabled: true,
-      weight: W.PF_KEYS,
-      method: "score",
-      args: { keys: jobReq.PF },
-      sourceTest: TEST_TYPE_KEYS.PERSONAL_FAVORITES,
-    });
-  }
-
-  return out;
-}
-
-/** معیارهای شغل انتخابی */
-function buildCriteriaFromJob(jobReq = {}) {
-  if (Array.isArray(jobReq?.criteria) && jobReq.criteria.length) {
-    return jobReq.criteria.map((c) => ({
-      id: c.id || rid(),
-      key: c.key,
-      title: c.title || c.key,
-      enabled: c.enabled !== false,
-      weight: Number.isFinite(c.weight) ? c.weight : 10,
-      method: c.method || "score",
-      args: c.args || {},
-      sourceTest: c.sourceTest || guessSourceByKey(c.key),
-    }));
-  }
-  return deriveCriteriaFromClassic(jobReq);
-}
-
-function guessSourceByKey(key = "") {
-  const k = String(key).toUpperCase();
-  if (k.includes("MBTI")) return TEST_TYPE_KEYS.MBTI;
-  if (k.includes("DISC")) return TEST_TYPE_KEYS.DISC;
-  if (k.includes("HOLLAND")) return TEST_TYPE_KEYS.HOLLAND;
-  if (k.includes("GARDNER")) return TEST_TYPE_KEYS.GARDNER;
-  if (k.includes("CLIFTON")) return TEST_TYPE_KEYS.CLIFTON;
-  if (k.includes("PF")) return TEST_TYPE_KEYS.PERSONAL_FAVORITES;
-  return null;
-}
-
-function attachAvailability(criteria = [], inv) {
-  return (criteria || []).map((c) => {
-    let available = true;
-    if (c.sourceTest === TEST_TYPE_KEYS.MBTI) available = !!inv.hasMBTI;
-    else if (c.sourceTest === TEST_TYPE_KEYS.DISC) available = !!inv.hasDISC;
-    else if (c.sourceTest === TEST_TYPE_KEYS.HOLLAND) available = !!inv.hasHOLLAND;
-    else if (c.sourceTest === TEST_TYPE_KEYS.GARDNER) available = !!inv.hasGARDNER;
-    else if (c.sourceTest === TEST_TYPE_KEYS.CLIFTON) available = !!inv.hasCLIFTON;
-    else if (c.sourceTest === TEST_TYPE_KEYS.PERSONAL_FAVORITES) available = !!inv.hasPF;
-    return { ...c, available };
-  });
-}
-
-const JobQuotaModal = ({
-  open,
-  quotas = {},
-  onChange,
-  onSubmit,
+const AllocationReport = ({
+  data,
+  title = "گزارش تخصیص",
+  subtitle = "نتیجه رتبه‌بندی و توزیع ظرفیت‌ها",
   onClose,
-  jobRequirements = {},
-  tests = [],
+  fileNamePrefix = "allocation",
 }) => {
-  if (!open) return null;
+  const {
+    allocations: legacyAllocations = {},
+    quotas = {},
+    meta = {},
+    assignments = [],
+    waitlist = [],
+    unassigned: unassignedInput = [],
+    table = [],
+  } = data || {};
 
-  const jobKeys = Object.keys(jobRequirements);
-  const [jobKey, setJobKey] = useState(jobKeys[0] || "");
-
-  useEffect(() => {
-    if (!jobKey && jobKeys.length) setJobKey(jobKeys[0]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobKeys.join("|")]);
-
-  const inv = useMemo(() => buildTestsInventory(tests), [tests]);
-
-  // معیارها + وضعیت دسترسی، وزن نرمال
-  const { criteria, weightSum, weightOk, normalizedWeights, unavailableCriteria } = useMemo(() => {
-    const req = jobRequirements[jobKey] || {};
-    const base = buildCriteriaFromJob(req);
-    const attached = attachAvailability(base, inv);
-
-    const enabledOnes = attached.filter((c) => c.enabled && c.available);
-    const sum = enabledOnes.reduce((s, c) => s + (Number(c.weight) || 0), 0);
-
-    const normalized = Object.fromEntries(
-      attached.map((c) => [
-        c.key,
-        c.enabled && c.available && sum > 0 ? +(100 * (Number(c.weight)||0) / sum).toFixed(2) : 0,
-      ])
-    );
-
-    const wSum = Math.round(sum);
-    const ok = wSum >= WEIGHT_SUM_OK_RANGE[0] && wSum <= WEIGHT_SUM_OK_RANGE[1];
-
-    const unavailable = attached
-      .filter((c) => !c.available)
-      .map((c) => ({ key: c.key, title: c.title, sourceTest: c.sourceTest }));
-
-    return {
-      criteria: attached,
-      weightSum: wSum,
-      weightOk: ok,
-      normalizedWeights: normalized,
-      unavailableCriteria: unavailable,
-    };
-  }, [jobRequirements, jobKey, inv]);
-
-  const [localCriteria, setLocalCriteria] = useState([]);
-  useEffect(() => { setLocalCriteria(criteria); }, [criteria]);
-
-  const handleToggle = (id, enabled) => {
-    setLocalCriteria((prev) => prev.map(c => c.id === id ? { ...c, enabled } : c));
-  };
-  const handleWeight = (id, weight) => {
-    setLocalCriteria((prev) => prev.map(c => c.id === id ? { ...c, weight: clamp01(weight) } : c));
-  };
-
-  const { finalSum, finalOk, finalNorm } = useMemo(() => {
-    const enabled = localCriteria.filter(c => c.enabled && c.available);
-    const sum = enabled.reduce((s, c) => s + (Number(c.weight) || 0), 0);
-    const norm = Object.fromEntries(
-      localCriteria.map(c => [
-        c.key,
-        c.enabled && c.available && sum > 0 ? +(100 * (Number(c.weight)||0) / sum).toFixed(2) : 0,
-      ])
-    );
-    return {
-      finalSum: Math.round(sum),
-      finalOk: Math.round(sum) >= WEIGHT_SUM_OK_RANGE[0] && Math.round(sum) <= WEIGHT_SUM_OK_RANGE[1],
-      finalNorm: norm,
-    };
-  }, [localCriteria]);
-
-  const submit = () => {
-    onSubmit?.({
-      jobKey,
-      quotas,
-      criteria: localCriteria,
-      normalizedWeights: finalNorm,
-      unavailableCriteria,
+  console.log("AllocationReport data:", data);
+  
+  /* ---------- capacities by job name ---------- */
+  const capacities = useMemo(() => {
+    const byName = {};
+    Object.values(quotas || {}).forEach((q) => {
+      if (!q?.name) return;
+      byName[q.name] = Number(q.tableCount) || 0;
     });
+    return byName;
+  }, [quotas]);
+
+  /* ---------- enrichment from table (fullName/username/field/score/rank/assigned) ---------- */
+  const personFromTable = useMemo(() => {
+    const m = new Map();
+    (table || []).forEach((r) => {
+      if (!r?.userId) return;
+      const uid = String(r.userId);
+      m.set(uid, {
+        fullName: r.fullName ?? "",
+        username: r.username ?? "",
+        field: r.field ?? "",
+        score: Number(r.score ?? 0),
+        rank: r.rank,
+        assigned: !!r.assigned,
+        assignedJob: r.assignedJob ?? null,
+      });
+    });
+    return m;
+  }, [table]);
+
+  /* ---------- Selected per job ---------- */
+  const selectedByJob = useMemo(() => {
+    // Legacy mode
+    if (Object.keys(legacyAllocations).length) {
+      const map = {};
+      Object.entries(legacyAllocations).forEach(([job, block]) => {
+        map[job] = (block?.persons || []).map((p, i) => ({
+          id: p.id,
+          userId: p.id,
+          fullName: p.fullName ?? "",
+          username: p.username ?? "",
+          field: p.field ?? "",
+          phone: p.phone ?? "",
+          rank: p.rank || i + 1,
+          score: Number(p.score ?? 0),
+          status: "منتخب",
+        }));
+      });
+      return map;
+    }
+    // New mode
+    const map = {};
+    assignments.forEach(({ job, slots = [] }) => {
+      const rows = slots.map((s, i) => {
+        const enrich = personFromTable.get(String(s.userId)) || {};
+        return {
+          id: s.userId,
+          userId: s.userId,
+          fullName: enrich.fullName || "",
+          username: enrich.username || s.username || "",
+          field: enrich.field || "",
+          rank: enrich.rank || i + 1,
+          score: Number(s.score ?? enrich.score ?? 0),
+          status: "منتخب",
+        };
+      });
+      rows.sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
+      map[job] = rows;
+    });
+    return map;
+  }, [legacyAllocations, assignments, personFromTable]);
+
+  /* ---------- Waitlist per job (new mode) ---------- */
+  const waitlistByJob = useMemo(() => {
+    const map = {};
+    waitlist.forEach(({ job, queue = [] }) => {
+      map[job] = queue.map((s, idx) => {
+        const enrich = personFromTable.get(String(s.userId)) || {};
+        return {
+          id: s.userId,
+          userId: s.userId,
+          fullName: enrich.fullName || "",
+          username: enrich.username || s.username || "",
+          field: enrich.field || "",
+          rank: enrich.rank || idx + 1,
+          score: Number(s.score ?? enrich.score ?? 0),
+          status: "انتظار",
+        };
+      });
+    });
+    return map;
+  }, [waitlist, personFromTable]);
+
+  /* ---------- jobs union ---------- */
+  const jobKeys = useMemo(() => {
+    const set = new Set();
+    Object.keys(legacyAllocations || {}).forEach((j) => set.add(j));
+    assignments.forEach((a) => set.add(a.job));
+    waitlist.forEach((w) => set.add(w.job));
+    Object.values(quotas || {}).forEach((q) => q?.name && set.add(q.name));
+    return [...set].sort((a, b) => String(a).localeCompare(String(b), "fa"));
+  }, [legacyAllocations, assignments, waitlist, quotas]);
+
+  /* ---------- per-job counts ---------- */
+  const assignedTotals = useMemo(() => {
+    const t = {};
+    jobKeys.forEach((j) => (t[j] = (selectedByJob[j] || []).length));
+    return t;
+  }, [jobKeys, selectedByJob]);
+  const waitTotals = useMemo(() => {
+    const t = {};
+    jobKeys.forEach((j) => (t[j] = (waitlistByJob[j] || []).length));
+    return t;
+  }, [jobKeys, waitlistByJob]);
+
+  const totalAssigned = useMemo(
+    () => Object.values(assignedTotals).reduce((a, b) => a + (b || 0), 0),
+    [assignedTotals]
+  );
+  const totalWait = useMemo(
+    () => Object.values(waitTotals).reduce((a, b) => a + (b || 0), 0),
+    [waitTotals]
+  );
+  const totalCapacity = useMemo(
+    () => Object.values(capacities).reduce((a, b) => a + (b || 0), 0),
+    [capacities]
+  );
+
+  /* ---------- Unassigned compute (prefer explicit; else derive from table) ---------- */
+  const unassigned = useMemo(() => {
+    if (unassignedInput && unassignedInput.length) return unassignedInput;
+    // اگر table داریم، از آن دربیاریم: کسانی که assigned=false
+    if (table && table.length) {
+      const seen = new Set();
+      const out = [];
+      table.forEach((r) => {
+        if (r.assigned) return;
+        const uid = String(r.userId);
+        if (seen.has(uid)) return;
+        seen.add(uid);
+        out.push({
+          userId: uid,
+          username: r.username || "",
+          fullName: r.fullName || "",
+          field: r.field || "",
+        });
+      });
+      return out;
+    }
+    return [];
+  }, [unassignedInput, table]);
+
+  /* ---------- Export: Excel ---------- */
+  const downloadExcel = async () => {
+    try {
+      const XLSX = (await import("xlsx")).default || (await import("xlsx"));
+      const wb = XLSX.utils.book_new();
+
+      // Summary
+      const summaryRows = jobKeys.map((jk) => ({
+        Job: jk,
+        Capacity: capacities[jk] ?? 0,
+        Selected: assignedTotals[jk] ?? 0,
+        Waitlist: waitTotals[jk] ?? 0,
+        Unfilled: Math.max(0, (capacities[jk] ?? 0) - (assignedTotals[jk] ?? 0)),
+      }));
+      summaryRows.push({
+        Job: "TOTAL",
+        Capacity: totalCapacity,
+        Selected: totalAssigned,
+        Waitlist: totalWait,
+        Unfilled: Math.max(0, totalCapacity - totalAssigned),
+      });
+      const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+      // Per job - Selected
+      jobKeys.forEach((jk) => {
+        const selectedRows = (selectedByJob[jk] || []).map((p) => ({
+          Rank: p.rank,
+          UserID: p.userId,
+          Username: p.username || "",
+          Name: p.fullName || "",
+          Field: p.field || "",
+          Score: round2(p.score),
+          Notes: "", // ستون خالی برای ملاحظات
+        }));
+        const wsSel = XLSX.utils.json_to_sheet(selectedRows);
+        XLSX.utils.book_append_sheet(wb, wsSel, cleanSheetName(`Selected_${jk}`));
+
+        const waitRows = (waitlistByJob[jk] || []).map((p) => ({
+          Rank: p.rank,
+          UserID: p.userId,
+          Username: p.username || "",
+          Name: p.fullName || "",
+          Field: p.field || "",
+          Score: round2(p.score),
+          Notes: "",
+        }));
+        if (waitRows.length) {
+          const wsWait = XLSX.utils.json_to_sheet(waitRows);
+          XLSX.utils.book_append_sheet(wb, wsWait, cleanSheetName(`Waitlist_${jk}`));
+        }
+      });
+
+      // Unassigned
+      if (unassigned.length) {
+        const wsUn = XLSX.utils.json_to_sheet(
+          unassigned.map((u) => ({
+            UserID: u.userId,
+            Username: u.username || "",
+            Name: u.fullName || "",
+            Field: u.field || "",
+            Notes: "",
+          }))
+        );
+        XLSX.utils.book_append_sheet(wb, wsUn, "Unassigned");
+      }
+
+      const file = `${fileNamePrefix}_${slug(title)}_${dateStamp()}.xlsx`;
+      XLSX.writeFile(wb, file);
+    } catch (err) {
+      console.error("Excel export failed; falling back to CSV:", err);
+      downloadCSV();
+    }
   };
 
+  /* ---------- Export: CSV (fallback) ---------- */
+  const downloadCSV = () => {
+    const chunks = [];
+
+    chunks.push("=== Summary ===");
+    chunks.push("Job,Capacity,Selected,Waitlist,Unfilled");
+    jobKeys.forEach((jk) =>
+      chunks.push(
+        [
+          escapeCSV(jk),
+          capacities[jk] ?? 0,
+          assignedTotals[jk] ?? 0,
+          waitTotals[jk] ?? 0,
+          Math.max(0, (capacities[jk] ?? 0) - (assignedTotals[jk] ?? 0)),
+        ].join(",")
+      )
+    );
+    chunks.push(
+      [
+        "TOTAL",
+        totalCapacity,
+        totalAssigned,
+        totalWait,
+        Math.max(0, totalCapacity - totalAssigned),
+      ].join(",")
+    );
+    chunks.push("");
+
+    jobKeys.forEach((jk) => {
+      chunks.push(`=== Selected ${jk} ===`);
+      chunks.push("Rank,UserID,Username,Name,Field,Score,Notes");
+      (selectedByJob[jk] || []).forEach((p) => {
+        chunks.push(
+          [
+            p.rank ?? "",
+            // escapeCSV(p.userId ?? ""),
+            // escapeCSV(p.username ?? ""),
+            escapeCSV(p.fullName ?? ""),
+            escapeCSV(p.field ?? ""),
+            round2(p.score ?? 0),
+            "", // Notes
+          ].join(",")
+        );
+      });
+      chunks.push("");
+
+      const wl = waitlistByJob[jk] || [];
+      if (wl.length) {
+        chunks.push(`=== Waitlist ${jk} ===`);
+        chunks.push("Rank,UserID,Username,Name,Field,Score,Notes");
+        wl.forEach((p) => {
+          chunks.push(
+            [
+              p.rank ?? "",
+              // escapeCSV(p.userId ?? ""),
+              // escapeCSV(p.username ?? ""),
+              escapeCSV(p.fullName ?? ""),
+              escapeCSV(p.field ?? ""),
+              round2(p.score ?? 0),
+              "",
+            ].join(",")
+          );
+        });
+        chunks.push("");
+      }
+    });
+
+    if (unassigned.length) {
+      chunks.push("=== Unassigned ===");
+      chunks.push("UserID,Username,Name,Field,Notes");
+      unassigned.forEach((u) =>
+        chunks.push(
+          [
+            // escapeCSV(u.userId),
+            // escapeCSV(u.username || ""),
+            escapeCSV(u.fullName || ""),
+            escapeCSV(u.field || ""),
+            "",
+          ].join(",")
+        )
+      );
+    }
+
+    const blob = new Blob([chunks.join("\n")], { type: "text/csv;charset=utf-8;" });
+    triggerDownload(
+      URL.createObjectURL(blob),
+      `${fileNamePrefix}_${slug(title)}_${dateStamp()}.csv`
+    );
+  };
+
+  const handlePrint = () => window.print();
+
+  /* ---------- UI ---------- */
   return (
-    <div className="ts-modal-overlay" role="dialog" aria-modal="true">
-      <div className="ts-modal card" dir="rtl">
-        <h3>تنظیمات تخصیص و اولویت‌بندی</h3>
+    <section className="allocation-report" dir="rtl">
+      <header className="allocation-header">
+        <div>
+          <h2 className="allocation-title">{title}</h2>
+        <div className="allocation-sub muted small">
+          {subtitle}
+          {!!meta?.source && <> • منبع داده: {meta.source}</>}
+        </div>
+        </div>
+        <div className="allocation-actions">
+          <button className="btn" onClick={downloadCSV}>دانلود CSV</button>
+          <button className="btn primary" onClick={downloadExcel}>دانلود Excel</button>
+          <button className="btn outline" onClick={handlePrint}>چاپ</button>
+          {onClose && <button className="btn ghost" onClick={onClose}>بستن</button>}
+        </div>
+      </header>
 
-        {/* انتخاب شغل */}
-        <section className="ts-modal-block">
-          <div className="row gap8 align-center">
-            <label htmlFor="jobKey"><b>شغل/رسته:</b></label>
-            <select id="jobKey" value={jobKey} onChange={(e) => setJobKey(e.target.value)}>
-              {jobKeys.map((k) => <option key={k} value={k}>{k}</option>)}
-            </select>
+      {/* KPIs */}
+      <div className="rep-summary">
+        <div className="sum-grid">
+          <div className="sum-item">
+            <div className="muted small">تعداد رسته‌ها</div>
+            <div style={{ fontWeight: 800, fontSize: 18 }}>{jobKeys.length}</div>
           </div>
-          {!jobKey && <p className="muted small">هیچ شغلی تعریف نشده است.</p>}
-        </section>
+          <div className="sum-item">
+            <div className="muted small">مجموع ظرفیت</div>
+            <div style={{ fontWeight: 800, fontSize: 18 }}>{totalCapacity}</div>
+          </div>
+          <div className="sum-item">
+            <div className="muted small">منتخب نهایی</div>
+            <div style={{ fontWeight: 800, fontSize: 18 }}>{totalAssigned}</div>
+          </div>
+          <div className="sum-item">
+            <div className="muted small">لیست انتظار</div>
+            <div style={{ fontWeight: 800, fontSize: 18 }}>{totalWait}</div>
+          </div>
+          <div className="sum-item">
+            <div className="muted small">بدون تخصیص</div>
+            <div style={{ fontWeight: 800, fontSize: 18 }}>{unassigned.length}</div>
+          </div>
+        </div>
+      </div>
 
-        {/* سهمیه‌ها */}
-        <section className="ts-modal-block">
-          <h4>۱) تعداد افراد مورد نیاز برای هر رسته</h4>
-          <div className="ts-modal-grid">
-            {Object.keys(quotas).map((key) => (
-              <div className="quota-row" key={key}>
-                <label htmlFor={`quota-${key}`}>{quotas[key].name}</label>
-                <input
-                  id={`quota-${key}`}
-                  type="number"
-                  min="0"
-                  value={quotas[key].tableCount}
-                  onChange={(e) => onChange?.(key, parseInt(e.target.value || "0", 10))}
-                />
+      {/* Totals table */}
+      <table className="totals-table">
+        <thead>
+          <tr>
+            <th>رسته</th>
+            <th>ظرفیت</th>
+            <th>منتخب</th>
+            <th>لیست انتظار</th>
+            <th>ظرفیت خالی</th>
+          </tr>
+        </thead>
+        <tbody>
+          {jobKeys.map((jk) => (
+            <tr key={jk}>
+              <td className="t-left" style={{ textAlign: "right" }}>{jk}</td>
+              <td className="num">{capacities[jk] ?? 0}</td>
+              <td className="num">{assignedTotals[jk] ?? 0}</td>
+              <td className="num">{waitTotals[jk] ?? 0}</td>
+              <td className="num">
+                {Math.max(0, (capacities[jk] ?? 0) - (assignedTotals[jk] ?? 0))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Per job: Selected + Waitlist */}
+      {jobKeys.map((jk) => {
+        const selected = selectedByJob[jk] || [];
+        const wl = waitlistByJob[jk] || [];
+        return (
+          <div key={jk} className="allocation-container" style={{ marginTop: 10 }}>
+            <div className="group-row">
+              <table className="allocation-table" style={{ margin: 0 }}>
+                <thead>
+                  <tr>
+                    <th colSpan="6" className="t-left" style={{ textAlign: "right" }}>
+                      {jk}
+                      <span className="badge" style={{ marginInlineStart: 8 }}>
+                        ظرفیت: {capacities[jk] ?? 0}
+                      </span>
+                      <span className="badge" style={{ marginInlineStart: 6 }}>
+                        منتخب: {selected.length}
+                      </span>
+                      {wl.length > 0 && (
+                        <span className="badge" style={{ marginInlineStart: 6 }}>
+                          انتظار: {wl.length}
+                        </span>
+                      )}
+                    </th>
+                  </tr>
+                  <tr>
+                    <th>رتبه</th>
+                    <th style={{ textAlign: "right" }}>نام</th>
+                    <th>رشته تحصیلی</th>
+                    <th>امتیاز</th>
+                    <th>ملاحظات</th>
+                    <th>وضعیت</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selected.map((p) => (
+                    <tr key={`sel-${jk}-${p.userId}`}>
+                      <td className="num">{p.rank ?? ""}</td>
+                      <td className="t-left" style={{ textAlign: "right" }}>{p.fullName || "—"}</td>
+                      <td className="t-left" style={{ textAlign: "right" }}>{p.field || "—"}</td>
+                      <td className="num">{round2(p.score)}</td>
+                      <td className="t-left" style={{ textAlign: "right" }}>{""}</td>
+                      <td><span className="badge ok">منتخب</span></td>
+                    </tr>
+                  ))}
+                  {selected.length === 0 && (
+                    <tr><td colSpan="6" className="muted center">—</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {wl.length > 0 && (
+              <div className="group-row" style={{ marginTop: 8 }}>
+                <table className="allocation-table" style={{ margin: 0 }}>
+                  <thead>
+                    <tr>
+                      <th colSpan="6" className="t-left" style={{ textAlign: "right" }}>
+                        لیست انتظار
+                      </th>
+                    </tr>
+                    <tr>
+                      <th>رتبه</th>
+                      <th style={{ textAlign: "right" }}>نام</th>
+                      <th>رشته تحصیلی</th>
+                      <th>امتیاز</th>
+                      <th>ملاحظات</th>
+                      {/* <th>وضعیت</th> */}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {wl.map((p) => (
+                      <tr key={`wl-${jk}-${p.userId}`}>
+                        <td className="num">{p.rank ?? ""}</td>
+                        <td className="t-left" style={{ textAlign: "right" }}>{p.fullName || "—"}</td>
+                        <td className="t-left" style={{ textAlign: "right" }}>{p.field || "—"}</td>
+                        <td className="num">{round2(p.score)}</td>
+                        <td className="t-left" style={{ textAlign: "right" }}>{""}</td>
+                        {/* <td><span className="badge warn">انتظار</span></td> */}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-            {Object.keys(quotas).length === 0 && <p className="muted">رسته‌ای تعریف نشده است.</p>}
+            )}
           </div>
-        </section>
+        );
+      })}
 
-        {/* معیارها */}
-        <section className="ts-modal-block">
-          <h4>۲) مولفه‌های مؤثر در اولویت‌بندی (اتوماتیک از نیازمندی‌های شغل)</h4>
-
-          <div className="criteria-table-wrap">
-            <table className="criteria-table">
+      {/* Unassigned */}
+      {unassigned.length > 0 && (
+        <div className="allocation-container" style={{ marginTop: 12 }}>
+          <div className="group-row">
+            <table className="allocation-table" style={{ margin: 0 }}>
               <thead>
                 <tr>
-                  <th>فعال</th>
-                  <th>عنوان معیار</th>
-                  <th>منبع آزمون</th>
-                  <th>وضعیت آزمون</th>
-                  <th style={{minWidth:160}}>وزن</th>
+                  <th colSpan="4" className="t-left" style={{ textAlign: "right" }}>
+                    افراد بدون تخصیص
+                    <span className="badge" style={{ marginInlineStart: 8 }}>
+                      تعداد: {unassigned.length}
+                    </span>
+                  </th>
+                </tr>
+                <tr>
+                  <th>کد کاربر</th>
+                  <th>نام</th>
+                  <th>رشته تحصیلی</th>
+                  <th>ملاحظات</th>
                 </tr>
               </thead>
               <tbody>
-                {localCriteria.map((c) => {
-                  const isAvailable = c.available;
-                  return (
-                    <tr key={c.id}>
-                      <td className="center">
-                        <input
-                          type="checkbox"
-                          checked={!!c.enabled}
-                          onChange={(e) => handleToggle(c.id, e.target.checked)}
-                          disabled={!isAvailable}
-                          title={!isAvailable ? "این معیار به دلیل نبود آزمون مربوطه قابل‌فعال‌سازی نیست" : ""}
-                        />
-                      </td>
-                      <td>{c.title}</td>
-                      <td>{sourceTestFa(c.sourceTest)}</td>
-                      <td>
-                        {isAvailable
-                          ? <span className="badge ok">آزمون موجود</span>
-                          : <span className="badge warn">آزمون موجود نیست</span>}
-                      </td>
-                      <td>
-                        <div className="row gap8">
-                          <input
-                            type="range"
-                            min="0" max="100"
-                            value={c.weight ?? 0}
-                            onChange={(e) => handleWeight(c.id, e.target.value)}
-                            disabled={!isAvailable || !c.enabled}
-                          />
-                          <span style={{width:40, textAlign:"center"}}>{c.weight ?? 0}%</span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {localCriteria.length === 0 && (
-                  <tr><td colSpan="5" className="muted center">معیاری تعریف نشده است.</td></tr>
-                )}
+                {unassigned.map((u) => (
+                  <tr key={`un-${u.userId}`}>
+                    <td className="num">{u.userId}</td>
+                    <td className="t-left" style={{ textAlign: "right" }}>{u.fullName || "—"}</td>
+                    <td className="t-left" style={{ textAlign: "right" }}>{u.field || "—"}</td>
+                    <td className="t-left" style={{ textAlign: "right" }}>{""}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-
-          <div className="row gap12 align-center" style={{marginTop:8}}>
-            <span className={`badge ${finalOk ? "ok" : "warn"}`}>جمع وزن معیارهای فعال: {finalSum}%</span>
-            {!finalOk && <span className="muted small">پیشنهاد: مجموع به ۱۰۰% نزدیک باشد.</span>}
-          </div>
-
-          {unavailableCriteria.length > 0 && (
-            <div className="muted small" style={{marginTop:6}}>
-              برخی معیارها غیرفعال مانده‌اند چون آزمون مربوطه در موجودی شما نیست:
-              {" "}
-              {unavailableCriteria.map(u => u.title).join("، ")}
-            </div>
-          )}
-        </section>
-
-        <div className="ts-modal-actions">
-          <button className="btn primary" onClick={submit}>شروع</button>
-          <button className="btn ghost" onClick={onClose}>انصراف</button>
         </div>
-      </div>
-    </div>
+      )}
+    </section>
   );
 };
 
-export default JobQuotaModal;
-
-/* ====== helpers ====== */
-function sourceTestFa(key) {
-  switch (key) {
-    case "MBTI": return "MBTI";
-    case "DISC": return "DISC";
-    case "HOLLAND": return "Holland (RIASEC)";
-    case "GARDNER": return "Gardner";
-    case "CLIFTON": return "CliftonStrengths";
-    case "PERSONAL_FAVORITES": return "Personal Favorites";
-    case null: return "تجمیعی/بنچمارک";
-    default: return key || "—";
-  }
+/* ------------ helpers ------------ */
+function round2(v) { return Math.round((Number(v) || 0) * 100) / 100; }
+function cleanSheetName(name) { return String(name).slice(0, 31).replace(/[\\/?*\]\[:]/g, "-"); }
+function slug(s) { return String(s || "").trim().replace(/\s+/g, "_").replace(/[^\w\-]+/g, ""); }
+function dateStamp() {
+  const d = new Date(); const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}`;
 }
+function triggerDownload(href, filename) {
+  const a = document.createElement("a");
+  a.href = href; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(href);
+}
+function escapeCSV(v) {
+  const s = String(v ?? "");
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+AllocationReport.propTypes = {
+  data: PropTypes.object,
+  title: PropTypes.string,
+  subtitle: PropTypes.string,
+  onClose: PropTypes.func,
+  fileNamePrefix: PropTypes.string,
+};
+
+export default AllocationReport;
