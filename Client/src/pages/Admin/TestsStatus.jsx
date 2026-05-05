@@ -446,8 +446,14 @@ const TestsStatus = () => {
     return (
       <section className="tests-status card" dir="rtl">
         <AllocationReport
-          selectedUsers={selectedUsers}
-          assignmentResult={assignmentResult}
+          // selectedUsers={selectedUsers}
+          // assignmentResult={assignmentResult}
+          data={assignmentResult}
+          title="گزارش تخصیص دوره 45"
+          subtitle="اولویت‌بندی بر اساس معیارهای شغلی، آزمون‌ها، معدل و رشته"
+          fileNamePrefix="cohort3_allocation"
+          // onClose={() => setShowReport(false)}
+
         />
         <div className="footer-actions">
           <button className="btn ghost" onClick={() => setAssignmentResult(null)}>
