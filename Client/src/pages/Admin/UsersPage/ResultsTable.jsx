@@ -9,6 +9,7 @@ const ResultsTable = ({
   onAnalyze,
   onRemoveAnalysis,
   selectedResultId,
+  busy = false,
 }) => {
   const { t } = useI18n();
 
@@ -104,7 +105,7 @@ const ResultsTable = ({
                 const isSelected = selectedResultId === rowId;
                 const hasId = Boolean(rowId);
                 const lockOthers = !!selectedResultId && !isSelected;
-                const disabled = !hasId || lockOthers;
+                const disabled = busy || !hasId || lockOthers;
                 const durationSeconds = Number(r.duration/1000);
                 const hasAnalysis =
                   !!r?.analyzedAt ||
@@ -165,7 +166,7 @@ const ResultsTable = ({
                         {!hasAnalysis && (
                           <button
                             className="btn outline"
-                            disabled={!hasId || lockOthers}
+                            disabled={disabled}
                             onClick={() => onAnalyze(r)}
                           >
                             {t("usersPage.results.analyze")}
