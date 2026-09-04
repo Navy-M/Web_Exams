@@ -14,8 +14,8 @@ const ControlsBar = ({
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="جستجو… (نام، دوره، نقش، استان)"
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="جستجو بر اساس نام، دوره، نقش یا استان"
           aria-label="جستجو"
         />
       </div>
@@ -23,20 +23,20 @@ const ControlsBar = ({
       <div className="ts-filters">
         <select
           value={searchFilter}
-          onChange={(e) => setSearchFilter(e.target.value)}
-          aria-label="فیلتر بر اساس"
+          onChange={(event) => setSearchFilter(event.target.value)}
+          aria-label="فیلتر جستجو"
         >
           <option value="">همه فیلدها</option>
           <option value="name">نام</option>
           <option value="period">دوره</option>
           <option value="role">نقش</option>
-          <option value="job">شماره دانشجویی</option>
+          <option value="job">موقعیت شغلی</option>
           <option value="province">استان</option>
         </select>
 
         <select
           value={String(visibleCount)}
-          onChange={(e) => setVisibleCount(parseInt(e.target.value, 10))}
+          onChange={(event) => setVisibleCount(parseInt(event.target.value, 10))}
           aria-label="تعداد نمایش"
         >
           <option value="10">نمایش ۱۰</option>
