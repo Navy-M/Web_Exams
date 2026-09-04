@@ -368,7 +368,9 @@ const TestsStatus = () => {
         capacities: modalPayload?.capacities,     // از JobQuotaModal ساخته می‌شود
         weights: modalPayload?.serverWeights,     // وزن‌های ساده آزمون‌ها
       });
-
+      
+      // console.log("prioritizeUsers response in TestStatus : ", res);
+      
       if (res?.ok) {
         const selectedUsers = users.filter(u => selected.has(u._id));
         const map = new Map(selectedUsers.map(u => [u._id, u]));
@@ -441,28 +443,31 @@ const TestsStatus = () => {
   };
 
   /* ===================== Render: allocation report ===================== */
-  if (assignmentResult) {
-    const selectedUsers = users.filter((u) => selected.has(u._id));
-    return (
-      <section className="tests-status card" dir="rtl">
-        <AllocationReport
-          // selectedUsers={selectedUsers}
-          // assignmentResult={assignmentResult}
-          data={assignmentResult}
-          title="گزارش تخصیص دوره 45"
-          subtitle="اولویت‌بندی بر اساس معیارهای شغلی، آزمون‌ها، معدل و رشته"
-          fileNamePrefix="cohort3_allocation"
-          // onClose={() => setShowReport(false)}
+ if (assignmentResult) {
+  const selectedUsers = users.filter((u) => selected.has(u._id));
+  return (
+    <section className="tests-status card" dir="rtl">
+      <header className="ts-head">
+        <h2>گزارش تخصیص و اولویت‌بندی</h2>
+        <span className="muted">
+          {selectedUsers.length} کاربر انتخاب‌شده
+        </span>
+      </header>
 
-        />
-        <div className="footer-actions">
-          <button className="btn ghost" onClick={() => setAssignmentResult(null)}>
-            بازگشت
-          </button>
-        </div>
-      </section>
-    );
-  }
+      <AllocationReport
+        selectedUsers={selectedUsers}
+        assignmentResult={assignmentResult}
+      />
+
+      <div className="footer-actions" style={{ textAlign: "center", marginTop: "1rem" }}>
+        <button className="btn ghost" onClick={() => setAssignmentResult(null)}>
+          ← بازگشت به لیست آزمون‌ها
+        </button>
+      </div>
+    </section>
+  );
+}
+
 
   /* ===================== Render: main ===================== */
   return (

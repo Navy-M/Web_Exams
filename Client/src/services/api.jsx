@@ -212,6 +212,8 @@ export const prioritizeUsers = async ({ userIds, capacities, weights }) => {
     capacities, // { "ناوبری و فرماندهی کشتی": 5, ...}
     weights,    // { MBTI:1, DISC:1, ... } (اختیاری)
   });
+  // console.log("data :" , data);
+  
   return data; // { ok:true, assignments, waitlist, table, export }
 };
 

@@ -382,7 +382,7 @@ const JobQuotaModal = ({
             </section>
 
             {/* معیارها */}
-            <section className="ts-modal-block">
+            {/* <section className="ts-modal-block">
               <h4>۲) مولفه‌های مؤثر (اتوماتیک از نیازمندی‌های شغل)</h4>
               <div className="criteria-table-wrap" aria-live="polite">
                 <table className="criteria-table" key={jobKey}>
@@ -446,11 +446,11 @@ const JobQuotaModal = ({
                   <span className="muted small">پیشنهاد: مجموع به ۱۰۰% نزدیک باشد.</span>
                 )}
               </div>
-            </section>
+            </section> */}
 
             {/* منابع ارزیابی + معدل/رشته */}
             <section className="ts-modal-block">
-              <h4>۳) انتخاب منابع ارزیابی برای گروه</h4>
+              <h4>۲) انتخاب منابع ارزیابی برای گروه</h4>
 
               <div className="ts-modal-grid">
                 {Object.keys(TEST_TYPE_KEYS).map((key) => {
