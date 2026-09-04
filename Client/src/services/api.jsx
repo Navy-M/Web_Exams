@@ -130,9 +130,17 @@ export const submitResult = async (resultData) => {
   try {
     // console.log("submitedResult req data : ",resultData);
     const response = await API.post('/results/submitUInfo', resultData);
-    console.log("submitedResult response : ",response);
-    
-    return response.data;
+    const data = response.data || {};
+    const result = data.result || data;
+    return {
+      ...data,
+      ...result,
+      ok: data.ok === true,
+      resultId: data.resultId || result._id || result.id,
+      _id: result._id || data.resultId,
+      id: result.id || result._id || data.resultId,
+      user: result.user || resultData.userId,
+    };
   } catch (error) {
     console.error('Error submitting result:', error);
     throw error;
@@ -205,12 +213,14 @@ export const analyzeTests = async (Data) => {
   }
 }
 
-export const prioritizeUsers = async ({ userIds, capacities, weights }) => {
+export const prioritizeUsers = async ({ userIds, capacities, weights, jobRequirements, quotas }) => {
   // توجه: پیشوند '/api' را اگر در baseURL ست کردید، اینجا دوباره نزنید
   const { data } = await API.post("/results/jobs/prioritize", {
     userIds,   // array of strings
     capacities, // { "ناوبری و فرماندهی کشتی": 5, ...}
     weights,    // { MBTI:1, DISC:1, ... } (اختیاری)
+    jobRequirements,
+    quotas,
   });
   // console.log("data :" , data);
   
