@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+﻿import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import "../../styles/GardnerTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import TopbarStatus from "./TopbarStatus";
-import { getItemWithExpiry, setItemWithExpiry } from "../../services/storage";
+import { getItemWithExpiry, scopedStorageKey, setItemWithExpiry } from "../../services/storage";
 
 const DONE_KEY = "gardnerTestDone";
 
@@ -15,39 +15,45 @@ function formatTime(sec) {
 }
 
 const SCORE_MAP = {
-  "خیلی کم": 1,
-  "کمی": 2,
-  "تاحدی": 3,
-  "زیاد": 4,
-  "خیلی زیاد": 5,
+  "Ø®ÛŒÙ„ÛŒ Ú©Ù…": 1,
+  "Ú©Ù…ÛŒ": 2,
+  "ØªØ§Ø­Ø¯ÛŒ": 3,
+  "Ø²ÛŒØ§Ø¯": 4,
+  "Ø®ÛŒÙ„ÛŒ Ø²ÛŒØ§Ø¯": 5,
 };
 
 export default function GardnerTest({ questions, duration = 10 }) {
   const { user } = useAuth() || {};
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
+  const userId = user?.id || user?._id;
+  const doneKey = scopedStorageKey(DONE_KEY, userId, "GARDNER");
 
   const Gardner_Test = useMemo(() => (Array.isArray(questions) ? questions : []), [questions]);
   const total = Gardner_Test.length;
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  // جواب‌ها به‌صورت map نگه می‌داریم: { [questionId]: number }
+  // Ø¬ÙˆØ§Ø¨â€ŒÙ‡Ø§ Ø¨Ù‡â€ŒØµÙˆØ±Øª map Ù†Ú¯Ù‡ Ù…ÛŒâ€ŒØ¯Ø§Ø±ÛŒÙ…: { [questionId]: number }
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(duration * 60);
-  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(DONE_KEY));
+  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(doneKey));
   const submittingRef = useRef(false);
   const [started, setStarted] = useState(false);
 
   const currentQuestion = Gardner_Test[currentIndex];
   useEffect(() => {
+    setBlocked(!!getItemWithExpiry(doneKey));
+  }, [doneKey]);
+
+  useEffect(() => {
     if (!blocked) return;
     alert("You have already completed this test. Please try again in 24 hours.");
-    navigate("/");
+    navigate("/dashboard");
   }, [blocked, navigate]);
 
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
-  // تایمر کل آزمون
+  // ØªØ§ÛŒÙ…Ø± Ú©Ù„ Ø¢Ø²Ù…ÙˆÙ†
   useEffect(() => {
     if (blocked || !started) return;
     if (timeLeft <= 0) {
@@ -59,7 +65,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blocked, started, timeLeft]);
 
-  // انتخاب گزینه
+  // Ø§Ù†ØªØ®Ø§Ø¨ Ú¯Ø²ÛŒÙ†Ù‡
   const handleSelect = useCallback(
     (choice) => {
       const qid = currentQuestion?.id ?? `q_${currentIndex}`;
@@ -80,7 +86,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
     [currentIndex, currentQuestion?.id, total]
   );
 
-  // ارسال نهایی
+  // Ø§Ø±Ø³Ø§Ù„ Ù†Ù‡Ø§ÛŒÛŒ
   const handleSubmit = useCallback(async () => {
     if (submittingRef.current) return;
     submittingRef.current = true;
@@ -103,22 +109,21 @@ export default function GardnerTest({ questions, duration = 10 }) {
     try {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
-        alert("🎉 آزمون گاردنر با موفقیت ثبت شد!");
-        setItemWithExpiry(DONE_KEY, true, 24 * 60 * 60 * 1000);
+        alert("ðŸŽ‰ Ø¢Ø²Ù…ÙˆÙ† Ú¯Ø§Ø±Ø¯Ù†Ø± Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø«Ø¨Øª Ø´Ø¯!");
+        setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000);
         setBlocked(true);
-        navigate("/");
-        location.reload();
+        navigate("/dashboard");
 
       } else {
-        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        alert("âŒ Ø°Ø®ÛŒØ±Ù‡â€ŒØ³Ø§Ø²ÛŒ Ù†ØªØ§ÛŒØ¬ Ø§Ù†Ø¬Ø§Ù… Ù†Ø´Ø¯!");
         submittingRef.current = false;
       }
     } catch (err) {
       console.error("Gardner submission error:", err);
-      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      alert("âš ï¸ Ø§Ø±Ø³Ø§Ù„ Ù†ØªØ§ÛŒØ¬ Ø¨Ø§ Ø®Ø·Ø§ Ù…ÙˆØ§Ø¬Ù‡ Ø´Ø¯.");
       submittingRef.current = false;
     }
-  }, [answers, navigate, user?.id, user?._id]);
+  }, [answers, doneKey, navigate, user?.id, user?._id]);
 
   if (blocked) {
     return null;
@@ -128,8 +133,8 @@ export default function GardnerTest({ questions, duration = 10 }) {
     return (
       <div className="gardner-test">
         <div className="intro-box">
-          <h2>آزمون گاردنر</h2>
-          <p>سوالی برای نمایش وجود ندارد.</p>
+          <h2>Ø¢Ø²Ù…ÙˆÙ† Ú¯Ø§Ø±Ø¯Ù†Ø±</h2>
+          <p>Ø³ÙˆØ§Ù„ÛŒ Ø¨Ø±Ø§ÛŒ Ù†Ù…Ø§ÛŒØ´ ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯.</p>
         </div>
       </div>
     );
@@ -139,14 +144,14 @@ export default function GardnerTest({ questions, duration = 10 }) {
     <div className="gardner-test" role="main" aria-live="polite">
       {!started ? (
         <div className="intro-box">
-          <p>این آزمون به شما کمک می‌کند توانایی‌های مختلف خود را شناسایی کنید</p>
-          <h2>🧠</h2>
+          <p>Ø§ÛŒÙ† Ø¢Ø²Ù…ÙˆÙ† Ø¨Ù‡ Ø´Ù…Ø§ Ú©Ù…Ú© Ù…ÛŒâ€ŒÚ©Ù†Ø¯ ØªÙˆØ§Ù†Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ù…Ø®ØªÙ„Ù Ø®ÙˆØ¯ Ø±Ø§ Ø´Ù†Ø§Ø³Ø§ÛŒÛŒ Ú©Ù†ÛŒØ¯</p>
+          <h2>Gardner</h2>
           <h4>
-            میانگین برای هر سؤال:{" "}
-            {Math.max(5, Math.round((duration * 60) / total))} ثانیه
+            Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø¨Ø±Ø§ÛŒ Ù‡Ø± Ø³Ø¤Ø§Ù„:{" "}
+            {Math.max(5, Math.round((duration * 60) / total))} Ø«Ø§Ù†ÛŒÙ‡
           </h4>
           <button className="start-btn" onClick={() => setStarted(true)}>
-            شروع آزمون
+            Ø´Ø±ÙˆØ¹ Ø¢Ø²Ù…ÙˆÙ†
           </button>
         </div>
       ) : (
@@ -163,9 +168,9 @@ export default function GardnerTest({ questions, duration = 10 }) {
           </div>
 
           <div className="question-card" key={currentQuestion?.id ?? currentIndex}>
-            <h3 className="question-text">{currentQuestion?.text ?? "سؤال"}</h3>
+            <h3 className="question-text">{currentQuestion?.text ?? "Ø³Ø¤Ø§Ù„"}</h3>
 
-            <div className="options-grid" role="listbox" aria-label="گزینه‌ها">
+            <div className="options-grid" role="listbox" aria-label="Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§">
               {(currentQuestion?.options || []).map((option, idx) => {
                 const qid = currentQuestion?.id ?? `q_${currentIndex}`;
                 const optVal =
@@ -179,7 +184,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
                     className={`option-button ${selected ? "selected" : ""}`}
                     onClick={() => handleSelect(option)}
                     aria-pressed={selected}
-                    title={`کلید ${idx + 1}`}
+                    title={`Ú©Ù„ÛŒØ¯ ${idx + 1}`}
                   >
                     {option}
                   </button>
@@ -189,7 +194,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
           </div>
 
           <p className="progress-count">
-            سؤال {currentIndex + 1} از {total}
+            Ø³Ø¤Ø§Ù„ {currentIndex + 1} Ø§Ø² {total}
           </p>
 
           <div className="nav-actions">
@@ -197,25 +202,25 @@ export default function GardnerTest({ questions, duration = 10 }) {
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
                 className="nav-btn"
-                aria-label="سوال قبلی"
+                aria-label="Ø³ÙˆØ§Ù„ Ù‚Ø¨Ù„ÛŒ"
               >
-                ← قبلی
+                â† Ù‚Ø¨Ù„ÛŒ
               </button>
 
               <button
                 onClick={() => currentIndex + 1 < total && setCurrentIndex((i) => i + 1)}
                 disabled={currentIndex + 1 >= total}
                 className="nav-btn"
-                aria-label="سوال بعدی"
+                aria-label="Ø³ÙˆØ§Ù„ Ø¨Ø¹Ø¯ÛŒ"
               >
-                بعدی →
+                Ø¨Ø¹Ø¯ÛŒ â†’
               </button>
               {/* <button
-                onClick={() => window.confirm("ارسال آزمون؟") && handleSubmit()}
+                onClick={() => window.confirm("Ø§Ø±Ø³Ø§Ù„ Ø¢Ø²Ù…ÙˆÙ†ØŸ") && handleSubmit()}
                 className="submit-btn"
                 disabled={submitting}
               >
-                {submitting ? "در حال ارسال..." : "ارسال نهایی"}
+                {submitting ? "Ø¯Ø± Ø­Ø§Ù„ Ø§Ø±Ø³Ø§Ù„..." : "Ø§Ø±Ø³Ø§Ù„ Ù†Ù‡Ø§ÛŒÛŒ"}
               </button> */}
             </div>
         </div>
