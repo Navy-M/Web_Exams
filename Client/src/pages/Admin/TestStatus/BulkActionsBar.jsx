@@ -3,9 +3,7 @@ import React from "react";
 const BulkActionsBar = ({ count, onStartPrioritization, onDeleteFromView, onMakeGroup }) => {
   return (
     <div className="ts-bulk card" role="region" aria-live="polite">
-      <div className="ts-bulk-info">
-        {count} کاربر انتخاب شده
-      </div>
+      <div className="ts-bulk-info">{count} کاربر انتخاب شده</div>
       <div className="ts-bulk-actions">
         <button className="btn primary" onClick={onStartPrioritization}>
           شروع اولویت‌بندی
