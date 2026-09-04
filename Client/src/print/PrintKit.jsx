@@ -1,5 +1,6 @@
 // src/print/PrintKit.jsx
 import React from "react";
+import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import ShowAnalysis from "../components/Common/ShowAnalysis";
 import { rankJobsForUserRich, renderJobPriorityTableHTML } from "../utils/jobRanking";
@@ -7,6 +8,13 @@ import { jobRequirements } from "../services/dummyData";
 
 /* ========= Global Print CSS ========= */
 const PRINT_CSS = `
+@font-face{
+  font-family:"Vazirmatn";
+  src:url("/fonts/Vazirmatn-Variable.woff2") format("woff2");
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap;
+}
 :root{
   --ink:#0f172a; --muted:#64748b; --Lmuted:#14253d; --sub:#475569;
   --line:#e5e7eb; --line-2:#d9e1ea; --soft:#f8fafc; --soft-2:#eef2f7;
@@ -435,11 +443,11 @@ function mountHiddenHost() {
   host.style.width = "794px";
   host.style.background = "#fff";
   host.style.zIndex = "-1";
-  // stage-1: onscreen (nearly invisible)
+  // stage-1: onscreen so html2canvas can measure and capture it correctly.
   host.dataset.stage = "onscreen";
   host.style.top = "0";
   host.style.left = "0";
-  host.style.opacity = "0.01";
+  host.style.opacity = "1";
   host.style.pointerEvents = "none";
   document.body.appendChild(host);
   return host;
@@ -473,18 +481,16 @@ export function PrintDocument({ user, results = [], formatDate, jobsHTML }) {
     <div className="print-sanitize">
       <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
 
-      {/* Cover */}
       <section className="page">
         <div className="container">
           <header className="doc-header card avoid-break">
-            <div className="title">گزارش</div>
+            <div className="title">کارنامه فردی</div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <div className="subtitle">{fullName}</div>
               <div className="meta mt-8"><span>تاریخ تولید:</span><span className="dot" /><span>{nowStr}</span></div>
             </div>
           </header>
 
-          {/* Personal info */}
           <section className="card avoid-break">
             <div className="section-title"><span className="pill">اطلاعات فردی</span><h3>پروفایل</h3></div>
             <div className="grid-3">
@@ -492,7 +498,7 @@ export function PrintDocument({ user, results = [], formatDate, jobsHTML }) {
               <div className="kv"><span className="k">سن:</span><span className="v">{p.age ?? "—"}</span></div>
               <div className="kv"><span className="k">کد ملی:</span><span className="v">{p.nationalId || p.nationalCode || "—"}</span></div>
               <div className="kv"><span className="k">تلفن:</span><span className="v">{p.phone || user?.phone || "—"}</span></div>
-              <div className="kv"><span className="k">وضعیت تأهل:</span><span className="v">{p.single === true ? "مجرد" : p.single === false ? "متاهل" : "—"}</span></div>
+              <div className="kv"><span className="k">وضعیت تأهل:</span><span className="v">{p.single === true ? "مجرد" : p.single === false ? "متأهل" : "—"}</span></div>
               <div className="kv"><span className="k">شغل پدر:</span><span className="v">{p.fathersJob || "—"}</span></div>
               <div className="kv"><span className="k">تحصیلات:</span><span className="v">{p.education || p.degree || "—"}</span></div>
               <div className="kv"><span className="k">معدل دیپلم:</span><span className="v">{p.diplomaAverage ?? "—"}</span></div>
@@ -504,48 +510,33 @@ export function PrintDocument({ user, results = [], formatDate, jobsHTML }) {
             </div>
           </section>
 
-        {/* Overview */}
           <section className="card avoid-break">
             <div className="section-title"><span className="pill">نمای کلی آزمون‌ها</span><h3>برگه مسیر</h3></div>
-            {overview.map((it) => (
-              <div className="kv  tests-status " key={it.key}>
+            {overview.length ? overview.map((it) => (
+              <div className="kv tests-status" key={it.key}>
                 <span className="badge">{it.label}</span><span className="v">• {it.date}</span>
               </div>
-            ))}
+            )) : <p className="muted">هنوز آزمونی برای این کاربر ثبت نشده است.</p>}
           </section>
 
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-<br />
-
-          {/* Jobs */}
-          {jobsHTML && <section className="card " dangerouslySetInnerHTML={{ __html: jobsHTML }} />}
-
-          
+          {jobsHTML && <section className="card" dangerouslySetInnerHTML={{ __html: jobsHTML }} />}
         </div>
       </section>
 
-      {/* Details (each test on its own page) */}
       {(results || []).map((r, i) => {
         const when = r?.createdAt ? formatDate(r.createdAt) : r?.completedAt ? formatDate(r.completedAt) : "—";
         return (
-          <section className="page " key={r._id || r.resultId || i}>
+          <section className="page" key={r._id || r.resultId || i}>
             <div className="container">
-              <section className="card ">
-                <br />
-<br />
-                <div className="section-title"><h3>تحلیل </h3><span className="pill">{r?.testType || "آزمون"}</span></div>
+              <section className="card">
+                <div className="section-title"><h3>تحلیل</h3><span className="pill">{r?.testType || "آزمون"}</span></div>
                 <div className="meta mb-8"><span>تاریخ: {when}</span><span className="dot" /><span>کاربر: {fullName}</span></div>
 
-                <div className=" analysis-compact">
+                <div className="analysis-compact">
                   {r?.analysis ? (
                     <ShowAnalysis testType={r.testType} analysisData={r.analysis} />
                   ) : (
-                    <p className="muted">برای این آزمون هنوز آنالیز ثبت نشده است.</p>
+                    <p className="muted">برای این آزمون هنوز تحلیل ثبت نشده است.</p>
                   )}
                 </div>
 
@@ -560,7 +551,7 @@ export function PrintDocument({ user, results = [], formatDate, jobsHTML }) {
         );
       })}
 
-      {/* <div className="footer">صفحه <span className="pageno"></span></div> */}
+      <div className="footer">صفحه <span className="pageno"></span></div>
     </div>
   );
 }
@@ -726,7 +717,7 @@ const renderToNewWindowAndPrint = async (makeNode, { title } = {}) => {
   const node = await Promise.resolve(typeof makeNode === "function" ? makeNode() : makeNode);
   const mount = w.document.getElementById("root");
   const root = createRoot(mount);
-  root.render(node);
+  flushSync(() => root.render(node));
 
   await waitForReady(w.document, mount);
   await waitForChartsReady(mount);
@@ -745,19 +736,19 @@ const renderToNewWindowAndPrint = async (makeNode, { title } = {}) => {
 };
 
 const renderHiddenAndSavePdf = async (makeNode, { title, filename } = {}) => {
-  const pdfName = filename || `${safeName(title || "Report")}.pdf`;
+  const pdfName = safeName(filename || `${safeName(title || "Report")}.pdf`);
 
   const host = document.createElement("div");
   Object.assign(host.style, {
     position: "fixed", top: "0", left: "0",
-    width: "794px", background: "#fff",
-    opacity: "0.01", pointerEvents: "none", zIndex: "0",
+    width: "794px", minHeight: "1123px", background: "#fff",
+    opacity: "1", pointerEvents: "none", zIndex: "-1",
   });
   document.body.appendChild(host);
 
   const node = await Promise.resolve(typeof makeNode === "function" ? makeNode() : makeNode);
   const root = createRoot(host);
-  root.render(node);
+  flushSync(() => root.render(node));
 
   await waitForReady(document, host);
   await waitForChartsReady(host);
