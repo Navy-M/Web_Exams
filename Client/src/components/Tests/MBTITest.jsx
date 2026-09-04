@@ -1,11 +1,11 @@
-// src/components/tests/MBTITest.jsx
+﻿// src/components/tests/MBTITest.jsx
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import "../../styles/mbtiTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import TopbarStatus from "./TopbarStatus";
-import { getItemWithExpiry, setItemWithExpiry } from "../../services/storage";
+import { getItemWithExpiry, scopedStorageKey, setItemWithExpiry } from "../../services/storage";
 
 const DONE_KEY = "mbtiTestDone";
 
@@ -19,6 +19,8 @@ export default function MBTITest({ questions, duration = 8 }) {
   const { user } = useAuth() || {};
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
+  const userId = user?.id || user?._id;
+  const doneKey = scopedStorageKey(DONE_KEY, userId, "MBTI");
 
   const Mbti_Test = useMemo(() => Array.isArray(questions) ? questions : [], [questions]);
 
@@ -26,7 +28,7 @@ export default function MBTITest({ questions, duration = 8 }) {
   const [answers, setAnswers] = useState({});
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration * 60);
-  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(DONE_KEY));
+  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(doneKey));
   const submittingRef = useRef(false);
 
   const total = Mbti_Test.length;
@@ -34,9 +36,13 @@ export default function MBTITest({ questions, duration = 8 }) {
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
   useEffect(() => {
+    setBlocked(!!getItemWithExpiry(doneKey));
+  }, [doneKey]);
+
+  useEffect(() => {
     if (!blocked) return;
     alert("You have already completed this test. Please try again in 24 hours.");
-    navigate("/");
+    navigate("/dashboard");
   }, [blocked, navigate]);
 
   const handleSubmit = useCallback(async () => {
@@ -61,22 +67,21 @@ export default function MBTITest({ questions, duration = 8 }) {
     try {
       const result = await submitResult(resultData);
       if (result?.user) {
-        alert("🎉 آزمون MBTI با موفقیت ثبت شد!");
-        setItemWithExpiry(DONE_KEY, true, 24 * 60 * 60 * 1000);
+        alert("ðŸŽ‰ Ø¢Ø²Ù…ÙˆÙ† MBTI Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø«Ø¨Øª Ø´Ø¯!");
+        setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000);
         setBlocked(true);
-        navigate("/");
-        location.reload();
+        navigate("/dashboard");
 
       } else {
-        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        alert("âŒ Ø°Ø®ÛŒØ±Ù‡â€ŒØ³Ø§Ø²ÛŒ Ù†ØªØ§ÛŒØ¬ Ø§Ù†Ø¬Ø§Ù… Ù†Ø´Ø¯!");
         submittingRef.current = false;
       }
     } catch (err) {
       console.error("MBTI submission error:", err);
-      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      alert("âš ï¸ Ø§Ø±Ø³Ø§Ù„ Ù†ØªØ§ÛŒØ¬ Ø¨Ø§ Ø®Ø·Ø§ Ù…ÙˆØ§Ø¬Ù‡ Ø´Ø¯.");
       submittingRef.current = false;
     }
-  }, [answers, navigate, user?.id]);
+  }, [answers, doneKey, navigate, user?.id]);
   useEffect(() => {
     if (blocked || !started) return;
     if (timeLeft <= 0) {
@@ -91,11 +96,11 @@ export default function MBTITest({ questions, duration = 8 }) {
 
   const handleSelect = useCallback((questionId, value) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
-    // افکت کوتاه انتخاب و سپس رفتن به سوال بعد
+    // Ø§ÙÚ©Øª Ú©ÙˆØªØ§Ù‡ Ø§Ù†ØªØ®Ø§Ø¨ Ùˆ Ø³Ù¾Ø³ Ø±ÙØªÙ† Ø¨Ù‡ Ø³ÙˆØ§Ù„ Ø¨Ø¹Ø¯
     setTimeout(() => {
       setCurrentIndex((prev) => {
         if (prev + 1 < Mbti_Test.length) return prev + 1;
-        // آخرین سوال
+        // Ø¢Ø®Ø±ÛŒÙ† Ø³ÙˆØ§Ù„
         handleSubmit();
         return prev;
       });
@@ -111,8 +116,8 @@ export default function MBTITest({ questions, duration = 8 }) {
     return (
       <div className="mbti-test">
         <div className="intro-box">
-          <h2>آزمون MBTI</h2>
-          <p>سوالی برای نمایش وجود ندارد.</p>
+          <h2>Ø¢Ø²Ù…ÙˆÙ† MBTI</h2>
+          <p>Ø³ÙˆØ§Ù„ÛŒ Ø¨Ø±Ø§ÛŒ Ù†Ù…Ø§ÛŒØ´ ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯.</p>
         </div>
       </div>
     );
@@ -122,14 +127,14 @@ export default function MBTITest({ questions, duration = 8 }) {
     <div className="mbti-test" role="main" aria-live="polite">
       {!started ? (
         <div className="intro-box">
-          <p>این آزمون کمک می‌کند تیپ شخصیتی خود را بهتر بشناسید</p>
-          <h2>🧩</h2>
+          <p>Ø§ÛŒÙ† Ø¢Ø²Ù…ÙˆÙ† Ú©Ù…Ú© Ù…ÛŒâ€ŒÚ©Ù†Ø¯ ØªÛŒÙ¾ Ø´Ø®ØµÛŒØªÛŒ Ø®ÙˆØ¯ Ø±Ø§ Ø¨Ù‡ØªØ± Ø¨Ø´Ù†Ø§Ø³ÛŒØ¯</p>
+          <h2>ðŸ§©</h2>
           <h4>
-              میانگین برای هر سؤال:{" "}
-            {Math.max(5, Math.round((duration * 60) / total))} ثانیه•
+              Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø¨Ø±Ø§ÛŒ Ù‡Ø± Ø³Ø¤Ø§Ù„:{" "}
+            {Math.max(5, Math.round((duration * 60) / total))} Ø«Ø§Ù†ÛŒÙ‡â€¢
           </h4>
           <button className="start-btn" onClick={() => setStarted(true)}>
-            شروع آزمون
+            Ø´Ø±ÙˆØ¹ Ø¢Ø²Ù…ÙˆÙ†
           </button>
         </div>
       ) : (
@@ -148,7 +153,7 @@ export default function MBTITest({ questions, duration = 8 }) {
           <div className="question-card" key={currentQuestion?.id ?? currentIndex}>
             <h3 className="question-text">{currentQuestion.text}</h3>
 
-            <div className="options-grid" role="listbox" aria-label="گزینه‌ها">
+            <div className="options-grid" role="listbox" aria-label="Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§">
               {currentQuestion.options.map((option, idx) => {
                 const selected = answers[currentQuestion.id] === option.value;
                 return (
@@ -167,7 +172,7 @@ export default function MBTITest({ questions, duration = 8 }) {
           </div>
 
           <p className="progress-count">
-            سؤال {currentIndex + 1} از {total}
+            Ø³Ø¤Ø§Ù„ {currentIndex + 1} Ø§Ø² {total}
           </p>
 
           <div className="nav-actions">
@@ -175,25 +180,25 @@ export default function MBTITest({ questions, duration = 8 }) {
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
                 className="nav-btn"
-                aria-label="سوال قبلی"
+                aria-label="Ø³ÙˆØ§Ù„ Ù‚Ø¨Ù„ÛŒ"
               >
-                ← قبلی
+                â† Ù‚Ø¨Ù„ÛŒ
               </button>
 
               <button
                 onClick={() => currentIndex + 1 < total && setCurrentIndex((i) => i + 1)}
                 disabled={currentIndex + 1 >= total}
                 className="nav-btn"
-                aria-label="سوال بعدی"
+                aria-label="Ø³ÙˆØ§Ù„ Ø¨Ø¹Ø¯ÛŒ"
               >
-                بعدی →
+                Ø¨Ø¹Ø¯ÛŒ â†’
               </button>
               {/* <button
-                onClick={() => window.confirm("ارسال آزمون؟") && handleSubmit()}
+                onClick={() => window.confirm("Ø§Ø±Ø³Ø§Ù„ Ø¢Ø²Ù…ÙˆÙ†ØŸ") && handleSubmit()}
                 className="submit-btn"
                 disabled={submitting}
               >
-                {submitting ? "در حال ارسال..." : "ارسال نهایی"}
+                {submitting ? "Ø¯Ø± Ø­Ø§Ù„ Ø§Ø±Ø³Ø§Ù„..." : "Ø§Ø±Ø³Ø§Ù„ Ù†Ù‡Ø§ÛŒÛŒ"}
               </button> */}
             </div>
         </div>
