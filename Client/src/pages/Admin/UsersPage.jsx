@@ -68,6 +68,7 @@ const UsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showAddRow, setShowAddRow] = useState(false);
+  const [activeMutation, setActiveMutation] = useState(null);
 
   // bulk analyze ui
   const [bulkAnalyzing, setBulkAnalyzing] = useState(false);
@@ -142,6 +143,43 @@ const UsersPage = () => {
     });
   }, []);
 
+  const refreshUsers = useCallback(async () => {
+    const list = await getUsers();
+    const nonAdmin = (list || []).filter((u) => u.role !== "admin");
+    setUsers(nonAdmin);
+    return nonAdmin;
+  }, []);
+
+  const refreshAdminData = useCallback(
+    async ({ userId = selectedUser?._id, resultId = selectedResult?._id } = {}) => {
+      const [freshUsers, freshResults] = await Promise.all([
+        refreshUsers(),
+        userId ? getUserResults(userId) : Promise.resolve([]),
+      ]);
+
+      const nextSelectedUser = userId
+        ? freshUsers.find((user) => String(user._id) === String(userId)) || selectedUser
+        : null;
+      const nextResults = Array.isArray(freshResults) ? freshResults : [];
+
+      if (userId) {
+        setSelectedUser(nextSelectedUser);
+        setUserResults(nextResults);
+      }
+
+      if (resultId) {
+        const nextSelectedResult = nextResults.find((entry) => {
+          const id = entry?.resultId || entry?._id;
+          return String(id) === String(resultId);
+        });
+        setSelectedResult(nextSelectedResult || null);
+      }
+
+      return { users: freshUsers, results: nextResults };
+    },
+    [refreshUsers, selectedResult?._id, selectedUser]
+  );
+
   // search
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -185,7 +223,7 @@ const UsersPage = () => {
       });
 
       alert(res.message || t("usersPage.addSuccess"));
-      if (res.user) setUsers((prev) => [...prev, res.user]);
+      await refreshUsers();
       setNewUser({
         fullName: "",
         period: "",
@@ -203,7 +241,7 @@ const UsersPage = () => {
     if (!window.confirm(t("usersPage.deleteUserConfirm"))) return;
     try {
       await deleteUser(id);
-      setUsers((prev) => prev.filter((u) => u._id !== id));
+      await refreshUsers();
       if (selectedUser?._id === id) {
         setSelectedUser(null);
         setUserResults([]);
@@ -225,24 +263,31 @@ const UsersPage = () => {
 
   const handleDeleteUserResult = async (resultId) => {
     if (!window.confirm(t("usersPage.deleteResultConfirm"))) return;
+    if (activeMutation) return;
     try {
+      setActiveMutation(`delete:${resultId}`);
       await deleteResult(resultId);
-      setUserResults((prev) =>
-        prev.filter((r) => r.resultId !== resultId && r._id !== resultId)
-      );
-      if (selectedResult?._id === resultId) setSelectedResult(null);
+      await refreshAdminData({ userId: selectedUser?._id, resultId: null });
+      setSelectedResult(null);
     } catch {
       alert(t("usersPage.deleteResultFailure"));
+    } finally {
+      setActiveMutation(null);
     }
   };
 
   const handleCheckTest = async (result) => {
+    const resultId = result?.resultId || result?._id;
+    if (!resultId || activeMutation) return;
     try {
-      const { resultId, testType } = result;
-      await analyzeTests({ resultId, testType });
+      setActiveMutation(`analyze:${resultId}`);
+      await analyzeTests({ resultId, testType: result.testType });
+      await refreshAdminData({ userId: selectedUser?._id, resultId });
       alert(t("usersPage.analyzeSuccess"));
     } catch {
       alert(t("usersPage.analyzeFailure"));
+    } finally {
+      setActiveMutation(null);
     }
   };
 
@@ -251,46 +296,27 @@ const UsersPage = () => {
       t("usersPage.deleteAnalysisConfirm") ||
       "Remove the analysis for this result?";
     if (!window.confirm(confirmMessage)) return;
+    if (activeMutation) return;
 
     try {
+      setActiveMutation(`clear:${resultId}`);
       await clearResultAnalysis(resultId);
-
-      setUserResults((prev) =>
-        prev.map((entry) => {
-          const id = entry?.resultId || entry?._id;
-          if (id !== resultId) return entry;
-          const next = { ...entry };
-          delete next.analysis;
-          delete next.analyzedAt;
-          delete next.score;
-          return next;
-        })
-      );
-
-      setSelectedResult((prev) => {
-        if (!prev) return prev;
-        const id = prev._id || prev.resultId;
-        if (id !== resultId) return prev;
-        const next = { ...prev };
-        delete next.analysis;
-        delete next.analyzedAt;
-        delete next.score;
-        return next;
-      });
-
+      await refreshAdminData({ userId: selectedUser?._id, resultId });
       alert(t("usersPage.deleteAnalysisSuccess") || "Analysis removed.");
     } catch {
       alert(
         t("usersPage.deleteAnalysisFailure") ||
           "Unable to remove the analysis."
       );
+    } finally {
+      setActiveMutation(null);
     }
   };
 //#endregion
 
   // analyze all
   const handleAnalyzeAll = async () => {
-    if (!selectedUser) return;
+    if (!selectedUser || bulkAnalyzing) return;
 
     const items = (userResults || []).filter(
       (r) => r && (r.resultId || r._id) && r.testType
@@ -304,6 +330,7 @@ const UsersPage = () => {
     setBulkAnalyzing(true);
     setBulkErrors([]);
     setBulkProgress({ done: 0, total: items.length });
+    const errors = [];
 
     for (let i = 0; i < items.length; i++) {
       const r = items[i];
@@ -315,6 +342,7 @@ const UsersPage = () => {
           e?.response?.data?.message ||
           e?.message ||
           t("usersPage.analyzeFailure");
+        errors.push({ resultId, message });
         setBulkErrors((prev) => [...prev, { resultId, message }]);
       } finally {
         setBulkProgress({ done: i + 1, total: items.length });
@@ -331,32 +359,34 @@ const UsersPage = () => {
 
     setBulkAnalyzing(false);
 
-    if (bulkErrors.length === 0) {
+    if (errors.length === 0) {
       alert(t("usersPage.analyzeAllDone") || "All analyses completed.");
     } else {
       alert(
         (t("usersPage.analyzeAllDoneWithErrors") ||
           "Done with some errors.") +
-          ` (${bulkErrors.length})`
+          ` (${errors.length})`
       );
     }
   };
 
   const handleSubmitFeedback = async () => {
-    if (!feedback.trim() || !selectedResult || !selectedUser) return;
+    if (!feedback.trim() || !selectedResult || !selectedUser || activeMutation) return;
+    const resultId = selectedResult._id || selectedResult.resultId;
     try {
+      setActiveMutation(`feedback:${resultId}`);
       await submitTestFeedback({
         userId: selectedUser._id,
-        resultId: selectedResult._id,
+        resultId,
         feedback,
       });
       alert(t("usersPage.feedbackSuccess"));
       setFeedback("");
-      setSelectedResult(null);
-      const refreshed = await getUserResults(selectedUser._id);
-      setUserResults(refreshed || []);
+      await refreshAdminData({ userId: selectedUser._id, resultId });
     } catch {
       alert(t("usersPage.feedbackFailure"));
+    } finally {
+      setActiveMutation(null);
     }
   };
 
@@ -396,7 +426,8 @@ const UsersPage = () => {
     if (!selectedUser) return;
     try {
       setPrinting(true);
-      const filename = `${(selectedUser?.profile?.fullName || "report")}.pdf`;
+      const baseName = selectedUser?.profile?.fullName || selectedUser?.username || "report";
+      const filename = `${baseName}-${new Date().toISOString().slice(0, 10)}.pdf`;
       await renderHiddenAndSavePdf(async () => {
         const resultsReady = await fetchResultsWithAnalyses(userResults, getTestResults);
         return (
@@ -407,7 +438,7 @@ const UsersPage = () => {
             jobsHTML={buildJobsHTML(resultsReady,selectedUser)}
           />
         );
-      }, filename);
+      }, { title: baseName, filename });
     } catch (e) {
       alert(t("usersPage.pdfExportFailed") || "خطا در ساخت PDF");
       console.error(e);
@@ -483,6 +514,7 @@ const UsersPage = () => {
                 onAnalyze={handleCheckTest}
                 onRemoveAnalysis={handleRemoveResultAnalysis}
                 selectedResultId={selectedResult?._id || selectedResult?.resultId}
+                busy={Boolean(activeMutation)}
               />
 
               {selectedResult && (
