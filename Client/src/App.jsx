@@ -4,16 +4,8 @@ import LoginPage from "./pages/Public/LoginPage";
 import SignupPage from "./pages/Public/SignupPage";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import UserDashboard from "./pages/User/Dashboard";
-import TestsPage from "./pages/Admin/AdminTestManager/TestsPage";
 import StarterTestPage from "./pages/User/StarterTestPage"
 import CompleteProfilePage from "./pages/User/CompleteProfilePage"
-
-
-// Block right-click
-document.addEventListener("contextmenu", (e) => e.preventDefault());
-
-// Block text drag
-document.addEventListener("dragstart", (e) => e.preventDefault());
 
 const App = () => (
   <Routes>
@@ -23,15 +15,15 @@ const App = () => (
     {/* Admin routes */}
     <Route element={<ProtectedRoute role="admin" />}>
       <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/admin/tests" element={<TestsPage />} />
-      <Route path="/admin/users" element={<TestsPage />} />
+      <Route path="/admin/tests" element={<Navigate to="/admin?tab=tests" replace />} />
+      <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
     </Route>
 
     {/* User routes */}
     <Route element={<ProtectedRoute role="user" />}>
       <Route path="/dashboard" element={<UserDashboard />} />
       <Route path="/users/completeProfile" element={<CompleteProfilePage />} />
-      <Route path="/users/tests" element={<TestsPage />} />
+      <Route path="/users/tests" element={<Navigate to="/dashboard" replace />} />
       <Route path="/users/starttest/:testId" element={<StarterTestPage />} />
     </Route>
 
