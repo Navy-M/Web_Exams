@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+﻿import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import "../../styles/GHQTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import TopbarStatus from "./TopbarStatus";
-import { getItemWithExpiry, setItemWithExpiry } from "../../services/storage";
+import { getItemWithExpiry, scopedStorageKey, setItemWithExpiry } from "../../services/storage";
 
 const DONE_KEY = "ghqTestDone";
 
@@ -18,6 +18,8 @@ export default function GHQTest({ questions, duration = 8 }) {
   const { user } = useAuth() || {};
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
+  const userId = user?.id || user?._id;
+  const doneKey = scopedStorageKey(DONE_KEY, userId, "GHQ");
 
   const Ghq_Test = useMemo(() => (Array.isArray(questions) ? questions : []), [questions]);
   const total = Ghq_Test.length;
@@ -26,16 +28,20 @@ export default function GHQTest({ questions, duration = 8 }) {
   const [answers, setAnswers] = useState({}); // { [qid]: number }
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration * 60);
-  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(DONE_KEY));
+  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(doneKey));
   const submittingRef = useRef(false);
 
   const currentQuestion = Ghq_Test[currentIndex];
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
   useEffect(() => {
+    setBlocked(!!getItemWithExpiry(doneKey));
+  }, [doneKey]);
+
+  useEffect(() => {
     if (!blocked) return;
     alert("You have already completed this test. Please try again in 24 hours.");
-    navigate("/");
+    navigate("/dashboard");
   }, [blocked, navigate]);
 
   // countdown (whole test)
@@ -85,22 +91,21 @@ export default function GHQTest({ questions, duration = 8 }) {
     try {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
-        alert("🎉 آزمون سلامت عمومی (GHQ) با موفقیت ثبت شد!");
-        setItemWithExpiry(DONE_KEY, true, 24 * 60 * 60 * 1000);
+        alert("ðŸŽ‰ Ø¢Ø²Ù…ÙˆÙ† Ø³Ù„Ø§Ù…Øª Ø¹Ù…ÙˆÙ…ÛŒ (GHQ) Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø«Ø¨Øª Ø´Ø¯!");
+        setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000);
         setBlocked(true);
-        navigate("/");
-        location.reload();
+        navigate("/dashboard");
 
       } else {
-        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        alert("âŒ Ø°Ø®ÛŒØ±Ù‡â€ŒØ³Ø§Ø²ÛŒ Ù†ØªØ§ÛŒØ¬ Ø§Ù†Ø¬Ø§Ù… Ù†Ø´Ø¯!");
         submittingRef.current = false;
       }
     } catch (err) {
       console.error("GHQ submission error:", err);
-      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      alert("âš ï¸ Ø§Ø±Ø³Ø§Ù„ Ù†ØªØ§ÛŒØ¬ Ø¨Ø§ Ø®Ø·Ø§ Ù…ÙˆØ§Ø¬Ù‡ Ø´Ø¯.");
       submittingRef.current = false;
     }
-  }, [answers, navigate, user?.id, user?._id]);
+  }, [answers, doneKey, navigate, user?.id, user?._id]);
 
   if (blocked) {
     return null;
@@ -110,8 +115,8 @@ export default function GHQTest({ questions, duration = 8 }) {
     return (
       <div className="ghq-test">
         <div className="intro-box">
-          <h2>آزمون GHQ</h2>
-          <p>سوالی برای نمایش وجود ندارد.</p>
+          <h2>Ø¢Ø²Ù…ÙˆÙ† GHQ</h2>
+          <p>Ø³ÙˆØ§Ù„ÛŒ Ø¨Ø±Ø§ÛŒ Ù†Ù…Ø§ÛŒØ´ ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯.</p>
         </div>
       </div>
     );
@@ -121,11 +126,11 @@ export default function GHQTest({ questions, duration = 8 }) {
     <div className="ghq-test" role="main" aria-live="polite">
       {!started ? (
         <div className="intro-box">
-          <p>این آزمون کمک می‌کند سطح سلامت روانی خود را بسنجید</p>
-          <h2>🧠</h2>
+          <p>Ø§ÛŒÙ† Ø¢Ø²Ù…ÙˆÙ† Ú©Ù…Ú© Ù…ÛŒâ€ŒÚ©Ù†Ø¯ Ø³Ø·Ø­ Ø³Ù„Ø§Ù…Øª Ø±ÙˆØ§Ù†ÛŒ Ø®ÙˆØ¯ Ø±Ø§ Ø¨Ø³Ù†Ø¬ÛŒØ¯</p>
+          <h2>GHQ</h2>
           <h4>
-            میانگین برای هر سؤال:{" "}
-            {Math.max(5, Math.round((duration * 60) / total))} ثانیه
+            Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø¨Ø±Ø§ÛŒ Ù‡Ø± Ø³Ø¤Ø§Ù„:{" "}
+            {Math.max(5, Math.round((duration * 60) / total))} Ø«Ø§Ù†ÛŒÙ‡
           </h4>
           <button
             className="start-btn"
@@ -135,7 +140,7 @@ export default function GHQTest({ questions, duration = 8 }) {
               setTimeLeft(duration * 60);
             }}
           >
-            شروع آزمون
+            Ø´Ø±ÙˆØ¹ Ø¢Ø²Ù…ÙˆÙ†
           </button>
         </div>
       ) : (
@@ -152,9 +157,9 @@ export default function GHQTest({ questions, duration = 8 }) {
           </div>
 
           <div className="question-card" key={currentQuestion?.id ?? currentIndex}>
-            <h3 className="question-text">{currentQuestion?.text ?? "سؤال"}</h3>
+            <h3 className="question-text">{currentQuestion?.text ?? "Ø³Ø¤Ø§Ù„"}</h3>
 
-            <div className="options-grid" role="listbox" aria-label="گزینه‌ها">
+            <div className="options-grid" role="listbox" aria-label="Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§">
               {(currentQuestion?.options || []).map((option, idx) => {
                 const qid = currentQuestion?.id ?? `q_${currentIndex}`;
                 const optVal = Number.isFinite(Number(option?.value))
@@ -168,7 +173,7 @@ export default function GHQTest({ questions, duration = 8 }) {
                     className={`option-button ${selected ? "selected" : ""}`}
                     onClick={() => handleSelect(qid, option.value)}
                     aria-pressed={selected}
-                    title={`کلید ${idx + 1}`}
+                    title={`Ú©Ù„ÛŒØ¯ ${idx + 1}`}
                   >
                     {option?.text ?? String(option?.value)}
                   </button>
@@ -178,7 +183,7 @@ export default function GHQTest({ questions, duration = 8 }) {
           </div>
 
           <p className="progress-count">
-            سؤال {currentIndex + 1} از {total}
+            Ø³Ø¤Ø§Ù„ {currentIndex + 1} Ø§Ø² {total}
           </p>
 
           <div className="nav-actions">
@@ -186,25 +191,25 @@ export default function GHQTest({ questions, duration = 8 }) {
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
                 className="nav-btn"
-                aria-label="سوال قبلی"
+                aria-label="Ø³ÙˆØ§Ù„ Ù‚Ø¨Ù„ÛŒ"
               >
-                ← قبلی
+                â† Ù‚Ø¨Ù„ÛŒ
               </button>
 
               <button
                 onClick={() => currentIndex + 1 < total && setCurrentIndex((i) => i + 1)}
                 disabled={currentIndex + 1 >= total}
                 className="nav-btn"
-                aria-label="سوال بعدی"
+                aria-label="Ø³ÙˆØ§Ù„ Ø¨Ø¹Ø¯ÛŒ"
               >
-                بعدی →
+                Ø¨Ø¹Ø¯ÛŒ â†’
               </button>
               {/* <button
-                onClick={() => window.confirm("ارسال آزمون؟") && handleSubmit()}
+                onClick={() => window.confirm("Ø§Ø±Ø³Ø§Ù„ Ø¢Ø²Ù…ÙˆÙ†ØŸ") && handleSubmit()}
                 className="submit-btn"
                 disabled={submitting}
               >
-                {submitting ? "در حال ارسال..." : "ارسال نهایی"}
+                {submitting ? "Ø¯Ø± Ø­Ø§Ù„ Ø§Ø±Ø³Ø§Ù„..." : "Ø§Ø±Ø³Ø§Ù„ Ù†Ù‡Ø§ÛŒÛŒ"}
               </button> */}
             </div>
         </div>
