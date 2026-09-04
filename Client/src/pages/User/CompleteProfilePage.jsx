@@ -30,8 +30,13 @@ const isValidIranMobile = (raw) => {
 };
 
 // username: 3–30 [a-z0-9._], start/end alnum
-const isValidUsername = (u) =>
-  /^[a-z0-9](?:[a-z0-9._]{1,28})[a-z0-9]$/i.test(u);
+const isValidUsername = (u) => {
+  const value = cleanText(u);
+  return (
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ||
+    /^[a-z0-9](?:[a-z0-9._-]{1,58})[a-z0-9]$/i.test(value)
+  );
+};
 
 // age: 10–100
 const isValidAge = (a) => {
@@ -165,11 +170,6 @@ const CompleteProfilePage = () => {
     return err;
   };
 
-  const isFormValid = useMemo(() => {
-    const e = validate(formData);
-    return Object.keys(e).length === 0;
-  }, [formData]);
-
   const buildPayload = () => {
     const fieldFinal = formData.field === "دیگر" ? formData.fieldOther : formData.field;
     return {
@@ -224,7 +224,6 @@ const CompleteProfilePage = () => {
       if (String(status).toLowerCase() === "success") {
         alert("پروفایل شما با موفقیت تکمیل شد.");
         navigate("/dashboard");
-        window.location.reload();
       } else {
         alert(response?.message?.text || "خطا در ارسال اطلاعات.");
         console.warn("Server response:", response);
@@ -426,8 +425,8 @@ const CompleteProfilePage = () => {
         <button
           type="submit"
           className="submit-button"
-          disabled={!isFormValid || submitting}
-          aria-disabled={!isFormValid || submitting}
+          disabled={submitting}
+          aria-disabled={submitting}
         >
           {submitting ? "در حال ارسال..." : "ثبت اطلاعات"}
         </button>
