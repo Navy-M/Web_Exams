@@ -255,7 +255,10 @@ const UserDashboard = () => {
               {completed.length > 0 ? (
                 <>
                   <div className="tests-grid">
-                    <TestResultCardGrid onSelectTest={handleSelectCompletedResult} />
+                    <TestResultCardGrid
+                      results={completed}
+                      onSelectTest={handleSelectCompletedResult}
+                    />
                   </div>
 
                   {selectedCompletedTest && (
