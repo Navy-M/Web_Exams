@@ -26,7 +26,6 @@ const StarterTestPage = () => {
   const [started, setStarted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [progress, setProgress] = useState(0);
 
   const completedTests = useMemo(() => user?.testsAssigned ?? [], [user?.testsAssigned]);
   const isCompleted = useMemo(
@@ -58,7 +57,7 @@ const StarterTestPage = () => {
     if (isCompleted) return;
     setStarted(true);
   };
-  const handleBackDash = () => navigate("/users/dashboard");
+  const handleBackDash = () => navigate("/dashboard");
 
   const formatDuration = () => {
     if (!currentTest?.duration?.from || !currentTest?.duration?.to) {
@@ -156,12 +155,6 @@ const StarterTestPage = () => {
         <div className="test-interface">
           <div className="test-header">
             <h2>{formatName("name")}</h2>
-            <div className="progress-bar">
-              <div
-                className="progress-filled"
-                style={{ width: `${(progress / questions.length) * 100}%` }}
-              />
-            </div>
           </div>
 
           {testId === "MBTI" && <MBTITest questions={questions} duration={currentTest.duration?.to} />}
