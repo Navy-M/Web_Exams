@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import "../../styles/halandTest.css"; // ← همون فایلی که خودت داری
+﻿import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import "../../styles/halandTest.css"; // â† Ù‡Ù…ÙˆÙ† ÙØ§ÛŒÙ„ÛŒ Ú©Ù‡ Ø®ÙˆØ¯Øª Ø¯Ø§Ø±ÛŒ
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import TopbarStatus from "./TopbarStatus";
-import { getItemWithExpiry, setItemWithExpiry } from "../../services/storage";
+import { getItemWithExpiry, scopedStorageKey, setItemWithExpiry } from "../../services/storage";
 
 const DONE_KEY = "hollandTestDone";
 
@@ -18,28 +18,34 @@ const HalandTest = ({ questions, duration = 8 }) => {
   const { user } = useAuth() || {};
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
+  const userId = user?.id || user?._id;
+  const doneKey = scopedStorageKey(DONE_KEY, userId, "HOLLAND");
 
   const Holland_Test = useMemo(() => (Array.isArray(questions) ? questions : []), [questions]);
   const total = Holland_Test.length;
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  // ✅ جواب‌ها را مثل MBTI به‌صورت map نگه می‌داریم: { [questionId]: answerString }
+  // âœ… Ø¬ÙˆØ§Ø¨â€ŒÙ‡Ø§ Ø±Ø§ Ù…Ø«Ù„ MBTI Ø¨Ù‡â€ŒØµÙˆØ±Øª map Ù†Ú¯Ù‡ Ù…ÛŒâ€ŒØ¯Ø§Ø±ÛŒÙ…: { [questionId]: answerString }
   const [answers, setAnswers] = useState({});
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration * 60);
-  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(DONE_KEY));
+  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(doneKey));
   const submittingRef = useRef(false);
 
   const currentQuestion = Holland_Test[currentIndex];
   useEffect(() => {
+    setBlocked(!!getItemWithExpiry(doneKey));
+  }, [doneKey]);
+
+  useEffect(() => {
     if (!blocked) return;
     alert("You have already completed this test. Please try again in 24 hours.");
-    navigate("/");
+    navigate("/dashboard");
   }, [blocked, navigate]);
 
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
-  // Timer (کل آزمون)
+  // Timer (Ú©Ù„ Ø¢Ø²Ù…ÙˆÙ†)
   useEffect(() => {
     if (blocked || !started) return;
     if (timeLeft <= 0) {
@@ -70,7 +76,7 @@ const HalandTest = ({ questions, duration = 8 }) => {
   const handleSubmit = useCallback(async () => {
     if (submittingRef.current) return;
     submittingRef.current = true;
-    // تبدیل map به آرایه مثل قبل
+    // ØªØ¨Ø¯ÛŒÙ„ map Ø¨Ù‡ Ø¢Ø±Ø§ÛŒÙ‡ Ù…Ø«Ù„ Ù‚Ø¨Ù„
     const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
       questionId,
       answer,
@@ -90,22 +96,21 @@ const HalandTest = ({ questions, duration = 8 }) => {
     try {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
-        alert("🎉 آزمون هالند با موفقیت ثبت شد!");
-        setItemWithExpiry(DONE_KEY, true, 24 * 60 * 60 * 1000);
+        alert("ðŸŽ‰ Ø¢Ø²Ù…ÙˆÙ† Ù‡Ø§Ù„Ù†Ø¯ Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø«Ø¨Øª Ø´Ø¯!");
+        setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000);
         setBlocked(true);
-        navigate("/");
-        location.reload();
+        navigate("/dashboard");
 
       } else {
-        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        alert("âŒ Ø°Ø®ÛŒØ±Ù‡â€ŒØ³Ø§Ø²ÛŒ Ù†ØªØ§ÛŒØ¬ Ø§Ù†Ø¬Ø§Ù… Ù†Ø´Ø¯!");
         submittingRef.current = false;
       }
     } catch (err) {
       console.error("Holland submission error:", err);
-      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      alert("âš ï¸ Ø§Ø±Ø³Ø§Ù„ Ù†ØªØ§ÛŒØ¬ Ø¨Ø§ Ø®Ø·Ø§ Ù…ÙˆØ§Ø¬Ù‡ Ø´Ø¯.");
       submittingRef.current = false;
     }
-  }, [answers, navigate, user?.id, user?._id]);
+  }, [answers, doneKey, navigate, user?.id, user?._id]);
 
   if (blocked) {
     return null;
@@ -115,8 +120,8 @@ const HalandTest = ({ questions, duration = 8 }) => {
     return (
       <div className="holland-test">
         <div className="intro-box">
-          <h2>آزمون هالند</h2>
-          <p>سوالی برای نمایش وجود ندارد.</p>
+          <h2>Ø¢Ø²Ù…ÙˆÙ† Ù‡Ø§Ù„Ù†Ø¯</h2>
+          <p>Ø³ÙˆØ§Ù„ÛŒ Ø¨Ø±Ø§ÛŒ Ù†Ù…Ø§ÛŒØ´ ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯.</p>
         </div>
       </div>
     );
@@ -126,14 +131,14 @@ const HalandTest = ({ questions, duration = 8 }) => {
     <div className="holland-test" role="main" aria-live="polite">
       {!started ? (
         <div className="intro-box">
-          <p>این آزمون کمک می‌کند علاقه و گرایش شغلی خود را بشناسید</p>
-          <h2>🎯</h2>
+          <p>Ø§ÛŒÙ† Ø¢Ø²Ù…ÙˆÙ† Ú©Ù…Ú© Ù…ÛŒâ€ŒÚ©Ù†Ø¯ Ø¹Ù„Ø§Ù‚Ù‡ Ùˆ Ú¯Ø±Ø§ÛŒØ´ Ø´ØºÙ„ÛŒ Ø®ÙˆØ¯ Ø±Ø§ Ø¨Ø´Ù†Ø§Ø³ÛŒØ¯</p>
+          <h2>ðŸŽ¯</h2>
           <h4>
-            میانگین برای هر سؤال:{" "}
-            {Math.max(5, Math.round((duration * 60) / total))} ثانیه
+            Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø¨Ø±Ø§ÛŒ Ù‡Ø± Ø³Ø¤Ø§Ù„:{" "}
+            {Math.max(5, Math.round((duration * 60) / total))} Ø«Ø§Ù†ÛŒÙ‡
           </h4>
           <button className="start-btn" onClick={() => setStarted(true)}>
-            شروع آزمون
+            Ø´Ø±ÙˆØ¹ Ø¢Ø²Ù…ÙˆÙ†
           </button>
         </div>
       ) : (
@@ -150,12 +155,12 @@ const HalandTest = ({ questions, duration = 8 }) => {
           </div>
 
           <div className="question-card" key={currentQuestion?.id ?? currentIndex}>
-            <h3 className="question-text">{currentQuestion?.text ?? "سوال"}</h3>
+            <h3 className="question-text">{currentQuestion?.text ?? "Ø³ÙˆØ§Ù„"}</h3>
 
-            <div className="options-grid" role="listbox" aria-label="گزینه‌ها">
+            <div className="options-grid" role="listbox" aria-label="Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§">
               {(currentQuestion?.options || []).map((option, idx) => {
                 const qid = currentQuestion?.id ?? `q_${currentIndex}`;
-                const selected = answers[qid] === option; // گزینه‌ها رشته هستند
+                const selected = answers[qid] === option; // Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§ Ø±Ø´ØªÙ‡ Ù‡Ø³ØªÙ†Ø¯
                 return (
                   <button
                     key={idx}
@@ -163,7 +168,7 @@ const HalandTest = ({ questions, duration = 8 }) => {
                     className={`option-button ${selected ? "selected" : ""}`}
                     onClick={() => handleSelect(option)}
                     aria-pressed={selected}
-                    title={`کلید ${idx + 1}`}
+                    title={`Ú©Ù„ÛŒØ¯ ${idx + 1}`}
                   >
                     {option}
                   </button>
@@ -173,7 +178,7 @@ const HalandTest = ({ questions, duration = 8 }) => {
           </div>
 
           <p className="progress-count">
-            سؤال {currentIndex + 1} از {total}
+            Ø³Ø¤Ø§Ù„ {currentIndex + 1} Ø§Ø² {total}
           </p>
 
           <div className="nav-actions">
@@ -181,25 +186,25 @@ const HalandTest = ({ questions, duration = 8 }) => {
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
                 className="nav-btn"
-                aria-label="سوال قبلی"
+                aria-label="Ø³ÙˆØ§Ù„ Ù‚Ø¨Ù„ÛŒ"
               >
-                ← قبلی
+                â† Ù‚Ø¨Ù„ÛŒ
               </button>
 
               <button
                 onClick={() => currentIndex + 1 < total && setCurrentIndex((i) => i + 1)}
                 disabled={currentIndex + 1 >= total}
                 className="nav-btn"
-                aria-label="سوال بعدی"
+                aria-label="Ø³ÙˆØ§Ù„ Ø¨Ø¹Ø¯ÛŒ"
               >
-                بعدی →
+                Ø¨Ø¹Ø¯ÛŒ â†’
               </button>
               {/* <button
-                onClick={() => window.confirm("ارسال آزمون؟") && handleSubmit()}
+                onClick={() => window.confirm("Ø§Ø±Ø³Ø§Ù„ Ø¢Ø²Ù…ÙˆÙ†ØŸ") && handleSubmit()}
                 className="submit-btn"
                 disabled={submitting}
               >
-                {submitting ? "در حال ارسال..." : "ارسال نهایی"}
+                {submitting ? "Ø¯Ø± Ø­Ø§Ù„ Ø§Ø±Ø³Ø§Ù„..." : "Ø§Ø±Ø³Ø§Ù„ Ù†Ù‡Ø§ÛŒÛŒ"}
               </button> */}
             </div>
         </div>
