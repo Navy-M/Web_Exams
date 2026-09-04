@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+﻿import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import "../../styles/cliftonTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
-import { setItemWithExpiry, getItemWithExpiry, removeItem } from "../../services/storage";
+import { setItemWithExpiry, getItemWithExpiry, removeItem, scopedStorageKey } from "../../services/storage";
 import TopbarStatus from "./TopbarStatus";
 
 const STORAGE_KEY = "clifton_test_progress_v1";
@@ -19,6 +19,9 @@ export default function CliftonTest({ questions, duration = 10 }) {
   const { user } = useAuth() || {};
   const navigate = useNavigate();
   const startTimeRef = useRef(Date.now());
+  const userId = user?.id || user?._id;
+  const doneKey = scopedStorageKey(DONE_KEY, userId, "CLIFTON");
+  const storageKey = scopedStorageKey(STORAGE_KEY, userId, "CLIFTON");
 
   const Clifton_Test = useMemo(() => (Array.isArray(questions) ? questions : []), [questions]);
   const total = Clifton_Test.length;
@@ -27,31 +30,35 @@ export default function CliftonTest({ questions, duration = 10 }) {
   const [answers, setAnswers] = useState({}); // { [qid]: theme }
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration * 60);
-  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(DONE_KEY));
+  const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(doneKey));
   const submittingRef = useRef(false);
 
   const currentQ = Clifton_Test[currentIndex];
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
   useEffect(() => {
+    setBlocked(!!getItemWithExpiry(doneKey));
+  }, [doneKey]);
+
+  useEffect(() => {
     if (!blocked) return;
     alert("You have already completed this test. Please try again in 24 hours.");
-    navigate("/");
+    navigate("/dashboard");
   }, [blocked, navigate]);
 
   // try resume
   useEffect(() => {
     if (blocked) return;
-    const saved = getItemWithExpiry(STORAGE_KEY);
+    const saved = getItemWithExpiry(storageKey);
     if (saved && saved.questionsHash === total) {
-      if (window.confirm("پیش‌نویس آزمون کلیفتون پیدا شد. ادامه می‌دهید؟")) {
+      if (window.confirm("Ù¾ÛŒØ´â€ŒÙ†ÙˆÛŒØ³ Ø¢Ø²Ù…ÙˆÙ† Ú©Ù„ÛŒÙØªÙˆÙ† Ù¾ÛŒØ¯Ø§ Ø´Ø¯. Ø§Ø¯Ø§Ù…Ù‡ Ù…ÛŒâ€ŒØ¯Ù‡ÛŒØ¯ØŸ")) {
         setAnswers(saved.answers || {});
         setCurrentIndex(saved.currentIndex || 0);
         setStarted(saved.started || false);
         setTimeLeft(saved.timeLeft ?? duration * 60);
         startTimeRef.current = saved.startedAt || Date.now();
       } else {
-        removeItem(STORAGE_KEY);
+        removeItem(storageKey);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,7 +81,7 @@ export default function CliftonTest({ questions, duration = 10 }) {
     if (blocked || !started) return;
     const id = setTimeout(() => {
       setItemWithExpiry(
-        STORAGE_KEY,
+        storageKey,
         {
           answers,
           currentIndex,
@@ -124,23 +131,22 @@ export default function CliftonTest({ questions, duration = 10 }) {
     try {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
-        alert("🎉 آزمون کلیفتون با موفقیت ثبت شد!");
-        setItemWithExpiry(DONE_KEY, true, 24 * 60 * 60 * 1000); // 24h
+        alert("ðŸŽ‰ Ø¢Ø²Ù…ÙˆÙ† Ú©Ù„ÛŒÙØªÙˆÙ† Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø«Ø¨Øª Ø´Ø¯!");
+        setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000); // 24h
         setBlocked(true);
-        removeItem(STORAGE_KEY);
-        navigate("/");
-        location.reload();
+        removeItem(storageKey);
+        navigate("/dashboard");
 
       } else {
-        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        alert("âŒ Ø°Ø®ÛŒØ±Ù‡â€ŒØ³Ø§Ø²ÛŒ Ù†ØªØ§ÛŒØ¬ Ø§Ù†Ø¬Ø§Ù… Ù†Ø´Ø¯!");
         submittingRef.current = false;
       }
     } catch (error) {
       console.error("Clifton submission error:", error);
-      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      alert("âš ï¸ Ø§Ø±Ø³Ø§Ù„ Ù†ØªØ§ÛŒØ¬ Ø¨Ø§ Ø®Ø·Ø§ Ù…ÙˆØ§Ø¬Ù‡ Ø´Ø¯.");
       submittingRef.current = false;
     }
-  }, [answers, navigate, user?.id, user?._id]);
+  }, [answers, doneKey, navigate, storageKey, user?.id, user?._id]);
 
   if (blocked) {
     return null;
@@ -150,8 +156,8 @@ export default function CliftonTest({ questions, duration = 10 }) {
     return (
       <div className="clifton-test">
         <div className="intro-box">
-          <h2>آزمون کلیفتون</h2>
-          <p>سوالی برای نمایش وجود ندارد.</p>
+          <h2>Ø¢Ø²Ù…ÙˆÙ† Ú©Ù„ÛŒÙØªÙˆÙ†</h2>
+          <p>Ø³ÙˆØ§Ù„ÛŒ Ø¨Ø±Ø§ÛŒ Ù†Ù…Ø§ÛŒØ´ ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯.</p>
         </div>
       </div>
     );
@@ -161,11 +167,11 @@ export default function CliftonTest({ questions, duration = 10 }) {
     <div className="clifton-test" role="main" aria-live="polite">
       {!started ? (
         <div className="intro-box">
-          <p>این آزمون به شما کمک می‌کند توانایی‌ها و علایق شغلی خود را بهتر بشناسید</p>
-          <h2>💼</h2>
+          <p>Ø§ÛŒÙ† Ø¢Ø²Ù…ÙˆÙ† Ø¨Ù‡ Ø´Ù…Ø§ Ú©Ù…Ú© Ù…ÛŒâ€ŒÚ©Ù†Ø¯ ØªÙˆØ§Ù†Ø§ÛŒÛŒâ€ŒÙ‡Ø§ Ùˆ Ø¹Ù„Ø§ÛŒÙ‚ Ø´ØºÙ„ÛŒ Ø®ÙˆØ¯ Ø±Ø§ Ø¨Ù‡ØªØ± Ø¨Ø´Ù†Ø§Ø³ÛŒØ¯</p>
+          <h2>ðŸ’¼</h2>
           <h4>
-            میانگین برای هر سؤال:{" "}
-            {Math.max(5, Math.round((duration * 60) / total))} ثانیه
+            Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø¨Ø±Ø§ÛŒ Ù‡Ø± Ø³Ø¤Ø§Ù„:{" "}
+            {Math.max(5, Math.round((duration * 60) / total))} Ø«Ø§Ù†ÛŒÙ‡
           </h4>
           <button
             className="start-btn"
@@ -175,7 +181,7 @@ export default function CliftonTest({ questions, duration = 10 }) {
               setTimeLeft(duration * 60);
             }}
           >
-            شروع آزمون
+            Ø´Ø±ÙˆØ¹ Ø¢Ø²Ù…ÙˆÙ†
           </button>
         </div>
       ) : (
@@ -192,15 +198,15 @@ export default function CliftonTest({ questions, duration = 10 }) {
           </div>
 
           <div className="question-card" key={currentQ?.id ?? currentIndex}>
-            {/* <h3 className="question-text">{currentQ?.question || currentQ?.text || "سؤال"}</h3> */}
+            {/* <h3 className="question-text">{currentQ?.question || currentQ?.text || "Ø³Ø¤Ø§Ù„"}</h3> */}
 
-            <div className="options-grid two-col" role="listbox" aria-label="گزینه‌ها">
+            <div className="options-grid two-col" role="listbox" aria-label="Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§">
               <button
                 type="button"
                 className={`option-button ${answers[currentQ?.id] === currentQ?.theme_a ? "selected" : ""}`}
                 onClick={() => handleSelect(currentQ?.theme_a)}
                 aria-pressed={answers[currentQ?.id] === currentQ?.theme_a}
-                title="کلید 1"
+                title="Ú©Ù„ÛŒØ¯ 1"
               >
                 {currentQ?.statement_a}
               </button>
@@ -209,7 +215,7 @@ export default function CliftonTest({ questions, duration = 10 }) {
                 className={`option-button ${answers[currentQ?.id] === currentQ?.theme_b ? "selected" : ""}`}
                 onClick={() => handleSelect(currentQ?.theme_b)}
                 aria-pressed={answers[currentQ?.id] === currentQ?.theme_b}
-                title="کلید 2"
+                title="Ú©Ù„ÛŒØ¯ 2"
               >
                 {currentQ?.statement_b}
               </button>
@@ -217,7 +223,7 @@ export default function CliftonTest({ questions, duration = 10 }) {
           </div>
 
           <p className="progress-count">
-            سؤال {currentIndex + 1} از {total}
+            Ø³Ø¤Ø§Ù„ {currentIndex + 1} Ø§Ø² {total}
           </p>
 
           <div className="nav-actions">
@@ -225,25 +231,25 @@ export default function CliftonTest({ questions, duration = 10 }) {
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
                 className="nav-btn"
-                aria-label="سوال قبلی"
+                aria-label="Ø³ÙˆØ§Ù„ Ù‚Ø¨Ù„ÛŒ"
               >
-                ← قبلی
+                â† Ù‚Ø¨Ù„ÛŒ
               </button>
 
               <button
                 onClick={() => currentIndex + 1 < total && setCurrentIndex((i) => i + 1)}
                 disabled={currentIndex + 1 >= total}
                 className="nav-btn"
-                aria-label="سوال بعدی"
+                aria-label="Ø³ÙˆØ§Ù„ Ø¨Ø¹Ø¯ÛŒ"
               >
-                بعدی →
+                Ø¨Ø¹Ø¯ÛŒ â†’
               </button>
               {/* <button
-                onClick={() => window.confirm("ارسال آزمون؟") && handleSubmit()}
+                onClick={() => window.confirm("Ø§Ø±Ø³Ø§Ù„ Ø¢Ø²Ù…ÙˆÙ†ØŸ") && handleSubmit()}
                 className="submit-btn"
                 disabled={submitting}
               >
-                {submitting ? "در حال ارسال..." : "ارسال نهایی"}
+                {submitting ? "Ø¯Ø± Ø­Ø§Ù„ Ø§Ø±Ø³Ø§Ù„..." : "Ø§Ø±Ø³Ø§Ù„ Ù†Ù‡Ø§ÛŒÛŒ"}
               </button> */}
             </div>
         </div>
