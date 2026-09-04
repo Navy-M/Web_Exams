@@ -4,9 +4,10 @@ import "../../styles/TestCardGrid.css";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
 
-const TestResultCardGrid = ({ onSelectTest }) => {
+const TestResultCardGrid = ({ onSelectTest, results }) => {
   const { user } = useAuth();
   const { t } = useI18n();
+  const tests = Array.isArray(results) ? results : user?.testsAssigned || [];
 
   const formatDate = (time) =>
     new Date(time).toLocaleDateString("fa-IR", {
@@ -19,7 +20,7 @@ const TestResultCardGrid = ({ onSelectTest }) => {
 
   return (
     <div className="test-card-grid">
-      {user?.testsAssigned?.map((test) => {
+      {tests.map((test) => {
         const id = test.testType;
         const testCard = Test_Cards.find((tc) => tc.id === id);
 
