@@ -15,24 +15,24 @@ import { protect, admin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", createResult);
-router.post("/submitUInfo", submitUInfo);
-
-router.get("/:resultId", getResultById);
+router.post("/", protect, createResult);
+router.post("/submitUInfo", protect, submitUInfo);
 
 router.delete("/:resultId/analysis", protect, admin, clearResultAnalysis);
 router.delete("/:resultId", protect, admin, deleteResult);
 
-router.post("/analyze", analyze);
+router.post("/analyze", protect, admin, analyze);
 
-router.post("/jobs/prioritize", prioritizeJobs);
+router.post("/jobs/prioritize", protect, admin, prioritizeJobs);
 
-router.get("/", getResults);
+router.get("/", protect, admin, getResults);
 
-router.post("/submitfeedback", updateTestFeedback);
+router.post("/submitfeedback", protect, admin, updateTestFeedback);
 
-router.post("/:userId/userResult", getResults);
+router.post("/:userId/userResult", protect, admin, getResultsByUser);
 
 router.post("/list/:userId", protect, admin, getResultsByUser);
+
+router.get("/:resultId", protect, getResultById);
 
 export default router;
