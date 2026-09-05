@@ -35,6 +35,8 @@ const resultSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+resultSchema.index({ user: 1, testType: 1 }, { unique: true });
+
 // Middleware to calculate total score and duration
 resultSchema.pre("save", function (next) {
   if (this.startedAt && this.submittedAt) {
