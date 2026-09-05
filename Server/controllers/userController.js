@@ -34,6 +34,12 @@ export const getUsers = async (req, res, next) => {
 export const getUserById = async (req, res, next) => {
   try {
     const userId = req.params.id;
+    const isAdmin = req.user?.role === "admin";
+    const isOwner = req.user?._id?.toString() === userId;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ message: "Access denied" });
+    }
 
     // Find user by ID and exclude password
     const user = await User.findById(userId).select("-password");
@@ -56,8 +62,18 @@ export const completeProfile = async (req, res) => {
       ? req.body.profile
       : req.body;
 
-    const userId = req.body.userId ?? src.userId ?? req.user?._id;
+    const requestedUserId = req.body.userId ?? src.userId;
+    const isAdmin = req.user?.role === "admin";
+    const userId = isAdmin && requestedUserId ? requestedUserId : req.user?._id;
     const username = req.body.username ?? src.username;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!isAdmin && requestedUserId && requestedUserId !== req.user?._id?.toString()) {
+      return res.status(403).json({ message: "Access denied" });
+    }
 
     // console.log("=== [completeProfile] payload →", {
     //   userId,
@@ -136,17 +152,6 @@ export const completeProfile = async (req, res) => {
 };
 
 export const getProfile = (req, res) => {
-  const token = req.cookies.token;
-  if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return res.json({
-      id: decoded.id,
-      role: decoded.role,
-      username: decoded.username,
-    });
-  } catch {
-    return res.status(401).json({ message: "Invalid token" });
-  }
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+  return res.json(req.user);
 };
