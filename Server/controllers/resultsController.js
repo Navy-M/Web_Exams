@@ -20,8 +20,10 @@ export const createResult = async (req, res) => {
       adminFeedback, // Optional
       startedAt, // When test started
     } = req.body;
+    const isAdmin = req.user?.role === "admin";
+    const targetUserId = isAdmin && user ? user : req.user?._id;
 
-    if (!user || !testType || !answers) {
+    if (!targetUserId || !testType || !answers) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
@@ -33,7 +35,7 @@ export const createResult = async (req, res) => {
 
     // Check if result already exists
     const existingResult = await Result.findOne({
-      user: user, // if user is just an ID
+      user: targetUserId,
       testType: testType,
     });
     if (existingResult) {
@@ -45,7 +47,7 @@ export const createResult = async (req, res) => {
     const normalizedAnswers = normalizeAnswers(testType, answers);
 
     const newResult = new Result({
-      user,
+      user: targetUserId,
       testType,
       answers: normalizedAnswers,
       score,
@@ -98,8 +100,19 @@ export const getResultById = async (req, res) => {
     }
 
     // 5️⃣ Return the result
+    const isAdmin = req.user?.role === "admin";
+    const isOwner = String(result.user) === String(req.user?._id);
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({
+        status: "error",
+        message: "Access denied.",
+      });
+    }
+
     return res.status(200).json({
+      ok: true,
       status: "success",
+      resultId: String(result._id),
       data: result,
     });
   } catch (error) {
@@ -126,6 +139,12 @@ export const getResults = async (req, res) => {
 export const getResultsByUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    const isAdmin = req.user?.role === "admin";
+    const isOwner = String(req.user?._id) === String(userId);
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     const results = await Result.find({ user: userId }).populate(
       "user",
       "name email"
@@ -140,9 +159,34 @@ export const getResultsByUser = async (req, res) => {
 // Save Results
 export async function submitUInfo(req, res) {
   try {
-    const { userId, testType, answers, startedAt } = req.body;
+    const { userId: requestedUserId, testType, answers, startedAt } = req.body;
+    const isAdmin = req.user?.role === "admin";
+    const userId = isAdmin && requestedUserId ? requestedUserId : req.user?._id;
+
     if (!userId || !testType || !Array.isArray(answers)) {
       return res.status(400).json({ ok: false, error: "INVALID_PAYLOAD" });
+    }
+
+    if (!isAdmin && requestedUserId && String(requestedUserId) !== String(req.user?._id)) {
+      return res.status(403).json({ ok: false, error: "Access denied" });
+    }
+
+    const existing = await Result.findOne({ user: userId, testType }).select(
+      "_id user testType submittedAt durationInSeconds"
+    );
+    if (existing) {
+      return res.status(409).json({
+        ok: false,
+        error: "DUPLICATE_RESULT",
+        resultId: existing._id,
+        result: {
+          _id: existing._id,
+          user: existing.user,
+          testType: existing.testType,
+          submittedAt: existing.submittedAt,
+          durationInSeconds: existing.durationInSeconds ?? 0,
+        },
+      });
     }
 
     const normalized = normalizeAnswers(testType, answers);
@@ -157,26 +201,37 @@ export async function submitUInfo(req, res) {
 
     await result.save();
 
-    const user = await User.findById(userId);
-    if (user) {
-      const exists = (user.testsAssigned || []).some(
-        (t) => String(t.resultId) === String(result._id)
-      );
-      if (!exists) {
-        user.testsAssigned.push({
+    await User.updateOne(
+      { _id: userId, "testsAssigned.resultId": { $ne: result._id } },
+      {
+        $push: {
+          testsAssigned: {
           resultId: result._id,
           testType,
           completedAt: result.submittedAt,
           duration: result.durationInSeconds ?? 0,
           isPublic: false,
-        });
-        await user.save();
+          },
+        },
       }
-    }
+    );
 
-    return res.json({ ok: true, resultId: result._id });
+    return res.json({
+      ok: true,
+      resultId: result._id,
+      result: {
+        _id: result._id,
+        user: result.user,
+        testType: result.testType,
+        submittedAt: result.submittedAt,
+        durationInSeconds: result.durationInSeconds ?? 0,
+      },
+    });
   } catch (err) {
     console.error("submitUInfo error:", err);
+    if (err?.code === 11000) {
+      return res.status(409).json({ ok: false, error: "DUPLICATE_RESULT" });
+    }
     return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
   }
 }
@@ -216,7 +271,9 @@ export const deleteResult = async (req, res) => {
     // console.log("Private array update result:", privateUpdateResult); // Debug: Log update result
 
     return res.status(200).json({
+      ok: true,
       status: "success",
+      resultId: String(result._id),
       message: "نتیجه با موفقیت حذف شد",
     });
   } catch (err) {
@@ -413,6 +470,7 @@ export async function analyze(req, res) {
     return res.json({
       ok: true,
       resultId: result._id,
+      result: persisted,
       analysis: persisted?.analysis || analysis,
       score: persisted?.score ?? overall,
     });
@@ -496,10 +554,13 @@ export async function clearResultAnalysis(req, res) {
       }
     }
 
+    const persisted = await Result.findById(rid);
 
     // 5) پاسخ موفق
     return res.json({
       ok: true,
+      resultId: String(rid),
+      result: persisted,
       message: "ANALYSIS_CLEARED",
       // اطلاعات کمکی برای دیباگ مدیر سیستم:
       debug: {
@@ -568,7 +629,7 @@ export const updateTestFeedback = async (req, res) => {
 
     res
       .status(200)
-      .json({ message: "Feedback submitted successfully", result });
+      .json({ ok: true, message: "Feedback submitted successfully", result });
   } catch (error) {
     console.error("Error submitting feedback:", error);
     res.status(500).json({ message: "Server error" });
@@ -627,8 +688,8 @@ export async function prioritizeJobs(req, res) {
       jobRequirements: jobRequirements || {},
     });
 
-    // Build the exact envelope AllocationReport needs:
     const meta = {
+      ...(out.meta || {}),
       source: "api",
       receivedAt: new Date().toISOString(),
     };
@@ -653,6 +714,7 @@ export async function prioritizeJobs(req, res) {
       assignments: out.assignments || [],
       waitlist: out.waitlist || [],
       unassigned: out.unassigned || [],
+      candidateJobScores: out.candidateJobScores || [],
       table: out.table || [],
       export: out.export || {},
     });
