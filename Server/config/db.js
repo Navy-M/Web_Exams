@@ -1,10 +1,14 @@
 ﻿import mongoose from "mongoose";
 
+const env = (key) => process.env[key] || process.env[key.toLowerCase()];
+
 const connectDB = async () => {
-  // Dev
-  // const candidates = [process.env.MONGO_URI, process.env.LOCAL_MONGO_URI].filter(Boolean);
-  // Product
-  const candidates = [process.env.MONGO_URI].filter(Boolean);
+  const localUri = env("LOCAL_MONGO_URI") || env("local_mongo_uri");
+  const remoteUri = env("MONGO_URI");
+  const candidates =
+    process.env.NODE_ENV === "production"
+      ? [remoteUri, localUri].filter(Boolean)
+      : [localUri, remoteUri].filter(Boolean);
 
   if (candidates.length === 0) {
     console.error("[DB] No MongoDB connection string provided (MONGO_URI or LOCAL_MONGO_URI).");
