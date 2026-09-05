@@ -1353,22 +1353,59 @@ export function standardizeAnalysis(raw = {}, meta = {}) {
       : raw.normalizedScores && typeof raw.normalizedScores === "object"
       ? raw.normalizedScores
       : {};
+  const rawScores =
+    raw.rawScores && typeof raw.rawScores === "object"
+      ? raw.rawScores
+      : raw.scores && typeof raw.scores === "object"
+      ? raw.scores
+      : {};
+  const normalizedScores =
+    raw.normalizedScores && typeof raw.normalizedScores === "object"
+      ? raw.normalizedScores
+      : scores;
+  const traits =
+    raw.traits ||
+    raw.intelligenceProfiles ||
+    raw.themeDetails ||
+    raw.dimensions ||
+    raw.dominantTraits ||
+    null;
 
   return {
+    ...raw,
     test: raw.test || meta.testType,
     scores,
-    traits: raw.traits || raw.intelligenceProfiles || raw.themeDetails || raw.dimensions || null,
+    rawScores,
+    normalizedScores,
+    traits,
     summary: typeof raw.summary === "string" ? raw.summary : "",
     dataForUI: raw.dataForUI ?? null,
+    analyzedAt: raw.analyzedAt || new Date().toISOString(),
     meta: { ...(raw.meta || {}), ...(meta || {}) },
   };
 }
 
 /** میانگین گرفتن از نمرات 0..100 (برای KPI کلی) */
 export function computeOverallScore(scores = {}) {
-  const vals = Object.values(scores)
-    .map((v) => (typeof v === "number" ? v : null))
-    .filter((v) => v != null);
+  const vals = [];
+  const collect = (value) => {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      vals.push(value);
+      return;
+    }
+    if (!value || typeof value !== "object" || Array.isArray(value)) return;
+
+    const entries = Object.values(value);
+    const numeric = entries.filter((v) => typeof v === "number" && Number.isFinite(v));
+    if (numeric.length && numeric.length === entries.length) {
+      vals.push(Math.max(...numeric));
+      return;
+    }
+
+    entries.forEach(collect);
+  };
+
+  collect(scores);
   if (!vals.length) return 0;
   const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
   return clampPct(mean);
