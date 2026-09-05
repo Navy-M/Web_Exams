@@ -24,13 +24,18 @@ const allowedOrigins = rawFrontend
   .split(",")
   .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
+const isProduction = process.env.NODE_ENV === "production";
+
+if (isProduction && allowedOrigins.length === 0) {
+  throw new Error("FRONTEND_URL must be configured in production");
+}
 
 app.use(helmet());
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      if (!isProduction || !origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
       console.warn(`Blocked CORS origin: ${origin}`);
@@ -65,8 +70,12 @@ const getRoleFromRequest = (req) => {
 //   next();
 // });
 
-// Sanitize against NoSQL injection attacks
-// app.use(mongoSanitize());
+// Sanitize body/params against NoSQL injection. Express 5 exposes req.query as a getter.
+app.use((req, res, next) => {
+  if (req.body) mongoSanitize.sanitize(req.body);
+  if (req.params) mongoSanitize.sanitize(req.params);
+  next();
+});
 
 // put this near the top, before app.use(limiter)
 app.set('trust proxy', 1); // one proxy (nginx). Or just true.
