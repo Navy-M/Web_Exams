@@ -4,12 +4,16 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test tests/jobPrioritizer.test.mjs",
+    "test:prioritizer": "node --test tests/jobPrioritizer.test.mjs",
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "nodemon scripts/devServer.mjs",
     "seedDBAdmin": "node seedAdmin.js",
     "seedDBUser": "node seedUser.js",
     "testDB": "node testMongo.js",
+    "smoke:security": "node scripts/securitySmoke.mjs",
+    "smoke:security:temp": "node scripts/securitySmokeWithTempUsers.mjs",
+    "smoke:admin": "node scripts/adminConsistencySmoke.mjs",
     "backupDB": "node backupMongo.js",
     "exportJsonDB":"node exportCollections.mjs"
   },
