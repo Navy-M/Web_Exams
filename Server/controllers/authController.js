@@ -71,7 +71,7 @@ export const loginUser = async (req, res, next) => {
  */
 export const registerUser = async (req, res, next) => {
   try {
-    const { username, fullName, period, password, role } = req.body;
+    const { username, fullName, period, password } = req.body;
       // console.log("username:", username);
       // console.log("password:", password);
       // console.log("fullName:", fullName);
@@ -97,7 +97,7 @@ export const registerUser = async (req, res, next) => {
       username,
       period,
       password: hashed,
-      role: role || "user",
+      role: "user",
       profile: { fullName: fullName },
     });
 
@@ -135,6 +135,7 @@ export const registerUser = async (req, res, next) => {
       message: "User registered",
       token,
       user: {
+        id: user._id,
         username: user.username,
         role: user.role,
         period,
@@ -169,41 +170,16 @@ export const logoutUser = (req, res) => {
 };
 
 /**
- * @desc    Get profile of logged-in user based on JWT cookie
+ * @desc    Get profile of logged-in user
  * @route   GET /api/auth/profile
  */
 export const getProfile = async (req, res) => {
   try {
-    const token = req.cookies.token;
-
-    if (!token) {
+    const user = req.user;
+    if (!user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded?.id) {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
-    // Find user by ID, exclude password
-    const user = await User.findById(decoded.id).select("-password");
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // console.log({
-    //   user: {
-    //     id: user._id,
-    //     email: user.email,
-    //     period: user.period,
-    //     role: user.role,
-    //     profile: user.profile || {},
-    //     testsAssigned: user.testsAssigned || [],
-    //   },
-    // });
-
-    // Send user data
     res.json({
       user: {
         id: user._id,
