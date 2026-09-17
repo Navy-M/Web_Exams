@@ -754,6 +754,17 @@ const renderHiddenAndSavePdf = async (makeNode, { title, filename } = {}) => {
   await waitForChartsReady(host);
   const restore = await rasterizeCharts(host);
 
+  const hasRenderedContent =
+    (host.innerText || "").trim().length > 0 ||
+    !!host.querySelector("canvas,svg,img,table");
+
+  if (!hasRenderedContent) {
+    try { restore(); } catch {}
+    try { root.unmount(); } catch {}
+    host.remove();
+    throw new Error("PDF_RENDER_EMPTY");
+  }
+
   let html2pdf = window.html2pdf;
   if (!html2pdf) {
     const mod = await import("html2pdf.js");
