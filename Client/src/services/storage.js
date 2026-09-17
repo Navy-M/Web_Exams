@@ -29,3 +29,7 @@ export function getItemWithExpiry(key) {
 export function removeItem(key) {
   localStorage.removeItem(key);
 }
+
+export function scopedStorageKey(key, userId, testType = "") {
+  return [key, userId || "anonymous", testType].filter(Boolean).join(":");
+}
