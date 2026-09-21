@@ -586,3 +586,9 @@ function escapeHtml(s: unknown) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+export const rankJobsForUser = rankJobsForUserRich;
+export const rankJobs = rankJobsForUserRich;
+export const rankJobsForUserRICH = rankJobsForUserRich;
+export const rankJobsForUser_Advanced = rankJobsForUserRich;
+export default rankJobsForUserRich;
