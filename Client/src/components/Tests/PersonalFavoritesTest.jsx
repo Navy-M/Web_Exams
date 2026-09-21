@@ -91,18 +91,18 @@ export default function PersonalFavoritesTest({ questions = [], duration = 8 }) 
     try {
       const res = await submitResult(resultData);
       if (res?.user || res?._id || res?.id) {
-        alert("ðŸŽ‰ Ø¢Ø²Ù…ÙˆÙ† Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø«Ø¨Øª Ø´Ø¯!");
+        alert("🎉 آزمون با موفقیت ثبت شد!");
         setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000);
         setBlocked(true);
         navigate("/dashboard");
 
       } else {
-        alert("âŒ Ø°Ø®ÛŒØ±Ù‡â€ŒØ³Ø§Ø²ÛŒ Ù†ØªØ§ÛŒØ¬ Ø§Ù†Ø¬Ø§Ù… Ù†Ø´Ø¯!");
+        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
         submittingRef.current = false;
       }
     } catch (err) {
       console.error("PF submission error:", err);
-      alert("âš ï¸ Ø§Ø±Ø³Ø§Ù„ Ù†ØªØ§ÛŒØ¬ Ø¨Ø§ Ø®Ø·Ø§ Ù…ÙˆØ§Ø¬Ù‡ Ø´Ø¯.");
+      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
       submittingRef.current = false;
     }
   }, [answers, doneKey, navigate, user?.id, user?._id]);
@@ -115,8 +115,8 @@ export default function PersonalFavoritesTest({ questions = [], duration = 8 }) 
     return (
       <div className="pf-test">
         <div className="intro-box">
-          <h2>Ø¢Ø²Ù…ÙˆÙ† Ø§ÙˆÙ„ÙˆÛŒØªâ€ŒÙ‡Ø§ÛŒ Ø´Ø®ØµÛŒ</h2>
-          <p>Ø³ÙˆØ§Ù„ÛŒ Ø¨Ø±Ø§ÛŒ Ù†Ù…Ø§ÛŒØ´ ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯.</p>
+          <h2>آزمون اولویت‌های شخصی</h2>
+          <p>سوالی برای نمایش وجود ندارد.</p>
         </div>
       </div>
     );
@@ -126,11 +126,11 @@ export default function PersonalFavoritesTest({ questions = [], duration = 8 }) 
     <div className="pf-test" role="main" aria-live="polite">
       {!started ? (
         <div className="intro-box">
-          <p>Ø§ÛŒÙ† Ø¢Ø²Ù…ÙˆÙ† Ø¨Ù‡ Ø´Ù…Ø§ Ú©Ù…Ú© Ù…ÛŒâ€ŒÚ©Ù†Ø¯ Ø§ÙˆÙ„ÙˆÛŒØªâ€ŒÙ‡Ø§ Ùˆ Ø¹Ù„Ø§ÛŒÙ‚ Ø±ÙˆØ²Ù…Ø±Ù‡â€ŒØªØ§Ù† Ø±Ø§ Ø´Ù†Ø§Ø³Ø§ÛŒÛŒ Ú©Ù†ÛŒØ¯.</p>
-          <h2>ðŸŽ¯</h2>
+          <p>این آزمون به شما کمک می‌کند اولویت‌ها و علایق روزمره‌تان را شناسایی کنید.</p>
+          <h2>🎯</h2>
           <h4>
-            Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø¨Ø±Ø§ÛŒ Ù‡Ø± Ø³Ø¤Ø§Ù„:{" "}
-            {Math.max(5, Math.round((duration * 60) / total))} Ø«Ø§Ù†ÛŒÙ‡
+            میانگین برای هر سؤال:{" "}
+            {Math.max(5, Math.round((duration * 60) / total))} ثانیه
           </h4>
           <button
             className="start-btn"
@@ -140,7 +140,7 @@ export default function PersonalFavoritesTest({ questions = [], duration = 8 }) 
               setTimeLeft(duration * 60);
             }}
           >
-            Ø´Ø±ÙˆØ¹ Ø¢Ø²Ù…ÙˆÙ†
+            شروع آزمون
           </button>
         </div>
       ) : (
@@ -157,9 +157,9 @@ export default function PersonalFavoritesTest({ questions = [], duration = 8 }) 
           </div>
 
           <div className="question-card" key={currentQuestion?.id ?? currentIndex}>
-            <h3 className="question-text">{currentQuestion?.text ?? "Ø³Ø¤Ø§Ù„"}</h3>
+            <h3 className="question-text">{currentQuestion?.text ?? "سؤال"}</h3>
 
-            <div className="options-grid" role="listbox" aria-label="Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§">
+            <div className="options-grid" role="listbox" aria-label="گزینه‌ها">
               {(currentQuestion?.options || []).map((opt, idx) => {
                 const qid = currentQuestion?.id ?? `q_${currentIndex}`;
                 const chosen = answers[qid] === (Number.isFinite(Number(opt.value)) ? Number(opt.value) : parseInt(opt.value, 10));
@@ -170,7 +170,7 @@ export default function PersonalFavoritesTest({ questions = [], duration = 8 }) 
                     className={`option-button ${chosen ? "selected" : ""}`}
                     onClick={() => handleSelect(qid, opt.value)}
                     aria-pressed={chosen}
-                    title={`Ú©Ù„ÛŒØ¯ ${idx + 1}`}
+                    title={`کلید ${idx + 1}`}
                   >
                     {opt?.text ?? String(opt?.value)}
                   </button>
@@ -179,32 +179,32 @@ export default function PersonalFavoritesTest({ questions = [], duration = 8 }) 
             </div>
           </div>
 
-          <p className="progress-count">Ø³Ø¤Ø§Ù„ {currentIndex + 1} Ø§Ø² {total}</p>
+          <p className="progress-count">سؤال {currentIndex + 1} از {total}</p>
 
           <div className="nav-actions">
               <button
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
                 className="nav-btn"
-                aria-label="Ø³ÙˆØ§Ù„ Ù‚Ø¨Ù„ÛŒ"
+                aria-label="سوال قبلی"
               >
-                â† Ù‚Ø¨Ù„ÛŒ
+                ← قبلی
               </button>
 
               <button
                 onClick={() => currentIndex + 1 < total && setCurrentIndex((i) => i + 1)}
                 disabled={currentIndex + 1 >= total}
                 className="nav-btn"
-                aria-label="Ø³ÙˆØ§Ù„ Ø¨Ø¹Ø¯ÛŒ"
+                aria-label="سوال بعدی"
               >
-                Ø¨Ø¹Ø¯ÛŒ â†’
+                بعدی →
               </button>
               {/* <button
-                onClick={() => window.confirm("Ø§Ø±Ø³Ø§Ù„ Ø¢Ø²Ù…ÙˆÙ†ØŸ") && handleSubmit()}
+                onClick={() => window.confirm("ارسال آزمون؟") && handleSubmit()}
                 className="submit-btn"
                 disabled={submitting}
               >
-                {submitting ? "Ø¯Ø± Ø­Ø§Ù„ Ø§Ø±Ø³Ø§Ù„..." : "Ø§Ø±Ø³Ø§Ù„ Ù†Ù‡Ø§ÛŒÛŒ"}
+                {submitting ? "در حال ارسال..." : "ارسال نهایی"}
               </button> */}
             </div>
         </div>
