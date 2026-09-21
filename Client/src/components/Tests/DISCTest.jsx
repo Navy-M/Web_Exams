@@ -53,14 +53,14 @@ export default function DiscTest({ questions = [], duration = 8 }) {
 
     const done = getItemWithExpiry(doneKey);
     if (done) {
-      alert("Ø´Ù…Ø§ Ù‚Ø¨Ù„Ø§Ù‹ Ø§ÛŒÙ† Ø¢Ø²Ù…ÙˆÙ† Ø±Ø§ Ø§Ù†Ø¬Ø§Ù… Ø¯Ø§Ø¯Ù‡â€ŒØ§ÛŒØ¯.");
+      alert("شما قبلاً این آزمون را انجام داده‌اید.");
       navigate("/dashboard");
       return;
     }
 
     const saved = getItemWithExpiry(storageKey);
     if (saved && saved.questionsHash === questions.length) {
-      if (window.confirm("Ù¾ÛŒØ´â€ŒÙ†ÙˆÛŒØ³ Ø¢Ø²Ù…ÙˆÙ† Ù¾ÛŒØ¯Ø§ Ø´Ø¯. Ø§Ø¯Ø§Ù…Ù‡ Ù…ÛŒâ€ŒØ¯Ù‡ÛŒØ¯ØŸ")) {
+      if (window.confirm("پیش‌نویس آزمون پیدا شد. ادامه می‌دهید؟")) {
         setAnswers(saved.answers || []);
         setCurrentIndex(saved.currentIndex || 0);
         setStarted(saved.started || false);
@@ -209,37 +209,37 @@ export default function DiscTest({ questions = [], duration = 8 }) {
       if (result && (result.user || result._id || result.id)) {
         setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000); // 24h
         removeItem(storageKey);
-        alert("ðŸŽ‰ Ø¢Ø²Ù…ÙˆÙ† Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø«Ø¨Øª Ø´Ø¯!");
+        alert("🎉 آزمون با موفقیت ثبت شد!");
         navigate("/dashboard");
 
       } else {
-        setError("Ø°Ø®ÛŒØ±Ù‡â€ŒØ³Ø§Ø²ÛŒ Ù†ØªØ§ÛŒØ¬ Ø§Ù†Ø¬Ø§Ù… Ù†Ø´Ø¯. Ø¯ÙˆØ¨Ø§Ø±Ù‡ ØªÙ„Ø§Ø´ Ú©Ù†ÛŒØ¯.");
+        setError("ذخیره‌سازی نتایج انجام نشد. دوباره تلاش کنید.");
       }
     } catch (err) {
       console.error("submit error:", err);
-      setError("âš ï¸ Ø§Ø±Ø³Ø§Ù„ Ù†ØªØ§ÛŒØ¬ Ø¨Ø§ Ø®Ø·Ø§ Ù…ÙˆØ§Ø¬Ù‡ Ø´Ø¯. Ø§ØªØµØ§Ù„ Ø§ÛŒÙ†ØªØ±Ù†Øª Ø±Ø§ Ø¨Ø±Ø±Ø³ÛŒ Ú©Ù†ÛŒØ¯.");
+      setError("⚠️ ارسال نتایج با خطا مواجه شد. اتصال اینترنت را بررسی کنید.");
     } finally {
       if (mountedRef.current) setSubmitting(false);
     }
   }, [answers, doneKey, navigate, storageKey, submitting, user]);
 
-  // Ø¯Ø±ØµØ¯ Ù¾ÛŒØ´Ø±ÙØª Ø¨Ø± Ø§Ø³Ø§Ø³ Ù…ÙˆÙ‚Ø¹ÛŒØª (Ø¨Ø±Ø§ÛŒ Ù‡Ù…Ø§Ù‡Ù†Ú¯ÛŒ Ø¨Ø§ MBTI/TopbarStatus)
+  // درصد پیشرفت بر اساس موقعیت (برای هماهنگی با MBTI/TopbarStatus)
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
   return (
     <div className="disc-test" dir="rtl" aria-live="polite">
       {!started ? (
         <div className="intro-box">
-          <p>ÛŒÚ© Ø§Ø±Ø²ÛŒØ§Ø¨ÛŒ Ø³Ø±ÛŒØ¹ Ø¨Ø±Ø§ÛŒ Ø¯Ø±Ú© ØªØ±Ø¬ÛŒØ­Ø§Øª Ø±ÙØªØ§Ø±ÛŒ Ø´Ù…Ø§.</p>
-          <h2>ðŸŽ¯</h2>
+          <p>یک ارزیابی سریع برای درک ترجیحات رفتاری شما.</p>
+          <h2>🎯</h2>
    
           <ul className="intro-list">
-            <li>ØªØ¹Ø¯Ø§Ø¯ Ø³ÙˆØ§Ù„Ø§Øª: {total}</li>
-            <li>Ø²Ù…Ø§Ù† Ú©Ù„: {duration} Ø¯Ù‚ÛŒÙ‚Ù‡</li>
-            <li>Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ù‡Ø± Ø³Ø¤Ø§Ù„: {perQuestionTime} Ø«Ø§Ù†ÛŒÙ‡</li>
+            <li>تعداد سوالات: {total}</li>
+            <li>زمان کل: {duration} دقیقه</li>
+            <li>میانگین هر سؤال: {perQuestionTime} ثانیه</li>
           </ul>
           <div className="intro-actions">
-            <button className="start-btn" onClick={handleStart}>Ø´Ø±ÙˆØ¹ Ø¢Ø²Ù…ÙˆÙ†</button>
+            <button className="start-btn" onClick={handleStart}>شروع آزمون</button>
           </div>
         </div>
       ) : (
@@ -258,12 +258,12 @@ export default function DiscTest({ questions = [], duration = 8 }) {
           {error && <div className="error-banner" role="alert">{error}</div>}
 
           <div className="question-card" key={currentQuestion?.id ?? currentIndex}>
-            <h3 className="question-text">{currentQuestion?.question || "Ø³ÙˆØ§Ù„ Ù†Ø§Ù…Ø´Ø®Øµ"}</h3>
+            <h3 className="question-text">{currentQuestion?.question || "سوال نامشخص"}</h3>
 
-            {/* Ù…ÛŒâ€ŒØªÙˆÙ†ÛŒ Ø§Ú¯Ø± Ø®ÙˆØ§Ø³ØªÛŒØŒ ØªØ§ÛŒÙ…Ø± Ø³ÙˆØ§Ù„ÛŒ Ø±Ùˆ Ù‡Ù… Ø¨Ù‡ ØµÙˆØ±Øª Ù…ØªÙ† Ø³Ø§Ø¯Ù‡ Ù†Ø´ÙˆÙ† Ø¨Ø¯ÛŒ: */}
-            {/* <div className="progress-count">Ø²Ù…Ø§Ù† Ø³ÙˆØ§Ù„: {fmt(perQuestionRemaining)} (Ù¾ÛŒØ´Ù†Ù‡Ø§Ø¯ÛŒ: {perQuestionTime}s)</div> */}
+            {/* می‌تونی اگر خواستی، تایمر سوالی رو هم به صورت متن ساده نشون بدی: */}
+            {/* <div className="progress-count">زمان سوال: {fmt(perQuestionRemaining)} (پیشنهادی: {perQuestionTime}s)</div> */}
 
-            <div className="options-grid" role="listbox" aria-label="Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§">
+            <div className="options-grid" role="listbox" aria-label="گزینه‌ها">
               {currentQuestion?.options?.map((option, idx) => {
                 const answeredForThis = answers.find((a) => a.questionId === currentQuestion.id);
                 const isAnswered = !!answeredForThis;
@@ -278,7 +278,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
                     role="option"
                     aria-pressed={selected}
                     aria-disabled={submitting || isAnswered}
-                    title={`Ú©Ù„ÛŒØ¯ ${idx + 1}`}
+                    title={`کلید ${idx + 1}`}
                   >
                     {option.text}
                   </button>
@@ -286,32 +286,32 @@ export default function DiscTest({ questions = [], duration = 8 }) {
               })}
             </div>
 
-              <p className="progress-count">Ø³Ø¤Ø§Ù„ {currentIndex + 1} Ø§Ø² {total}</p>
+              <p className="progress-count">سؤال {currentIndex + 1} از {total}</p>
 
             <div className="nav-actions">
               <button
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
                 className="nav-btn"
-                aria-label="Ø³ÙˆØ§Ù„ Ù‚Ø¨Ù„ÛŒ"
+                aria-label="سوال قبلی"
               >
-                â† Ù‚Ø¨Ù„ÛŒ
+                ← قبلی
               </button>
 
               <button
                 onClick={() => currentIndex + 1 < total && setCurrentIndex((i) => i + 1)}
                 disabled={currentIndex + 1 >= total}
                 className="nav-btn"
-                aria-label="Ø³ÙˆØ§Ù„ Ø¨Ø¹Ø¯ÛŒ"
+                aria-label="سوال بعدی"
               >
-                Ø¨Ø¹Ø¯ÛŒ â†’
+                بعدی →
               </button>
               {/* <button
-                onClick={() => window.confirm("Ø§Ø±Ø³Ø§Ù„ Ø¢Ø²Ù…ÙˆÙ†ØŸ") && handleSubmit()}
+                onClick={() => window.confirm("ارسال آزمون؟") && handleSubmit()}
                 className="submit-btn"
                 disabled={submitting}
               >
-                {submitting ? "Ø¯Ø± Ø­Ø§Ù„ Ø§Ø±Ø³Ø§Ù„..." : "Ø§Ø±Ø³Ø§Ù„ Ù†Ù‡Ø§ÛŒÛŒ"}
+                {submitting ? "در حال ارسال..." : "ارسال نهایی"}
               </button> */}
             </div>
           </div>
