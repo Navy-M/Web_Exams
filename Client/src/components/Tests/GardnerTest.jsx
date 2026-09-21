@@ -15,11 +15,11 @@ function formatTime(sec) {
 }
 
 const SCORE_MAP = {
-  "Ø®ÛŒÙ„ÛŒ Ú©Ù…": 1,
-  "Ú©Ù…ÛŒ": 2,
-  "ØªØ§Ø­Ø¯ÛŒ": 3,
-  "Ø²ÛŒØ§Ø¯": 4,
-  "Ø®ÛŒÙ„ÛŒ Ø²ÛŒØ§Ø¯": 5,
+  "خیلی کم": 1,
+  "کمی": 2,
+  "تاحدی": 3,
+  "زیاد": 4,
+  "خیلی زیاد": 5,
 };
 
 export default function GardnerTest({ questions, duration = 10 }) {
@@ -33,7 +33,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
   const total = Gardner_Test.length;
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  // Ø¬ÙˆØ§Ø¨â€ŒÙ‡Ø§ Ø¨Ù‡â€ŒØµÙˆØ±Øª map Ù†Ú¯Ù‡ Ù…ÛŒâ€ŒØ¯Ø§Ø±ÛŒÙ…: { [questionId]: number }
+  // جواب‌ها به‌صورت map نگه می‌داریم: { [questionId]: number }
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(doneKey));
@@ -53,7 +53,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
 
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
-  // ØªØ§ÛŒÙ…Ø± Ú©Ù„ Ø¢Ø²Ù…ÙˆÙ†
+  // تایمر کل آزمون
   useEffect(() => {
     if (blocked || !started) return;
     if (timeLeft <= 0) {
@@ -65,7 +65,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blocked, started, timeLeft]);
 
-  // Ø§Ù†ØªØ®Ø§Ø¨ Ú¯Ø²ÛŒÙ†Ù‡
+  // انتخاب گزینه
   const handleSelect = useCallback(
     (choice) => {
       const qid = currentQuestion?.id ?? `q_${currentIndex}`;
@@ -86,7 +86,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
     [currentIndex, currentQuestion?.id, total]
   );
 
-  // Ø§Ø±Ø³Ø§Ù„ Ù†Ù‡Ø§ÛŒÛŒ
+  // ارسال نهایی
   const handleSubmit = useCallback(async () => {
     if (submittingRef.current) return;
     submittingRef.current = true;
@@ -109,18 +109,18 @@ export default function GardnerTest({ questions, duration = 10 }) {
     try {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
-        alert("ðŸŽ‰ Ø¢Ø²Ù…ÙˆÙ† Ú¯Ø§Ø±Ø¯Ù†Ø± Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø«Ø¨Øª Ø´Ø¯!");
+        alert("🎉 آزمون گاردنر با موفقیت ثبت شد!");
         setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000);
         setBlocked(true);
         navigate("/dashboard");
 
       } else {
-        alert("âŒ Ø°Ø®ÛŒØ±Ù‡â€ŒØ³Ø§Ø²ÛŒ Ù†ØªØ§ÛŒØ¬ Ø§Ù†Ø¬Ø§Ù… Ù†Ø´Ø¯!");
+        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
         submittingRef.current = false;
       }
     } catch (err) {
       console.error("Gardner submission error:", err);
-      alert("âš ï¸ Ø§Ø±Ø³Ø§Ù„ Ù†ØªØ§ÛŒØ¬ Ø¨Ø§ Ø®Ø·Ø§ Ù…ÙˆØ§Ø¬Ù‡ Ø´Ø¯.");
+      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
       submittingRef.current = false;
     }
   }, [answers, doneKey, navigate, user?.id, user?._id]);
@@ -133,8 +133,8 @@ export default function GardnerTest({ questions, duration = 10 }) {
     return (
       <div className="gardner-test">
         <div className="intro-box">
-          <h2>Ø¢Ø²Ù…ÙˆÙ† Ú¯Ø§Ø±Ø¯Ù†Ø±</h2>
-          <p>Ø³ÙˆØ§Ù„ÛŒ Ø¨Ø±Ø§ÛŒ Ù†Ù…Ø§ÛŒØ´ ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯.</p>
+          <h2>آزمون گاردنر</h2>
+          <p>سوالی برای نمایش وجود ندارد.</p>
         </div>
       </div>
     );
@@ -144,14 +144,14 @@ export default function GardnerTest({ questions, duration = 10 }) {
     <div className="gardner-test" role="main" aria-live="polite">
       {!started ? (
         <div className="intro-box">
-          <p>Ø§ÛŒÙ† Ø¢Ø²Ù…ÙˆÙ† Ø¨Ù‡ Ø´Ù…Ø§ Ú©Ù…Ú© Ù…ÛŒâ€ŒÚ©Ù†Ø¯ ØªÙˆØ§Ù†Ø§ÛŒÛŒâ€ŒÙ‡Ø§ÛŒ Ù…Ø®ØªÙ„Ù Ø®ÙˆØ¯ Ø±Ø§ Ø´Ù†Ø§Ø³Ø§ÛŒÛŒ Ú©Ù†ÛŒØ¯</p>
+          <p>این آزمون به شما کمک می‌کند توانایی‌های مختلف خود را شناسایی کنید</p>
           <h2>Gardner</h2>
           <h4>
-            Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø¨Ø±Ø§ÛŒ Ù‡Ø± Ø³Ø¤Ø§Ù„:{" "}
-            {Math.max(5, Math.round((duration * 60) / total))} Ø«Ø§Ù†ÛŒÙ‡
+            میانگین برای هر سؤال:{" "}
+            {Math.max(5, Math.round((duration * 60) / total))} ثانیه
           </h4>
           <button className="start-btn" onClick={() => setStarted(true)}>
-            Ø´Ø±ÙˆØ¹ Ø¢Ø²Ù…ÙˆÙ†
+            شروع آزمون
           </button>
         </div>
       ) : (
@@ -168,9 +168,9 @@ export default function GardnerTest({ questions, duration = 10 }) {
           </div>
 
           <div className="question-card" key={currentQuestion?.id ?? currentIndex}>
-            <h3 className="question-text">{currentQuestion?.text ?? "Ø³Ø¤Ø§Ù„"}</h3>
+            <h3 className="question-text">{currentQuestion?.text ?? "سؤال"}</h3>
 
-            <div className="options-grid" role="listbox" aria-label="Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§">
+            <div className="options-grid" role="listbox" aria-label="گزینه‌ها">
               {(currentQuestion?.options || []).map((option, idx) => {
                 const qid = currentQuestion?.id ?? `q_${currentIndex}`;
                 const optVal =
@@ -184,7 +184,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
                     className={`option-button ${selected ? "selected" : ""}`}
                     onClick={() => handleSelect(option)}
                     aria-pressed={selected}
-                    title={`Ú©Ù„ÛŒØ¯ ${idx + 1}`}
+                    title={`کلید ${idx + 1}`}
                   >
                     {option}
                   </button>
@@ -194,7 +194,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
           </div>
 
           <p className="progress-count">
-            Ø³Ø¤Ø§Ù„ {currentIndex + 1} Ø§Ø² {total}
+            سؤال {currentIndex + 1} از {total}
           </p>
 
           <div className="nav-actions">
@@ -202,25 +202,25 @@ export default function GardnerTest({ questions, duration = 10 }) {
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
                 className="nav-btn"
-                aria-label="Ø³ÙˆØ§Ù„ Ù‚Ø¨Ù„ÛŒ"
+                aria-label="سوال قبلی"
               >
-                â† Ù‚Ø¨Ù„ÛŒ
+                ← قبلی
               </button>
 
               <button
                 onClick={() => currentIndex + 1 < total && setCurrentIndex((i) => i + 1)}
                 disabled={currentIndex + 1 >= total}
                 className="nav-btn"
-                aria-label="Ø³ÙˆØ§Ù„ Ø¨Ø¹Ø¯ÛŒ"
+                aria-label="سوال بعدی"
               >
-                Ø¨Ø¹Ø¯ÛŒ â†’
+                بعدی →
               </button>
               {/* <button
-                onClick={() => window.confirm("Ø§Ø±Ø³Ø§Ù„ Ø¢Ø²Ù…ÙˆÙ†ØŸ") && handleSubmit()}
+                onClick={() => window.confirm("ارسال آزمون؟") && handleSubmit()}
                 className="submit-btn"
                 disabled={submitting}
               >
-                {submitting ? "Ø¯Ø± Ø­Ø§Ù„ Ø§Ø±Ø³Ø§Ù„..." : "Ø§Ø±Ø³Ø§Ù„ Ù†Ù‡Ø§ÛŒÛŒ"}
+                {submitting ? "در حال ارسال..." : "ارسال نهایی"}
               </button> */}
             </div>
         </div>
