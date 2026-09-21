@@ -1,5 +1,5 @@
 ﻿import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import "../../styles/halandTest.css"; // â† Ù‡Ù…ÙˆÙ† ÙØ§ÛŒÙ„ÛŒ Ú©Ù‡ Ø®ÙˆØ¯Øª Ø¯Ø§Ø±ÛŒ
+import "../../styles/halandTest.css"; // ← همون فایلی که خودت داری
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +25,7 @@ const HalandTest = ({ questions, duration = 8 }) => {
   const total = Holland_Test.length;
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  // âœ… Ø¬ÙˆØ§Ø¨â€ŒÙ‡Ø§ Ø±Ø§ Ù…Ø«Ù„ MBTI Ø¨Ù‡â€ŒØµÙˆØ±Øª map Ù†Ú¯Ù‡ Ù…ÛŒâ€ŒØ¯Ø§Ø±ÛŒÙ…: { [questionId]: answerString }
+  // ✅ جواب‌ها را مثل MBTI به‌صورت map نگه می‌داریم: { [questionId]: answerString }
   const [answers, setAnswers] = useState({});
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration * 60);
@@ -45,7 +45,7 @@ const HalandTest = ({ questions, duration = 8 }) => {
 
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
 
-  // Timer (Ú©Ù„ Ø¢Ø²Ù…ÙˆÙ†)
+  // Timer (کل آزمون)
   useEffect(() => {
     if (blocked || !started) return;
     if (timeLeft <= 0) {
@@ -76,7 +76,7 @@ const HalandTest = ({ questions, duration = 8 }) => {
   const handleSubmit = useCallback(async () => {
     if (submittingRef.current) return;
     submittingRef.current = true;
-    // ØªØ¨Ø¯ÛŒÙ„ map Ø¨Ù‡ Ø¢Ø±Ø§ÛŒÙ‡ Ù…Ø«Ù„ Ù‚Ø¨Ù„
+    // تبدیل map به آرایه مثل قبل
     const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
       questionId,
       answer,
@@ -96,18 +96,18 @@ const HalandTest = ({ questions, duration = 8 }) => {
     try {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
-        alert("ðŸŽ‰ Ø¢Ø²Ù…ÙˆÙ† Ù‡Ø§Ù„Ù†Ø¯ Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø«Ø¨Øª Ø´Ø¯!");
+        alert("🎉 آزمون هالند با موفقیت ثبت شد!");
         setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000);
         setBlocked(true);
         navigate("/dashboard");
 
       } else {
-        alert("âŒ Ø°Ø®ÛŒØ±Ù‡â€ŒØ³Ø§Ø²ÛŒ Ù†ØªØ§ÛŒØ¬ Ø§Ù†Ø¬Ø§Ù… Ù†Ø´Ø¯!");
+        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
         submittingRef.current = false;
       }
     } catch (err) {
       console.error("Holland submission error:", err);
-      alert("âš ï¸ Ø§Ø±Ø³Ø§Ù„ Ù†ØªØ§ÛŒØ¬ Ø¨Ø§ Ø®Ø·Ø§ Ù…ÙˆØ§Ø¬Ù‡ Ø´Ø¯.");
+      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
       submittingRef.current = false;
     }
   }, [answers, doneKey, navigate, user?.id, user?._id]);
@@ -120,8 +120,8 @@ const HalandTest = ({ questions, duration = 8 }) => {
     return (
       <div className="holland-test">
         <div className="intro-box">
-          <h2>Ø¢Ø²Ù…ÙˆÙ† Ù‡Ø§Ù„Ù†Ø¯</h2>
-          <p>Ø³ÙˆØ§Ù„ÛŒ Ø¨Ø±Ø§ÛŒ Ù†Ù…Ø§ÛŒØ´ ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯.</p>
+          <h2>آزمون هالند</h2>
+          <p>سوالی برای نمایش وجود ندارد.</p>
         </div>
       </div>
     );
@@ -131,14 +131,14 @@ const HalandTest = ({ questions, duration = 8 }) => {
     <div className="holland-test" role="main" aria-live="polite">
       {!started ? (
         <div className="intro-box">
-          <p>Ø§ÛŒÙ† Ø¢Ø²Ù…ÙˆÙ† Ú©Ù…Ú© Ù…ÛŒâ€ŒÚ©Ù†Ø¯ Ø¹Ù„Ø§Ù‚Ù‡ Ùˆ Ú¯Ø±Ø§ÛŒØ´ Ø´ØºÙ„ÛŒ Ø®ÙˆØ¯ Ø±Ø§ Ø¨Ø´Ù†Ø§Ø³ÛŒØ¯</p>
-          <h2>ðŸŽ¯</h2>
+          <p>این آزمون کمک می‌کند علاقه و گرایش شغلی خود را بشناسید</p>
+          <h2>🎯</h2>
           <h4>
-            Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø¨Ø±Ø§ÛŒ Ù‡Ø± Ø³Ø¤Ø§Ù„:{" "}
-            {Math.max(5, Math.round((duration * 60) / total))} Ø«Ø§Ù†ÛŒÙ‡
+            میانگین برای هر سؤال:{" "}
+            {Math.max(5, Math.round((duration * 60) / total))} ثانیه
           </h4>
           <button className="start-btn" onClick={() => setStarted(true)}>
-            Ø´Ø±ÙˆØ¹ Ø¢Ø²Ù…ÙˆÙ†
+            شروع آزمون
           </button>
         </div>
       ) : (
@@ -155,12 +155,12 @@ const HalandTest = ({ questions, duration = 8 }) => {
           </div>
 
           <div className="question-card" key={currentQuestion?.id ?? currentIndex}>
-            <h3 className="question-text">{currentQuestion?.text ?? "Ø³ÙˆØ§Ù„"}</h3>
+            <h3 className="question-text">{currentQuestion?.text ?? "سوال"}</h3>
 
-            <div className="options-grid" role="listbox" aria-label="Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§">
+            <div className="options-grid" role="listbox" aria-label="گزینه‌ها">
               {(currentQuestion?.options || []).map((option, idx) => {
                 const qid = currentQuestion?.id ?? `q_${currentIndex}`;
-                const selected = answers[qid] === option; // Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§ Ø±Ø´ØªÙ‡ Ù‡Ø³ØªÙ†Ø¯
+                const selected = answers[qid] === option; // گزینه‌ها رشته هستند
                 return (
                   <button
                     key={idx}
@@ -168,7 +168,7 @@ const HalandTest = ({ questions, duration = 8 }) => {
                     className={`option-button ${selected ? "selected" : ""}`}
                     onClick={() => handleSelect(option)}
                     aria-pressed={selected}
-                    title={`Ú©Ù„ÛŒØ¯ ${idx + 1}`}
+                    title={`کلید ${idx + 1}`}
                   >
                     {option}
                   </button>
@@ -178,7 +178,7 @@ const HalandTest = ({ questions, duration = 8 }) => {
           </div>
 
           <p className="progress-count">
-            Ø³Ø¤Ø§Ù„ {currentIndex + 1} Ø§Ø² {total}
+            سؤال {currentIndex + 1} از {total}
           </p>
 
           <div className="nav-actions">
@@ -186,25 +186,25 @@ const HalandTest = ({ questions, duration = 8 }) => {
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
                 className="nav-btn"
-                aria-label="Ø³ÙˆØ§Ù„ Ù‚Ø¨Ù„ÛŒ"
+                aria-label="سوال قبلی"
               >
-                â† Ù‚Ø¨Ù„ÛŒ
+                ← قبلی
               </button>
 
               <button
                 onClick={() => currentIndex + 1 < total && setCurrentIndex((i) => i + 1)}
                 disabled={currentIndex + 1 >= total}
                 className="nav-btn"
-                aria-label="Ø³ÙˆØ§Ù„ Ø¨Ø¹Ø¯ÛŒ"
+                aria-label="سوال بعدی"
               >
-                Ø¨Ø¹Ø¯ÛŒ â†’
+                بعدی →
               </button>
               {/* <button
-                onClick={() => window.confirm("Ø§Ø±Ø³Ø§Ù„ Ø¢Ø²Ù…ÙˆÙ†ØŸ") && handleSubmit()}
+                onClick={() => window.confirm("ارسال آزمون؟") && handleSubmit()}
                 className="submit-btn"
                 disabled={submitting}
               >
-                {submitting ? "Ø¯Ø± Ø­Ø§Ù„ Ø§Ø±Ø³Ø§Ù„..." : "Ø§Ø±Ø³Ø§Ù„ Ù†Ù‡Ø§ÛŒÛŒ"}
+                {submitting ? "در حال ارسال..." : "ارسال نهایی"}
               </button> */}
             </div>
         </div>
