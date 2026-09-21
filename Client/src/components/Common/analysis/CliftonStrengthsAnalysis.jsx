@@ -15,6 +15,7 @@ import {
   Legend,
 } from "chart.js";
 import "./CliftonStrengthsAnalysis.css";
+import ReportChart from "./ReportChart";
 
 ChartJS.register(
   BarElement,
@@ -119,13 +120,6 @@ const toNum = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const clampPct = (v) => Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
 
 function normalizeTo100(map = {}) {
-  const vals = Object.values(map).map(toNum);
-  if (!vals.length) return {};
-  const max = Math.max(...vals);
-  if (max <= 10) {
-    const scale = max > 0 ? 100 / max : 0;
-    return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, clampPct(toNum(v) * scale)]));
-  }
   return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, clampPct(v)]));
 }
 
@@ -303,15 +297,16 @@ const CliftonStrengthsAnalysis = ({
 
   
   // Charts
-  const labels = useMemo(() => orderedThemes.map(getName), [orderedThemes]);
-  const userValues = useMemo(() => orderedThemes.map((k) => toNum(finalNorm[k])), [orderedThemes, finalNorm]);
+  const chartThemes = useMemo(() => orderedThemes.slice(0, 10), [orderedThemes]);
+  const labels = useMemo(() => chartThemes.map(getName), [chartThemes]);
+  const userValues = useMemo(() => chartThemes.map((k) => toNum(finalNorm[k])), [chartThemes, finalNorm]);
 
   const benchMap = useMemo(
     () => (benchmark?.normalizedScores ? normalizeTo100(remapKeys(benchmark.normalizedScores)) : null),
     [benchmark]
   );
   const benchValues = useMemo(
-    () => orderedThemes.map((k) => toNum(benchMap?.[k])), [orderedThemes, benchMap]
+    () => chartThemes.map((k) => toNum(benchMap?.[k])), [chartThemes, benchMap]
   );
 
   const colorPrimary = "#2563eb";
@@ -735,14 +730,14 @@ const CliftonStrengthsAnalysis = ({
           )}
         </div>
 
-        <div className="chart-wrap" ref={ClifchartWrapRef} aria-live="polite">
+        <ReportChart ref={ClifchartWrapRef} testType="CLIFTON" height={380}>
           {(mode === "bar" || mode === "compare") && (
             <Bar ref={barRef} data={barData} options={barOptions} />
           )}
           {mode === "radarDomains" && (
             <Radar ref={radarRef} data={radarData} options={radarOptions} />
           )}
-        </div>
+        </ReportChart>
 
         <p className="muted small">راهنما: مقیاس همه نمودارها نرمال‌شده (۰ تا ۱۰۰) است.</p>
       </section>

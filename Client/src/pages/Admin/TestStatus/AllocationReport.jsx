@@ -1,324 +1,159 @@
-import React, { useMemo } from "react";
-import { Download, FileSpreadsheet, FileText, Printer } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Download, FileSpreadsheet, LoaderCircle, Printer } from "lucide-react";
 import { DataGrid } from "@mui/x-data-grid";
 import * as XLSX from "xlsx";
+import { useNotification } from "../../../context/NotificationContext";
+import { ALLOCATION_REASON_LABELS, buildAllocationSheets } from "../../../utils/allocationExport";
 
-const EMPTY = "—";
-const round2 = (value) => Math.round((Number(value) || 0) * 100) / 100;
-const display = (value, fallback = EMPTY) => value || fallback;
-
-const escapeCSV = (value) => {
+const reason = (code) => ALLOCATION_REASON_LABELS[code] || code || "-";
+const percent = (value) => Math.round((Number(value) <= 1 ? Number(value) * 100 : Number(value)) * 100) / 100 || 0;
+const escapeCsv = (value) => {
   const text = String(value ?? "");
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 
-const escapeHTML = (value) =>
-  String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+const candidateColumns = [
+  { field: "row", headerName: "ردیف", width: 70 },
+  { field: "name", headerName: "نام و نام خانوادگی", flex: 1, minWidth: 170 },
+  { field: "top1", headerName: "پیشنهاد اول سیستم", flex: 1, minWidth: 170 },
+  { field: "top2", headerName: "پیشنهاد دوم سیستم", flex: 1, minWidth: 170 },
+  { field: "top3", headerName: "پیشنهاد سوم سیستم", flex: 1, minWidth: 170 },
+  { field: "allocation", headerName: "تخصیص نهایی", flex: 1, minWidth: 170 },
+  { field: "completeness", headerName: "تکمیل اطلاعات", width: 125 },
+  { field: "status", headerName: "وضعیت", width: 125 },
+  { field: "reason", headerName: "علت", flex: 1, minWidth: 220 },
+];
 
-const downloadBlob = (blob, fileName) => {
+const jobColumns = [
+  { field: "job", headerName: "رشته", flex: 1, minWidth: 180 },
+  { field: "rank", headerName: "رتبه در رشته", width: 120 },
+  { field: "name", headerName: "نام", flex: 1, minWidth: 170 },
+  { field: "score", headerName: "امتیاز تطابق", width: 130 },
+  { field: "completeness", headerName: "تکمیل اطلاعات", width: 125 },
+  { field: "eligibility", headerName: "واجد شرایط", width: 110 },
+  { field: "allocation", headerName: "تخصیص نهایی", flex: 1, minWidth: 160 },
+  { field: "reason", headerName: "علت", flex: 1, minWidth: 190 },
+];
+
+function downloadBlob(blob, name) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
+  link.download = name;
   link.click();
-  link.remove();
   URL.revokeObjectURL(url);
-};
-
-const personId = (person = {}) => String(person.userId || person.id || person._id || "");
-
-function normalizeRows({ selectedUsers = [], assignmentResult = {} }) {
-  const usersById = new Map(selectedUsers.map((user) => [String(user._id || user.id), user]));
-  const rows = [];
-
-  const addRow = (person = {}, status, job = EMPTY, index = 0) => {
-    const id = personId(person);
-    const user = usersById.get(id) || {};
-    const profile = user.profile || {};
-    rows.push({
-      id: `${status}-${job}-${id || index}`,
-      userId: id,
-      username: display(person.username || user.username),
-      name: display(person.fullName || profile.fullName || user.username),
-      phone: display(person.phone || profile.phone || user.phone),
-      field: display(person.field || profile.field || profile.highSchoolMajor || profile.major),
-      job: display(person.job || person.assignedJob || job),
-      score: round2(person.finalScore ?? person.score),
-      dataCompleteness: round2(person.dataCompleteness),
-      rank: person.rank || index + 1,
-      status,
-      reason: display(person.reason || (person.failedRequirements || []).join("، ")),
-      strengths: display((person.strengths || []).join("، ")),
-      gaps: display((person.gaps || []).join("، ")),
-      breakdown: display(
-        (person.components || [])
-          .map((component) => `${component.label || component.key}: ${round2(component.score)}`)
-          .join(" | ")
-      ),
-    });
-  };
-
-  (assignmentResult.assignments || []).forEach((assignment) => {
-    (assignment.slots || []).forEach((person, index) => {
-      addRow({ ...person, job: assignment.job }, "تخصیص‌یافته", assignment.job, index);
-    });
-  });
-
-  if (!rows.length) {
-    Object.entries(assignmentResult.allocations || {}).forEach(([job, allocation]) => {
-      (allocation?.persons || []).forEach((person, index) => {
-        addRow(person, "تخصیص‌یافته", allocation?.name || job, index);
-      });
-    });
-  }
-
-  (assignmentResult.waitlist || []).forEach((entry) => {
-    (entry.queue || []).forEach((person, index) => {
-      addRow({ ...person, job: entry.job, reason: person.reason || person.status }, "لیست انتظار", entry.job, index);
-    });
-  });
-
-  (assignmentResult.unassigned || []).forEach((person, index) => {
-    addRow(person, "بدون تخصیص", person.bestJob || EMPTY, index);
-  });
-
-  if (!rows.length) {
-    selectedUsers.forEach((user, index) => {
-      const profile = user.profile || {};
-      addRow(
-        {
-          id: user._id || user.id,
-          username: user.username,
-          fullName: profile.fullName,
-          phone: profile.phone,
-          field: profile.field,
-        },
-        "کاندید",
-        EMPTY,
-        index
-      );
-    });
-  }
-
-  return rows
-    .filter((row, index, all) => {
-      const key = `${row.status}-${row.job}-${row.userId}`;
-      return all.findIndex((item) => `${item.status}-${item.job}-${item.userId}` === key) === index;
-    })
-    .map((row, index) => ({ ...row, id: row.id || index + 1, rowNumber: index + 1 }));
 }
 
-const columns = [
-  { field: "rowNumber", headerName: "ردیف", width: 70 },
-  { field: "name", headerName: "نام و نام خانوادگی", flex: 1, minWidth: 170 },
-  { field: "job", headerName: "رسته / شغل", flex: 1, minWidth: 180 },
-  { field: "field", headerName: "رشته", flex: 1, minWidth: 130 },
-  { field: "phone", headerName: "شماره تماس", flex: 1, minWidth: 130 },
-  { field: "score", headerName: "امتیاز", width: 100, type: "number" },
-  { field: "dataCompleteness", headerName: "تکمیل داده", width: 120, type: "number" },
-  { field: "rank", headerName: "اولویت", width: 95 },
-  { field: "status", headerName: "وضعیت", width: 120 },
-  { field: "reason", headerName: "دلیل / نیاز", flex: 1, minWidth: 170 },
-  { field: "breakdown", headerName: "جزئیات امتیاز", flex: 1, minWidth: 240 },
-];
+export default function AllocationReport({ selectedUsers = [], assignmentResult = {} }) {
+  const { notify } = useNotification();
+  const [activeView, setActiveView] = useState("candidates");
+  const [exporting, setExporting] = useState("");
+  const candidates = useMemo(() => assignmentResult.candidates || [], [assignmentResult.candidates]);
+  const jobs = useMemo(() => assignmentResult.jobs || [], [assignmentResult.jobs]);
+  const sheets = useMemo(() => buildAllocationSheets(assignmentResult, selectedUsers), [assignmentResult, selectedUsers]);
 
-const csvHeaders = [
-  "ردیف",
-  "نام و نام خانوادگی",
-  "نام کاربری",
-  "رسته / شغل",
-  "رشته",
-  "شماره تماس",
-  "امتیاز",
-  "تکمیل داده",
-  "اولویت",
-  "وضعیت",
-  "دلیل / نیاز",
-  "نقاط قوت",
-  "گپ‌ها",
-  "جزئیات امتیاز",
-];
+  const candidateRows = useMemo(() => candidates.map((candidate, index) => ({
+    id: candidate.userId,
+    row: index + 1,
+    name: candidate.fullName || candidate.username,
+    top1: candidate.recommendations?.[0] ? `${candidate.recommendations[0].job} (${candidate.recommendations[0].matchScore}٪)` : "-",
+    top2: candidate.recommendations?.[1] ? `${candidate.recommendations[1].job} (${candidate.recommendations[1].matchScore}٪)` : "-",
+    top3: candidate.recommendations?.[2] ? `${candidate.recommendations[2].job} (${candidate.recommendations[2].matchScore}٪)` : "-",
+    allocation: candidate.finalAllocation?.job || "-",
+    completeness: `${percent(candidate.dataCompleteness)}٪`,
+    status: candidate.status === "ASSIGNED" ? "تخصیص‌یافته" : "بدون تخصیص",
+    reason: reason(candidate.finalAllocation?.reasonCode || candidate.reasonCode),
+  })), [candidates]);
 
-function buildAllocationHTML(rows, summary, meta = {}) {
-  const rowsHTML = rows
-    .map(
-      (row) => `<tr>
-        <td>${escapeHTML(row.rowNumber)}</td>
-        <td>${escapeHTML(row.name)}</td>
-        <td>${escapeHTML(row.job)}</td>
-        <td>${escapeHTML(row.field)}</td>
-        <td>${escapeHTML(row.phone)}</td>
-        <td>${escapeHTML(row.score)}</td>
-        <td>${escapeHTML(row.dataCompleteness)}%</td>
-        <td>${escapeHTML(row.rank)}</td>
-        <td>${escapeHTML(row.status)}</td>
-        <td>${escapeHTML(row.reason)}</td>
-      </tr>`
-    )
-    .join("");
+  const jobRows = useMemo(() => jobs.flatMap((job) => (job.ranking || []).map((entry) => ({
+    id: `${job.jobId}-${entry.userId}`,
+    job: job.job,
+    rank: entry.rank,
+    name: entry.fullName || entry.username,
+    score: `${entry.matchScore}٪`,
+    completeness: `${percent(entry.dataCompleteness)}٪`,
+    eligibility: entry.eligible ? "بله" : "خیر",
+    allocation: entry.finalAssignment || "-",
+    reason: reason(entry.reasonCode),
+  }))), [jobs]);
 
-  return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">
-    <style>
-      @font-face{font-family:Vazirmatn;src:url('/fonts/Vazirmatn-Variable.woff2') format('woff2');font-weight:100 900}
-      @page{size:A4;margin:14mm}
-      body{font-family:Vazirmatn,Arial,sans-serif;color:#111827;direction:rtl}
-      h1{font-size:18pt;margin:0 0 8mm}
-      .meta{font-size:10pt;color:#64748b;margin-bottom:6mm}
-      table{width:100%;border-collapse:collapse;font-size:9pt}
-      th,td{border:1px solid #d1d5db;padding:6px;text-align:right;vertical-align:top}
-      th{background:#f3f4f6}
-      tr{break-inside:avoid}
-      .footer{position:fixed;bottom:6mm;left:0;right:0;text-align:center;font-size:9pt;color:#94a3b8}
-      .footer:after{content:"صفحه " counter(page)}
-    </style></head><body>
-    <h1>گزارش تخصیص و اولویت‌بندی</h1>
-    <div class="meta">
-      نسخه الگوریتم: ${escapeHTML(meta.algorithmVersion || "-")} |
-      تخصیص‌یافته: ${summary.assigned} |
-      لیست انتظار: ${summary.waitlist} |
-      بدون تخصیص: ${summary.unassigned}
-    </div>
-    <table>
-      <thead><tr>
-        <th>ردیف</th><th>نام</th><th>رسته</th><th>رشته</th><th>تماس</th>
-        <th>امتیاز</th><th>تکمیل داده</th><th>اولویت</th><th>وضعیت</th><th>دلیل</th>
-      </tr></thead>
-      <tbody>${rowsHTML}</tbody>
-    </table>
-    <div class="footer"></div>
-  </body></html>`;
-}
+  const waitlistRows = useMemo(() => jobs.flatMap((job) => (job.waitlist || []).map((entry) => ({
+    id: `wait-${job.jobId}-${entry.userId}`,
+    job: job.job,
+    rank: entry.rank,
+    name: entry.fullName || entry.username,
+    score: `${entry.matchScore}٪`,
+    completeness: `${percent(entry.dataCompleteness)}٪`,
+    eligibility: entry.reasonCode === "CAPACITY_FULL" || entry.reasonCode === "ASSIGNED_ELSEWHERE" ? "بله" : "خیر",
+    allocation: "-",
+    reason: reason(entry.reasonCode),
+  }))), [jobs]);
 
-const AllocationReport = ({ selectedUsers = [], assignmentResult = {} }) => {
-  const rows = useMemo(
-    () => normalizeRows({ selectedUsers, assignmentResult }),
-    [assignmentResult, selectedUsers]
-  );
-
-  const summary = useMemo(() => {
-    const assigned = rows.filter((row) => row.status === "تخصیص‌یافته").length;
-    const waitlist = rows.filter((row) => row.status === "لیست انتظار").length;
-    const unassigned = rows.filter((row) => row.status === "بدون تخصیص").length;
-    return { assigned, waitlist, unassigned };
-  }, [rows]);
-
-  const exportRows = rows.map((row) => ({
-    "ردیف": row.rowNumber,
-    "نام و نام خانوادگی": row.name,
-    "نام کاربری": row.username,
-    "رسته / شغل": row.job,
-    "رشته": row.field,
-    "شماره تماس": row.phone,
-    "امتیاز": row.score,
-    "تکمیل داده": row.dataCompleteness,
-    "اولویت": row.rank,
-    "وضعیت": row.status,
-    "دلیل / نیاز": row.reason,
-    "نقاط قوت": row.strengths,
-    "گپ‌ها": row.gaps,
-    "جزئیات امتیاز": row.breakdown,
-  }));
-
-  const fileDate = new Date().toISOString().slice(0, 10);
-
-  const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(exportRows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Allocation");
-    XLSX.writeFile(workbook, `allocation-report-${fileDate}.xlsx`);
-  };
-
-  const downloadCSV = () => {
-    const lines = [
-      csvHeaders.map(escapeCSV).join(","),
-      ...exportRows.map((row) => csvHeaders.map((header) => escapeCSV(row[header])).join(",")),
-    ];
-    downloadBlob(new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" }), `allocation-report-${fileDate}.csv`);
-  };
-
-  const downloadPDF = async () => {
-    const host = document.createElement("div");
-    host.style.position = "fixed";
-    host.style.left = "0";
-    host.style.top = "0";
-    host.style.width = "794px";
-    host.style.background = "#ffffff";
-    host.style.zIndex = "-1";
-    host.innerHTML = buildAllocationHTML(rows, summary, assignmentResult.meta);
-    document.body.appendChild(host);
-
+  const exportExcel = () => {
+    if (exporting) return;
+    setExporting("excel");
     try {
-      const mod = await import("html2pdf.js");
-      const html2pdf = mod.default || mod;
-      await html2pdf()
-        .set({
-          margin: 0,
-          filename: `allocation-report-${fileDate}.pdf`,
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 794 },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-          pagebreak: { mode: ["css", "legacy"] },
-        })
-        .from(host)
-        .save();
+      const workbook = XLSX.utils.book_new();
+      for (const [name, rows] of sheets) {
+        const worksheet = XLSX.utils.json_to_sheet(rows.length ? rows : [{ "بدون داده": "-" }]);
+        worksheet["!cols"] = Object.keys(rows[0] || { "بدون داده": "" }).map((key) => ({ wch: Math.max(14, Math.min(40, key.length + 8)) }));
+        XLSX.utils.book_append_sheet(workbook, worksheet, name);
+      }
+      XLSX.writeFile(workbook, `allocation-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      notify("فایل Excel پنج‌بخشی آماده شد.", { type: "success" });
+    } catch (error) {
+      console.error("Excel export failed", error);
+      notify("تولید فایل Excel انجام نشد.", { type: "error" });
     } finally {
-      host.remove();
+      setExporting("");
     }
   };
 
+  const exportCsv = () => {
+    if (exporting) return;
+    setExporting("csv");
+    try {
+      const rows = sheets[0][1];
+      const headers = Object.keys(rows[0] || {});
+      const csv = [headers, ...rows.map((row) => headers.map((header) => row[header]))].map((row) => row.map(escapeCsv).join(",")).join("\r\n");
+      downloadBlob(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), `allocation-candidates-${new Date().toISOString().slice(0, 10)}.csv`);
+      notify("CSV فردمحور آماده شد.", { type: "success" });
+    } finally {
+      setExporting("");
+    }
+  };
+
+  const printReport = () => {
+    const popup = window.open("", "_blank");
+    if (!popup) return notify("مرورگر پنجره چاپ را مسدود کرده است.", { type: "error" });
+    const rows = sheets[0][1];
+    const headers = Object.keys(rows[0] || {});
+    popup.document.write(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #bbb;padding:6px;text-align:right}th{background:#eee}</style></head><body><h1>گزارش تطابق و تخصیص نهایی</h1><table><thead><tr>${headers.map((item) => `<th>${item}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${headers.map((key) => `<td>${row[key] ?? ""}</td>`).join("")}</tr>`).join("")}</tbody></table></body></html>`);
+    popup.document.close();
+    popup.focus();
+    popup.print();
+  };
+
+  const rows = activeView === "candidates" ? candidateRows : activeView === "jobs" ? jobRows : waitlistRows;
+  const columns = activeView === "candidates" ? candidateColumns : jobColumns;
+  const assignedCount = candidates.filter((item) => item.finalAllocation).length;
+
   return (
-    <section className="allocation-report space-y-6" dir="rtl">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">
-            گزارش نهایی اولویت‌بندی و تخصیص کاربران
-          </h2>
-          <div className="text-sm text-gray-600">
-            نسخه الگوریتم: {assignmentResult.meta?.algorithmVersion || "-"}
-          </div>
+    <section className="allocation-report" dir="rtl">
+      <header className="allocation-header">
+        <div><h2 className="allocation-title">گزارش تطابق و تخصیص</h2><p className="allocation-sub">{assignedCount} تخصیص از {candidates.length} نفر، الگوریتم {assignmentResult.meta?.algorithmVersion || "-"}</p></div>
+        <div className="allocation-actions">
+          <button className="btn" type="button" onClick={exportCsv} disabled={Boolean(exporting)}><Download size={16} /> CSV فردمحور</button>
+          <button className="btn" type="button" onClick={exportExcel} disabled={Boolean(exporting)}>{exporting === "excel" ? <LoaderCircle size={16} className="spin" /> : <FileSpreadsheet size={16} />} Excel</button>
+          <button className="btn" type="button" onClick={printReport} disabled={Boolean(exporting)}><Printer size={16} /> چاپ</button>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="btn" onClick={downloadCSV} type="button">
-            <Download className="w-4 h-4" /> CSV
-          </button>
-          <button className="btn" onClick={exportToExcel} type="button">
-            <FileSpreadsheet className="w-4 h-4" /> Excel
-          </button>
-          <button className="btn" onClick={downloadPDF} type="button">
-            <FileText className="w-4 h-4" /> PDF
-          </button>
-          <button className="btn" onClick={() => window.print()} type="button">
-            <Printer className="w-4 h-4" /> چاپ
-          </button>
-        </div>
+      </header>
+      <div className="allocation-tabs" role="tablist" aria-label="نوع نمایش گزارش">
+        <button type="button" className={activeView === "candidates" ? "active" : ""} onClick={() => setActiveView("candidates")}>نمای فردمحور</button>
+        <button type="button" className={activeView === "jobs" ? "active" : ""} onClick={() => setActiveView("jobs")}>رتبه‌بندی رشته‌ها</button>
+        <button type="button" className={activeView === "waitlist" ? "active" : ""} onClick={() => setActiveView("waitlist")}>لیست انتظار رشته‌ها</button>
       </div>
-
-      <div className="text-sm text-gray-600 mb-3">
-        {summary.assigned} تخصیص‌یافته، {summary.waitlist} در لیست انتظار، {summary.unassigned} بدون تخصیص
-      </div>
-
-      <div style={{ height: 560, width: "100%" }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-          pageSizeOptions={[10, 20, 50]}
-          disableRowSelectionOnClick
-          sx={{
-            fontFamily: "Vazirmatn, iransans, sans-serif",
-            direction: "rtl",
-            "& .MuiDataGrid-columnHeaders": { backgroundColor: "#f7f7f7" },
-            "& .MuiDataGrid-row:nth-of-type(even)": { backgroundColor: "#fafafa" },
-          }}
-        />
-      </div>
+      <div style={{ height: 560, width: "100%" }}><DataGrid rows={rows} columns={columns} disableRowSelectionOnClick pageSizeOptions={[10, 25, 50]} initialState={{ pagination: { paginationModel: { pageSize: 10 } } }} /></div>
     </section>
   );
-};
-
-export default AllocationReport;
+}

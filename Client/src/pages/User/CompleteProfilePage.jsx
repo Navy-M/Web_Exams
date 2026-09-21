@@ -3,6 +3,7 @@ import * as API from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import "../../styles/CompleteProfilePage.css";
 import { useAuth } from "../../context/AuthContext";
+import { useNotification } from "../../context/NotificationContext";
 
 // Persian/Arabic digits -> English
 const toEnDigits = (str = "") =>
@@ -53,6 +54,7 @@ const isValidGPA20 = (v) => {
 const CompleteProfilePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { notify } = useNotification();
 
   const initial = useMemo(() => ({
     userId: user?._id || user?.id || "",
@@ -197,7 +199,7 @@ const CompleteProfilePage = () => {
   const alertErrors = (errs) => {
     const lines = Object.values(errs);
     if (lines.length) {
-      alert("لطفاً موارد زیر را اصلاح کنید:\n\n- " + lines.join("\n- "));
+      notify(`لطفاً ${lines.length} مورد مشخص‌شده در فرم را اصلاح کنید.`, { type: "warning", duration: 7000 });
     }
   };
 
@@ -222,10 +224,10 @@ const CompleteProfilePage = () => {
 
       const status = response?.message?.status || response?.status || "";
       if (String(status).toLowerCase() === "success") {
-        alert("پروفایل شما با موفقیت تکمیل شد.");
+        notify("اطلاعات با موفقیت ثبت شد.", { type: "success" });
         navigate("/dashboard");
       } else {
-        alert(response?.message?.text || "خطا در ارسال اطلاعات.");
+        notify(response?.message?.text || "خطا در ارسال اطلاعات.", { type: "error" });
         console.warn("Server response:", response);
       }
     } catch (error) {
@@ -234,7 +236,7 @@ const CompleteProfilePage = () => {
         responseStatus: error.response?.status,
         responseData: error.response?.data,
       });
-      alert("مشکلی در برقراری ارتباط با سرور پیش آمده است.");
+      notify(error?.message || "مشکلی در برقراری ارتباط با سرور پیش آمده است.", { type: "error" });
     } finally {
       setSubmitting(false);
     }

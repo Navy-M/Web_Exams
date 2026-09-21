@@ -10,6 +10,9 @@ import {
   updateTestFeedback,
   prioritizeJobs,
   clearResultAnalysis,
+  getExamSession,
+  startExamSession,
+  saveExamDraft,
 } from "../controllers/resultsController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -17,6 +20,9 @@ const router = express.Router();
 
 router.post("/", protect, createResult);
 router.post("/submitUInfo", protect, submitUInfo);
+router.get("/sessions/:testType", protect, getExamSession);
+router.post("/sessions", protect, startExamSession);
+router.put("/sessions/:sessionId/draft", protect, saveExamDraft);
 
 router.delete("/:resultId/analysis", protect, admin, clearResultAnalysis);
 router.delete("/:resultId", protect, admin, deleteResult);

@@ -15,6 +15,8 @@ import {
   Legend,
 } from "chart.js";
 import "./HollandAnalysis.css";
+import ReportChart from "./ReportChart";
+import { useTheme } from "../../../context/ThemeContext";
 
 // ثبت پلاگین‌های Chart.js
 ChartJS.register(
@@ -123,6 +125,7 @@ const mapChartToCodes = (chartData) => {
    کامپوننت اصلی
 ============================================================================= */
 const HollandAnalysis = ({ data = null, benchmark = null, debug = false }) => {
+  useTheme();
   // گارد ورودی
   const hasPayload = !!data && (data.normalizedScores || data.rawScores || data.traits);
   if (!hasPayload) return <p className="muted" dir="rtl">داده‌ای برای نمایش موجود نیست.</p>;
@@ -682,10 +685,10 @@ const HollandAnalysis = ({ data = null, benchmark = null, debug = false }) => {
 
         {/* اگر داده‌ی عددی نداریم، نمودار را نشان نده و هشدار بده */}
         {hasNumeric ? (
-          <div className="chart-wrap" ref={HollandchartWrapRef} aria-live="polite" data-testid="chart">
+          <ReportChart ref={HollandchartWrapRef} testType="HOLLAND" height={380}>
             {(mode === "bar" || mode === "compare") && <Bar ref={barRef} data={barData} options={barOptions} />}
             {mode === "radar" && <Radar ref={radarRef} data={radarData} options={radarOptions} />}
-          </div>
+          </ReportChart>
         ) : (
           <p className="muted small" role="note">
             دادهٔ عددی کافی برای رسم نمودار موجود نیست؛ لطفاً نرمال‌سازی پاسخ‌ها را بررسی کنید.

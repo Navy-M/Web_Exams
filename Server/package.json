@@ -14,6 +14,8 @@
     "smoke:security": "node scripts/securitySmoke.mjs",
     "smoke:security:temp": "node scripts/securitySmokeWithTempUsers.mjs",
     "smoke:admin": "node scripts/adminConsistencySmoke.mjs",
+    "smoke:profile": "node scripts/profileFlowSmoke.mjs",
+    "smoke:timer": "node scripts/examSessionSmoke.mjs",
     "backupDB": "node backupMongo.js",
     "exportJsonDB":"node exportCollections.mjs"
   },

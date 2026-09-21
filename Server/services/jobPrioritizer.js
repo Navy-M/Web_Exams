@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Result from "../models/Result.js";
 import User from "../models/User.js";
 
-export const ALGORITHM_VERSION = "job-matching-v2.0.0";
+export const ALGORITHM_VERSION = "job-matching-v3.0.0";
 
 export const JOB_MATCHING_TEST_TYPES = [
   "MBTI",
@@ -86,6 +86,15 @@ function normalizeWeightMap(weights = {}) {
     out[testType] = Number.isFinite(n) && n > 0 ? n : 0;
   }
   return out;
+}
+
+function profileWeight(weights = {}, aliases = []) {
+  for (const key of aliases) {
+    if (!hasOwn(weights, key)) continue;
+    const value = Number(weights[key]);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }
+  return null;
 }
 
 function normalizeRequirementKey(testType) {
@@ -236,11 +245,18 @@ function adaptJobSpec(name, raw = {}, capacity = 0, globalWeights = {}) {
   );
 
   const hasFieldConfig = exactFields.length || relatedFields.length;
-  const fieldWeight = Number.isFinite(Number(raw.fieldWeight))
-    ? Math.max(0, Number(raw.fieldWeight))
+  const fieldOverride = profileWeight(globalWeights, ["field", "FIELD", "educationField"]);
+  const fieldWeight = fieldOverride != null
+    ? fieldOverride
+    : Number.isFinite(Number(raw.fieldWeight))
+      ? Math.max(0, Number(raw.fieldWeight))
     : hasFieldConfig
       ? 0.2
       : 0;
+  const academicOverride = profileWeight(globalWeights, ["academic", "ACADEMIC", "academicScore"]);
+  const academicWeight = academicOverride != null
+    ? academicOverride
+    : Math.max(0, Number(raw.academicWeight) || 0);
 
   return {
     id: stableString(raw.id || jobIdFromName(name)),
@@ -257,6 +273,7 @@ function adaptJobSpec(name, raw = {}, capacity = 0, globalWeights = {}) {
       exact: exactFields,
       related: relatedFields,
     },
+    academicWeight,
     thresholds: {
       minimumScore: clamp100(raw.thresholds?.minimumScore ?? raw.minimumScore ?? 0),
     },
@@ -392,10 +409,10 @@ function computeTestCompatibility(testType, resultDoc, jobSpec) {
   const strengths = [];
   const gaps = [];
 
-  if (score >= 75) strengths.push(`${testType}: strong match`);
-  if (score < 50) gaps.push(`${testType}: weak match`);
-  if (testSpec.preferHigh?.length) strengths.push(`${testType}: checked ${testSpec.preferHigh.join("/")}`);
-  if (testSpec.traits?.length) strengths.push(`${testType}: trait overlap considered`);
+  if (score >= 75) strengths.push(`${testType}: تطابق بالا`);
+  if (score < 50) gaps.push(`${testType}: تطابق پایین`);
+  if (testSpec.preferHigh?.length) strengths.push(`${testType}: شاخص‌های ترجیحی بررسی شد`);
+  if (testSpec.traits?.length) strengths.push(`${testType}: هم‌پوشانی ویژگی‌ها لحاظ شد`);
 
   return {
     type: "test",
@@ -430,7 +447,7 @@ function fieldCompatibility(user, jobSpec) {
       score: 0,
       failedRequirements: exact.length ? ["FIELD_REQUIRED"] : [],
       strengths: [],
-      gaps: ["field is missing"],
+      gaps: ["رشته تحصیلی ثبت نشده است"],
     };
   }
 
@@ -442,8 +459,8 @@ function fieldCompatibility(user, jobSpec) {
   return {
     score,
     failedRequirements: requiredFailed ? ["FIELD_REQUIRED"] : [],
-    strengths: exactMatch || relatedMatch ? [`field match: ${field}`] : [],
-    gaps: requiredFailed ? [`field does not satisfy ${exact.join(" / ")}`] : [],
+    strengths: exactMatch || relatedMatch ? [`تطابق رشته تحصیلی: ${field}`] : [],
+    gaps: requiredFailed ? [`رشته تحصیلی با الزامات ${exact.join(" / ")} مطابقت ندارد`] : [],
   };
 }
 
@@ -455,10 +472,11 @@ function userIdentity(user = {}) {
     fullName: profile.fullName || user.name || user.fullName || "",
     field: profile.field || profile.highSchoolMajor || profile.major || "",
     phone: profile.phone || user.phone || "",
+    period: user.period || "",
   };
 }
 
-function scoreCandidateForJob(user, userResults, jobSpec) {
+function scoreCandidateForJob(user, userResults, jobSpec, eligibility = {}) {
   const identity = userIdentity(user);
   const configuredTestWeights = Object.entries(jobSpec.testWeights)
     .filter(([testType, weight]) => JOB_MATCHING_TEST_TYPES.includes(testType) && Number(weight) > 0)
@@ -477,12 +495,13 @@ function scoreCandidateForJob(user, userResults, jobSpec) {
     const resultDoc = userResults?.[testType];
     if (!resultDoc) {
       missingTests.push(testType);
-      gaps.push(`${testType}: missing`);
+      gaps.push(`${testType}: نتیجه آزمون موجود نیست`);
       continue;
     }
     const component = computeTestCompatibility(testType, resultDoc, jobSpec);
     component.weight = weight;
     component.rawScore = component.score;
+    component.normalizedScore = component.score;
     components.push(component);
     activeWeightTotal += weight;
     weightedScore += component.score * weight;
@@ -493,37 +512,82 @@ function scoreCandidateForJob(user, userResults, jobSpec) {
   if (jobSpec.fieldWeights.weight > 0) {
     const field = fieldCompatibility(user, jobSpec);
     configuredWeightTotal += jobSpec.fieldWeights.weight;
-    activeWeightTotal += jobSpec.fieldWeights.weight;
-    weightedScore += field.score * jobSpec.fieldWeights.weight;
-    components.push({
-      type: "profile",
-      key: "field",
-      label: "Field compatibility",
-      score: clamp100(field.score),
-      rawScore: clamp100(field.score),
-      weight: jobSpec.fieldWeights.weight,
-      detail: {
-        candidateField: identity.field,
-        exact: jobSpec.fieldWeights.exact,
-        related: jobSpec.fieldWeights.related,
-      },
-    });
+    if (identity.field) {
+      activeWeightTotal += jobSpec.fieldWeights.weight;
+      weightedScore += field.score * jobSpec.fieldWeights.weight;
+      components.push({
+        type: "profile",
+        key: "field",
+        label: "رشته تحصیلی",
+        score: clamp100(field.score),
+        rawScore: clamp100(field.score),
+        normalizedScore: clamp100(field.score),
+        weight: jobSpec.fieldWeights.weight,
+        detail: {
+          candidateField: identity.field,
+          exact: jobSpec.fieldWeights.exact,
+          related: jobSpec.fieldWeights.related,
+        },
+      });
+    } else {
+      gaps.push("رشته تحصیلی ثبت نشده است");
+    }
     strengths.push(...field.strengths);
     gaps.push(...field.gaps);
     failedRequirements.push(...field.failedRequirements);
   }
 
+  if (jobSpec.academicWeight > 0) {
+    configuredWeightTotal += jobSpec.academicWeight;
+    const diplomaAverage = Number(user?.profile?.diplomaAverage);
+    if (Number.isFinite(diplomaAverage) && diplomaAverage >= 0 && diplomaAverage <= 20) {
+      const academicScore = clamp100(diplomaAverage * 5);
+      activeWeightTotal += jobSpec.academicWeight;
+      weightedScore += academicScore * jobSpec.academicWeight;
+      components.push({
+        type: "profile",
+        key: "academic",
+        label: "معدل دیپلم",
+        score: academicScore,
+        rawScore: diplomaAverage,
+        normalizedScore: academicScore,
+        weight: jobSpec.academicWeight,
+        detail: { diplomaAverage },
+      });
+      if (academicScore >= 75) strengths.push("معدل تحصیلی بالا");
+      if (academicScore < 50) gaps.push("معدل تحصیلی پایین‌تر از سطح مطلوب");
+    } else {
+      gaps.push("معدل دیپلم ثبت نشده است");
+    }
+  }
+
   const finalScore = activeWeightTotal > 0 ? clamp100(weightedScore / activeWeightTotal) : 0;
   const dataCompleteness =
-    configuredWeightTotal > 0 ? clamp100((activeWeightTotal / configuredWeightTotal) * 100) : 0;
+    configuredWeightTotal > 0 ? Math.max(0, Math.min(1, activeWeightTotal / configuredWeightTotal)) : 0;
 
   for (const component of components) {
     component.contribution =
       activeWeightTotal > 0 ? Number(((component.score * component.weight) / activeWeightTotal).toFixed(4)) : 0;
+    component.weightedContribution = component.contribution;
   }
 
-  const threshold = jobSpec.thresholds.minimumScore || 0;
-  if (finalScore < threshold) failedRequirements.push("MINIMUM_SCORE");
+  const threshold = Math.max(jobSpec.thresholds.minimumScore || 0, Number(eligibility.minMatchScore) || 0);
+  const overridden = eligibility.completenessOverrides?.has(identity.userId);
+  if (dataCompleteness < (Number(eligibility.minCompleteness) || 0) && !overridden) {
+    failedRequirements.push("INSUFFICIENT_DATA");
+  }
+  if (finalScore < threshold) failedRequirements.push("LOW_MATCH_SCORE");
+  if (failedRequirements.includes("FIELD_REQUIRED")) failedRequirements.push("HARD_REQUIREMENT_FAILED");
+
+  const evidenceStrengths = components
+    .filter((component) => component.normalizedScore >= 70)
+    .map((component) => `${component.label || component.key}: ${Math.round(component.normalizedScore)}%`);
+  const evidenceGaps = [
+    ...components
+      .filter((component) => component.normalizedScore < 50)
+      .map((component) => `${component.label || component.key}: ${Math.round(component.normalizedScore)}%`),
+    ...missingTests.map((testType) => `${testType}: نتیجه آزمون موجود نیست`),
+  ];
 
   return {
     jobId: jobSpec.id,
@@ -539,8 +603,8 @@ function scoreCandidateForJob(user, userResults, jobSpec) {
     score: Number(finalScore.toFixed(4)),
     dataCompleteness: Number(dataCompleteness.toFixed(2)),
     components,
-    strengths: [...new Set(strengths)].slice(0, 12),
-    gaps: [...new Set(gaps)].slice(0, 12),
+    strengths: [...new Set(evidenceStrengths)].slice(0, 12),
+    gaps: [...new Set(evidenceGaps)].slice(0, 12),
     missingTests,
     failedRequirements: [...new Set(failedRequirements)],
     reason: failedRequirements.length ? failedRequirements.join(",") : null,
@@ -555,7 +619,14 @@ function compareEdges(a, b) {
   return a.userId.localeCompare(b.userId);
 }
 
-function summarizePerson(row, rank = null) {
+function compareMatchEdges(a, b) {
+  if (b.finalScore !== a.finalScore) return b.finalScore - a.finalScore;
+  if (b.dataCompleteness !== a.dataCompleteness) return b.dataCompleteness - a.dataCompleteness;
+  if (a.jobId !== b.jobId) return a.jobId.localeCompare(b.jobId);
+  return a.userId.localeCompare(b.userId);
+}
+
+function summarizePerson(row, rank = null, extra = {}) {
   return {
     id: row.userId,
     userId: row.userId,
@@ -572,13 +643,14 @@ function summarizePerson(row, rank = null) {
     gaps: row.gaps,
     failedRequirements: row.failedRequirements,
     reason: row.reason,
+    ...extra,
   };
 }
 
 function unassignedReason(rows = []) {
   if (!rows.length) return "NO_JOB_CONFIGURED";
   if (rows.every((row) => row.dataCompleteness === 0)) return "INSUFFICIENT_DATA";
-  if (rows.every((row) => !row.eligible)) return "NO_ELIGIBLE_JOB";
+  if (rows.every((row) => !row.eligible)) return "NOT_ELIGIBLE";
   return "CAPACITY_FULL";
 }
 
@@ -613,7 +685,7 @@ function buildExports(rows = []) {
         row.fullName,
         row.field,
         row.finalScore ?? row.score ?? 0,
-        row.dataCompleteness ?? 0,
+        Number(((row.dataCompleteness ?? 0) * 100).toFixed(2)),
         row.reason || "",
         (row.failedRequirements || []).join("|"),
       ]
@@ -631,7 +703,7 @@ function buildExports(rows = []) {
         <td>${csvEscape(row.fullName || row.username || row.userId)}</td>
         <td>${csvEscape(row.field)}</td>
         <td>${Number(row.finalScore ?? row.score ?? 0).toFixed(2)}</td>
-        <td>${Number(row.dataCompleteness ?? 0).toFixed(0)}%</td>
+        <td>${Number((row.dataCompleteness ?? 0) * 100).toFixed(0)}%</td>
         <td>${csvEscape(row.reason || "")}</td>
       </tr>`
     )
@@ -650,6 +722,9 @@ export function runJobMatching({
   capacities = {},
   weights = {},
   jobRequirements = {},
+  minCompleteness = 0,
+  minMatchScore = 0,
+  completenessOverrides = [],
   generatedAt = new Date().toISOString(),
 } = {}) {
   const userList = users.map((user) => ({ ...user, _id: stableString(user._id || user.id) }));
@@ -659,14 +734,19 @@ export function runJobMatching({
       : new Map(Object.entries(resultsByUser || {}).map(([userId, results]) => [stableString(userId), results || {}]));
 
   const jobSpecs = Object.entries(capacities || {})
-    .filter(([, capacity]) => Number(capacity) > 0)
+    .filter(([, capacity]) => Number(capacity) >= 0)
     .map(([name, capacity]) => adaptJobSpec(name, jobRequirements?.[name] || {}, capacity, weights));
+  const eligibility = {
+    minCompleteness: Math.max(0, Math.min(1, Number(minCompleteness) || 0)),
+    minMatchScore: clamp100(minMatchScore),
+    completenessOverrides: new Set((completenessOverrides || []).map(stableString)),
+  };
 
   const candidateJobScores = [];
   for (const jobSpec of jobSpecs) {
     for (const user of userList) {
       const userResults = resultMap.get(stableString(user._id)) || {};
-      candidateJobScores.push(scoreCandidateForJob(user, userResults, jobSpec));
+      candidateJobScores.push(scoreCandidateForJob(user, userResults, jobSpec, eligibility));
     }
   }
 
@@ -674,7 +754,7 @@ export function runJobMatching({
   for (const jobSpec of jobSpecs) {
     const rows = candidateJobScores
       .filter((row) => row.jobId === jobSpec.id)
-      .sort(compareEdges)
+      .sort(compareMatchEdges)
       .map((row, index) => ({ ...row, rank: index + 1 }));
     rowsByJob.set(jobSpec.id, rows);
   }
@@ -708,7 +788,17 @@ export function runJobMatching({
   for (const jobSpec of jobSpecs) {
     const selected = (selectedByJob.get(jobSpec.id) || []).sort(compareEdges);
     const selectedIds = new Set(selected.map((row) => row.userId));
-    const persons = selected.map((row, index) => summarizePerson(row, index + 1));
+    const persons = selected.map((row, index) => {
+      const topMatches = candidateJobScores
+        .filter((match) => match.userId === row.userId)
+        .sort(compareEdges)
+        .slice(0, 3)
+        .map((match) => ({ jobId: match.jobId, job: match.job, finalScore: match.finalScore, eligible: match.eligible }));
+      return summarizePerson(row, index + 1, {
+        topMatches,
+        assignmentReason: topMatches[0]?.jobId && topMatches[0].jobId !== row.jobId ? "CAPACITY_FULL" : null,
+      });
+    });
 
     allocations[jobSpec.name] = {
       jobId: jobSpec.id,
@@ -717,21 +807,27 @@ export function runJobMatching({
       persons,
     };
 
-    assignments.push({
-      jobId: jobSpec.id,
-      job: jobSpec.name,
-      capacity: jobSpec.capacity,
-      slots: persons,
-    });
+    if (jobSpec.capacity > 0) {
+      assignments.push({
+        jobId: jobSpec.id,
+        job: jobSpec.name,
+        capacity: jobSpec.capacity,
+        slots: persons,
+      });
+    }
 
     const queue = (rowsByJob.get(jobSpec.id) || [])
       .filter((row) => !selectedIds.has(row.userId))
-      .map((row) => ({
-        ...summarizePerson(row, row.rank),
-        status: assignedJobByUser.has(row.userId) ? "assigned_elsewhere" : "available",
-        assignedJobId: assignedJobByUser.get(row.userId) || null,
-        eligible: row.eligible,
-      }));
+      .map((row) => {
+        const assignedJobId = assignedJobByUser.get(row.userId) || null;
+        return {
+          ...summarizePerson(row, row.rank),
+          status: assignedJobId ? "assigned_elsewhere" : "available",
+          reason: !row.eligible ? "NOT_ELIGIBLE" : assignedJobId ? "ASSIGNED_TO_HIGHER_GLOBAL_MATCH" : "CAPACITY_FULL",
+          assignedJobId,
+          eligible: row.eligible,
+        };
+      });
 
     waitlist.push({
       jobId: jobSpec.id,
@@ -767,6 +863,91 @@ export function runJobMatching({
       };
     });
 
+  const chosenByUser = new Map(chosen.map((row) => [row.userId, row]));
+  const candidates = userList.map((user) => {
+    const identity = userIdentity(user);
+    const matches = candidateJobScores
+      .filter((row) => row.userId === identity.userId)
+      .sort(compareMatchEdges);
+    const recommendations = matches.slice(0, 3).map((row, index) => ({
+      jobId: row.jobId,
+      job: row.job,
+      rank: index + 1,
+      matchScore: row.finalScore,
+      strengths: row.strengths,
+      gaps: row.gaps,
+      components: row.components,
+      eligible: row.eligible,
+      failedRequirements: row.failedRequirements,
+    }));
+    const selected = chosenByUser.get(identity.userId) || null;
+    const recommendationRank = selected
+      ? matches.findIndex((row) => row.jobId === selected.jobId) + 1
+      : null;
+    const higherRecommendationFailure = selected
+      ? matches.slice(0, Math.max(0, recommendationRank - 1)).find((row) => !row.eligible)?.failedRequirements?.[0]
+      : null;
+    const best = matches[0] || null;
+    let reasonCode = null;
+    if (!selected) {
+      if (!best || !matches.length) reasonCode = "NO_ELIGIBLE_JOB";
+      else if (matches.every((row) => row.failedRequirements.includes("INSUFFICIENT_DATA"))) reasonCode = "INSUFFICIENT_DATA";
+      else if (matches.every((row) => row.failedRequirements.includes("LOW_MATCH_SCORE"))) reasonCode = "LOW_MATCH_SCORE";
+      else if (matches.every((row) => row.failedRequirements.includes("HARD_REQUIREMENT_FAILED"))) reasonCode = "HARD_REQUIREMENT_FAILED";
+      else reasonCode = "CAPACITY_FULL";
+    }
+    return {
+      ...identity,
+      dataCompleteness: best?.dataCompleteness || 0,
+      recommendations,
+      finalAllocation: selected ? {
+        jobId: selected.jobId,
+        job: selected.job,
+        matchScore: selected.finalScore,
+        recommendationRank,
+        reasonCode: recommendationRank === 1 ? "TOP_RECOMMENDATION" : higherRecommendationFailure || "CAPACITY_FULL",
+      } : null,
+      status: selected ? "ASSIGNED" : "UNASSIGNED",
+      reasonCode,
+      completenessOverride: eligibility.completenessOverrides.has(identity.userId),
+    };
+  });
+
+  const jobs = jobSpecs.map((jobSpec) => {
+    const ranking = rowsByJob.get(jobSpec.id) || [];
+    const assignedIds = new Set((selectedByJob.get(jobSpec.id) || []).map((row) => row.userId));
+    return {
+      jobId: jobSpec.id,
+      job: jobSpec.name,
+      capacity: jobSpec.capacity,
+      assignedCount: assignedIds.size,
+      ranking: ranking.map((row) => ({
+        rank: row.rank,
+        userId: row.userId,
+        username: row.username,
+        fullName: row.fullName,
+        matchScore: row.finalScore,
+        dataCompleteness: row.dataCompleteness,
+        eligible: row.eligible,
+        finalAssignment: assignedJobByUser.get(row.userId) || null,
+        reasonCode: row.eligible ? null : row.failedRequirements[0] || "NO_ELIGIBLE_JOB",
+      })),
+      waitlist: ranking
+        .filter((row) => !assignedIds.has(row.userId))
+        .map((row) => ({
+          rank: row.rank,
+          userId: row.userId,
+          username: row.username,
+          fullName: row.fullName,
+          matchScore: row.finalScore,
+          dataCompleteness: row.dataCompleteness,
+          reasonCode: !row.eligible
+            ? row.failedRequirements[0] || "NO_ELIGIBLE_JOB"
+            : assignedJobByUser.has(row.userId) ? "ASSIGNED_ELSEWHERE" : "CAPACITY_FULL",
+        })),
+    };
+  });
+
   return {
     meta: {
       generatedAt,
@@ -774,7 +955,12 @@ export function runJobMatching({
       jobCount: jobSpecs.length,
       algorithmVersion: ALGORITHM_VERSION,
       excludedSensitiveSignals: EXCLUDED_SENSITIVE_SIGNALS,
+      weights,
+      minCompleteness: eligibility.minCompleteness,
+      minMatchScore: eligibility.minMatchScore,
     },
+    candidates,
+    jobs,
     allocations,
     assignments,
     waitlist,
@@ -812,6 +998,9 @@ export async function prioritizeCandidates({
   capacities = {},
   weights = {},
   jobRequirements = {},
+  minCompleteness = 0.6,
+  minMatchScore = 50,
+  completenessOverrides = [],
 }) {
   if (!Array.isArray(userIds) || !userIds.length) {
     throw new Error("userIds is required");
@@ -824,7 +1013,7 @@ export async function prioritizeCandidates({
   const [resultsByUser, users] = await Promise.all([
     fetchLatestResultsByUser(userIds),
     User.find({ _id: { $in: objectIds } })
-      .select("username email profile.fullName profile.field profile.highSchoolMajor profile.major profile.phone")
+      .select("username email period profile.fullName profile.field profile.highSchoolMajor profile.major profile.phone profile.diplomaAverage")
       .lean(),
   ]);
 
@@ -834,6 +1023,9 @@ export async function prioritizeCandidates({
     capacities,
     weights,
     jobRequirements,
+    minCompleteness,
+    minMatchScore,
+    completenessOverrides,
   });
 }
 

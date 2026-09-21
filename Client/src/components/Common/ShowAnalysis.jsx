@@ -7,6 +7,7 @@ import GardnerAnalysis from './analysis/GardnerAnalysis';
 import CliftonStrengthsAnalysis from './analysis/CliftonStrengthsAnalysis';
 import GHQAnalysis from './analysis/GHQAnalysis';
 import PersonalFavoritesAnalysis  from './analysis/PersonalFavoritesAnalysis';
+import { applyChartContract } from '../../utils/chartAdapters';
 
 const componentsByType = {
   MBTI: MbtiAnalysis,
@@ -91,7 +92,7 @@ const ShowAnalysis = ({ testType, analysisData }) => {
     return <div>نوع تحلیل مشخص نیست.</div>;
   }
 
-  const normalizedData = normalizeAnalysisData(analysisData);
+  const normalizedData = applyChartContract(testType, normalizeAnalysisData(analysisData));
   const hasUsableData =
     hasNumericValue(normalizedData.normalizedScores) ||
     hasNumericValue(normalizedData.rawScores) ||

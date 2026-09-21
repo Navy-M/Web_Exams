@@ -3,8 +3,11 @@ import "../../styles/GardnerTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../context/NotificationContext";
 import TopbarStatus from "./TopbarStatus";
 import { getItemWithExpiry, scopedStorageKey, setItemWithExpiry } from "../../services/storage";
+import { useReliableExamTimer } from "../../hooks/useReliableExamTimer";
+import { useExamDraft } from "../../hooks/useExamDraft";
 
 const DONE_KEY = "gardnerTestDone";
 
@@ -22,23 +25,27 @@ const SCORE_MAP = {
   "خیلی زیاد": 5,
 };
 
-export default function GardnerTest({ questions, duration = 10 }) {
+export default function GardnerTest({ questions, duration = 10, session }) {
   const { user } = useAuth() || {};
   const navigate = useNavigate();
-  const startTimeRef = useRef(Date.now());
+  const { notify } = useNotification();
+  const startTimeRef = useRef(new Date(session?.startedAt || Date.now()).getTime());
   const userId = user?.id || user?._id;
   const doneKey = scopedStorageKey(DONE_KEY, userId, "GARDNER");
 
   const Gardner_Test = useMemo(() => (Array.isArray(questions) ? questions : []), [questions]);
   const total = Gardner_Test.length;
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(session?.currentIndex || 0);
   // جواب‌ها به‌صورت map نگه می‌داریم: { [questionId]: number }
-  const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [answers, setAnswers] = useState(() => Object.fromEntries((session?.answersDraft || []).map((item) => [item.questionId, item.value])));
   const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(doneKey));
   const submittingRef = useRef(false);
-  const [started, setStarted] = useState(false);
+  const [started, setStarted] = useState(Boolean(session));
+  const submitHandlerRef = useRef(null);
+  const { remainingSeconds: timeLeft, tone } = useReliableExamTimer({ session, enabled: started && !blocked, onExpireRef: submitHandlerRef });
+  const draftAnswers = useMemo(() => Object.entries(answers).map(([questionId, value]) => ({ questionId, value })), [answers]);
+  useExamDraft({ sessionId: session?.sessionId, answers: draftAnswers, currentIndex, enabled: started && !blocked });
 
   const currentQuestion = Gardner_Test[currentIndex];
   useEffect(() => {
@@ -47,23 +54,11 @@ export default function GardnerTest({ questions, duration = 10 }) {
 
   useEffect(() => {
     if (!blocked) return;
-    alert("You have already completed this test. Please try again in 24 hours.");
+    notify("شما قبلاً این آزمون را انجام داده‌اید.", { type: "warning" });
     navigate("/dashboard");
-  }, [blocked, navigate]);
+  }, [blocked, navigate, notify]);
 
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
-
-  // تایمر کل آزمون
-  useEffect(() => {
-    if (blocked || !started) return;
-    if (timeLeft <= 0) {
-      handleSubmit();
-      return;
-    }
-    const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocked, started, timeLeft]);
 
   // انتخاب گزینه
   const handleSelect = useCallback(
@@ -79,7 +74,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
         if (currentIndex + 1 < total) {
           setCurrentIndex((i) => i + 1);
         } else {
-          handleSubmit();
+          submitHandlerRef.current?.();
         }
       }, 180);
     },
@@ -90,10 +85,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
   const handleSubmit = useCallback(async () => {
     if (submittingRef.current) return;
     submittingRef.current = true;
-    const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
-      questionId,
-      value,
-    }));
+    const formattedAnswers = draftAnswers;
 
     const resultData = {
       user: user?.id || user?._id || null,
@@ -102,28 +94,30 @@ export default function GardnerTest({ questions, duration = 10 }) {
       score: 0,
       analysis: {},
       adminFeedback: "",
-      startedAt: new Date(startTimeRef.current),
+      startedAt: new Date(session?.startedAt || startTimeRef.current),
       submittedAt: new Date(),
+      sessionId: session?.sessionId,
     };
 
     try {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
-        alert("🎉 آزمون گاردنر با موفقیت ثبت شد!");
+        notify("آزمون گاردنر با موفقیت ثبت شد.", { type: "success" });
         setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000);
         setBlocked(true);
         navigate("/dashboard");
 
       } else {
-        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        notify("ذخیره‌سازی نتیجه انجام نشد.", { type: "error" });
         submittingRef.current = false;
       }
     } catch (err) {
       console.error("Gardner submission error:", err);
-      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      notify("ارسال نتیجه با خطا مواجه شد.", { type: "error" });
       submittingRef.current = false;
     }
-  }, [answers, doneKey, navigate, user?.id, user?._id]);
+  }, [doneKey, draftAnswers, navigate, notify, session?.sessionId, session?.startedAt, user?.id, user?._id]);
+  submitHandlerRef.current = handleSubmit;
 
   if (blocked) {
     return null;
@@ -160,6 +154,7 @@ export default function GardnerTest({ questions, duration = 10 }) {
             <TopbarStatus
               timeLeft={timeLeft}
               timeText={formatTime(timeLeft)}
+              timerTone={tone}
               progressPercent={progressPercent}
               currentIndex={currentIndex}
               totalQuestions={total}

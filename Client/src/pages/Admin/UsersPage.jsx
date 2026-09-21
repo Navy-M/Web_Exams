@@ -12,14 +12,15 @@ import {
   clearResultAnalysis,
 } from "../../services/api";
 import { useI18n } from "../../i18n";
+import { useNotification } from "../../context/NotificationContext";
+import LoadingSpinner from "../../components/Common/LoadingSpinner";
 import PrintChoiceModal from "../../components/User/PrintChoiceModal";
 
-import ShowAnalysis from "../../components/Common/ShowAnalysis";
 import SearchBar from "./UsersPage/SearchBar";
 import UsersTable from "./UsersPage/UsersTable";
 import UserProfileCard from "./UsersPage/UserProfileCard";
 import ResultsTable from "./UsersPage/ResultsTable";
-import FeedbackPanel from "./UsersPage/FeedbackPanel";
+import AnalysisDialog from "./UsersPage/AnalysisDialog";
 
 import { usePrintActions, PrintDocument, buildJobsHTML } from "../../print/PrintKit";
 
@@ -57,6 +58,7 @@ async function fetchResultsWithAnalyses(list = [], getTestResultsFn) {
 ======================================================== */
 const UsersPage = () => {
   const { t } = useI18n();
+  const { notify } = useNotification();
 
   // data
   const [users, setUsers] = useState([]);
@@ -222,7 +224,7 @@ const UsersPage = () => {
         role: newUser.role,
       });
 
-      alert(res.message || t("usersPage.addSuccess"));
+      notify(res.message || t("usersPage.addSuccess"), { type: "success" });
       await refreshUsers();
       setNewUser({
         fullName: "",
@@ -233,7 +235,7 @@ const UsersPage = () => {
       });
       setShowAddRow(false);
     } catch (err) {
-      alert(err?.response?.message || t("usersPage.addFailure"));
+      notify(err?.response?.data?.message || t("usersPage.addFailure"), { type: "error" });
     }
   };
 
@@ -242,12 +244,13 @@ const UsersPage = () => {
     try {
       await deleteUser(id);
       await refreshUsers();
+      notify("کاربر با موفقیت حذف شد.", { type: "success" });
       if (selectedUser?._id === id) {
         setSelectedUser(null);
         setUserResults([]);
       }
     } catch {
-      alert(t("usersPage.deleteUserFailure"));
+      notify(t("usersPage.deleteUserFailure"), { type: "error" });
     }
   };
 
@@ -257,7 +260,7 @@ const UsersPage = () => {
       const data = res?.data ?? res;
       setSelectedResult(data);
     } catch {
-      alert(t("usersPage.selectResultError"));
+      notify(t("usersPage.selectResultError"), { type: "error" });
     }
   };
 
@@ -269,8 +272,9 @@ const UsersPage = () => {
       await deleteResult(resultId);
       await refreshAdminData({ userId: selectedUser?._id, resultId: null });
       setSelectedResult(null);
+      notify("نتیجه با موفقیت حذف شد.", { type: "success" });
     } catch {
-      alert(t("usersPage.deleteResultFailure"));
+      notify(t("usersPage.deleteResultFailure"), { type: "error" });
     } finally {
       setActiveMutation(null);
     }
@@ -283,9 +287,9 @@ const UsersPage = () => {
       setActiveMutation(`analyze:${resultId}`);
       await analyzeTests({ resultId, testType: result.testType });
       await refreshAdminData({ userId: selectedUser?._id, resultId });
-      alert(t("usersPage.analyzeSuccess"));
+      notify(t("usersPage.analyzeSuccess"), { type: "success" });
     } catch {
-      alert(t("usersPage.analyzeFailure"));
+      notify(t("usersPage.analyzeFailure"), { type: "error" });
     } finally {
       setActiveMutation(null);
     }
@@ -302,11 +306,12 @@ const UsersPage = () => {
       setActiveMutation(`clear:${resultId}`);
       await clearResultAnalysis(resultId);
       await refreshAdminData({ userId: selectedUser?._id, resultId });
-      alert(t("usersPage.deleteAnalysisSuccess") || "Analysis removed.");
+      notify(t("usersPage.deleteAnalysisSuccess") || "تحلیل حذف شد.", { type: "success" });
     } catch {
-      alert(
+      notify(
         t("usersPage.deleteAnalysisFailure") ||
-          "Unable to remove the analysis."
+          "حذف تحلیل انجام نشد.",
+        { type: "error" }
       );
     } finally {
       setActiveMutation(null);
@@ -323,7 +328,7 @@ const UsersPage = () => {
     );
 
     if (items.length === 0) {
-      alert(t("usersPage.noResultsToAnalyze") || "No results to analyze.");
+      notify(t("usersPage.noResultsToAnalyze") || "نتیجه‌ای برای تحلیل وجود ندارد.", { type: "warning" });
       return;
     }
 
@@ -360,12 +365,13 @@ const UsersPage = () => {
     setBulkAnalyzing(false);
 
     if (errors.length === 0) {
-      alert(t("usersPage.analyzeAllDone") || "All analyses completed.");
+      notify(t("usersPage.analyzeAllDone") || "تحلیل همه نتایج انجام شد.", { type: "success" });
     } else {
-      alert(
+      notify(
         (t("usersPage.analyzeAllDoneWithErrors") ||
-          "Done with some errors.") +
-          ` (${errors.length})`
+          "عملیات با تعدادی خطا تمام شد.") +
+          ` (${errors.length})`,
+        { type: "warning", duration: 8000 }
       );
     }
   };
@@ -380,11 +386,11 @@ const UsersPage = () => {
         resultId,
         feedback,
       });
-      alert(t("usersPage.feedbackSuccess"));
+      notify(t("usersPage.feedbackSuccess"), { type: "success" });
       setFeedback("");
       await refreshAdminData({ userId: selectedUser._id, resultId });
     } catch {
-      alert(t("usersPage.feedbackFailure"));
+      notify(t("usersPage.feedbackFailure"), { type: "error" });
     } finally {
       setActiveMutation(null);
     }
@@ -394,7 +400,7 @@ const UsersPage = () => {
   const openPrintDialog = () => setPrintOpen(true);
   const closePrintDialog = () => setPrintOpen(false);
 
-  const { renderToNewWindowAndPrint, renderHiddenAndSavePdf } = usePrintActions();
+  const { renderToNewWindowAndPrint } = usePrintActions();
 
   const onPrint = async () => {
     if (!selectedUser) return;
@@ -414,33 +420,7 @@ const UsersPage = () => {
         );
       }, { title: (selectedUser?.profile?.fullName || "report") } );
     } catch (e) {
-      alert(t("usersPage.pdfExportFailed") || "خطا در چاپ");
-      console.error(e);
-    } finally {
-      setPrinting(false);
-      closePrintDialog();
-    }
-  };
-
-  const onDownload = async () => {
-    if (!selectedUser) return;
-    try {
-      setPrinting(true);
-      const baseName = selectedUser?.profile?.fullName || selectedUser?.username || "report";
-      const filename = `${baseName}-${new Date().toISOString().slice(0, 10)}.pdf`;
-      await renderHiddenAndSavePdf(async () => {
-        const resultsReady = await fetchResultsWithAnalyses(userResults, getTestResults);
-        return (
-          <PrintDocument
-            user={selectedUser}
-            results={resultsReady}
-            formatDate={formatDate}
-            jobsHTML={buildJobsHTML(resultsReady,selectedUser)}
-          />
-        );
-      }, { title: baseName, filename });
-    } catch (e) {
-      alert(t("usersPage.pdfExportFailed") || "خطا در ساخت PDF");
+      notify(t("usersPage.pdfExportFailed") || "خطا در چاپ", { type: "error" });
       console.error(e);
     } finally {
       setPrinting(false);
@@ -490,12 +470,12 @@ const UsersPage = () => {
             open={printOpen}
             busy={printing}
             title="خروجی کارنامه"
-            message="می‌خواهید گزارش چاپ شود یا به صورت PDF دانلود گردد؟"
+            message="گزارش پس از آماده‌شدن نمودارها برای چاپ باز می‌شود. از گزینه Save as PDF مرورگر نیز می‌توانید استفاده کنید."
             printLabel="چاپ"
             downloadLabel="دانلود PDF"
             cancelLabel="انصراف"
             onPrint={printing ? undefined : onPrint}
-            onDownload={printing ? undefined : onDownload}
+            onDownload={undefined}
             onCancel={printing ? undefined : closePrintDialog}
             dir="rtl"
           />
@@ -517,34 +497,16 @@ const UsersPage = () => {
                 busy={Boolean(activeMutation)}
               />
 
-              {selectedResult && (
-                <section className="feedback-section card">
-                  {selectedResult?.analysis && (
-                    <div className="analysis-wrap">
-                      <h4>
-                        {t("usersPage.analysisHeading", {
-                          testType: selectedResult.testType,
-                        })}
-                      </h4>
-                      <ShowAnalysis
-                        testType={selectedResult.testType}
-                        analysisData={selectedResult.analysis}
-                      />
-                    </div>
-                  )}
-
-                  <FeedbackPanel
-                    show={!selectedResult?.adminFeedback}
-                    value={feedback}
-                    onChange={setFeedback}
-                    onSubmit={handleSubmitFeedback}
-                    onCancel={() => {
-                      setSelectedResult(null);
-                      setFeedback("");
-                    }}
-                  />
-                </section>
-              )}
+              <AnalysisDialog
+                result={selectedResult}
+                busy={Boolean(activeMutation)}
+                feedback={feedback}
+                onFeedbackChange={setFeedback}
+                onFeedbackSubmit={handleSubmitFeedback}
+                onAnalyze={handleCheckTest}
+                onClear={handleRemoveResultAnalysis}
+                onClose={() => { setSelectedResult(null); setFeedback(""); }}
+              />
             </main>
           </div>
         </div>
@@ -560,7 +522,7 @@ const UsersPage = () => {
         </header>
 
         {loading ? (
-          <p>{t("usersPage.loadingList")}</p>
+          <LoadingSpinner label={t("usersPage.loadingList")} page />
         ) : error ? (
           <p className="error">{error}</p>
         ) : (

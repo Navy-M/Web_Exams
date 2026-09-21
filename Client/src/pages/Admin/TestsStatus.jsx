@@ -9,6 +9,8 @@ import JobQuotaModal from "./TestStatus/JobQuotaModal";
 import AllocationReport from "./TestStatus/AllocationReport";
 
 import { jobRequirements, Test_Cards } from "../../services/dummyData";
+import { useNotification } from "../../context/NotificationContext";
+import LoadingSpinner from "../../components/Common/LoadingSpinner";
 
 const DEFAULT_QUOTAS = {
   job1: { name: "ناوبری و فرماندهی کشتی", tableCount: 0 },
@@ -21,6 +23,7 @@ const DEFAULT_QUOTAS = {
 const lc = (value) => (value ?? "").toString().toLowerCase();
 
 const TestsStatus = () => {
+  const { notify } = useNotification();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -121,7 +124,7 @@ const TestsStatus = () => {
 
   const handleStartPrioritization = () => {
     if (selected.size === 0) {
-      alert("ابتدا حداقل یک کاربر را انتخاب کنید.");
+      notify("ابتدا حداقل یک کاربر را انتخاب کنید.", { type: "warning" });
       return;
     }
     setShowPrioritizationModal(true);
@@ -131,7 +134,7 @@ const TestsStatus = () => {
     if (prioritizing) return;
     const userIds = Array.from(selected);
     if (!userIds.length) {
-      alert("ابتدا حداقل یک کاربر را انتخاب کنید.");
+      notify("ابتدا حداقل یک کاربر را انتخاب کنید.", { type: "warning" });
       return;
     }
 
@@ -141,6 +144,9 @@ const TestsStatus = () => {
         userIds,
         capacities: modalPayload?.capacities,
         weights: modalPayload?.serverWeights,
+        minCompleteness: modalPayload?.minCompleteness,
+        minMatchScore: modalPayload?.minMatchScore,
+        completenessOverrides: modalPayload?.completenessOverrides,
         jobRequirements,
         quotas: modalPayload?.quotas || jobQuotas,
       });
@@ -155,9 +161,10 @@ const TestsStatus = () => {
         meta: { ...(res.meta || {}), source: "api", serverOnly: true },
       });
       setShowPrioritizationModal(false);
+      notify("اولویت‌بندی با موفقیت انجام شد.", { type: "success" });
     } catch (err) {
       console.error("prioritizeUsers API failed:", err);
-      alert("خطا در اولویت‌بندی سروری. منبع تخصیص فقط API سرور است؛ لطفاً اتصال سرور و MongoDB را بررسی کنید.");
+      notify("خطا در اولویت‌بندی سروری؛ اتصال سرور و MongoDB را بررسی کنید.", { type: "error" });
     } finally {
       setPrioritizing(false);
     }
@@ -168,11 +175,6 @@ const TestsStatus = () => {
     if (!window.confirm("کاربران انتخاب‌شده فقط از نمای فعلی حذف شوند؟ این عملیات داده سرور را حذف نمی‌کند.")) return;
     setUsers((prev) => prev.filter((u) => !selected.has(u._id)));
     setSelected(new Set());
-  };
-
-  const handleBulkMakeGroup = () => {
-    if (!selected.size) return;
-    alert("دسته‌بندی گروهی هنوز به API متصل نشده است.");
   };
 
   if (assignmentResult) {
@@ -217,20 +219,23 @@ const TestsStatus = () => {
         setVisibleCount={setVisibleCount}
       />
 
-      <UsersTable
-        users={visibleUsers}
-        selected={selected}
-        onToggleUser={toggleUser}
-        onToggleAll={toggleAllVisible}
-        allVisibleSelected={isAllVisibleSelected}
-      />
+      {loading ? (
+        <LoadingSpinner label="در حال دریافت فهرست کاربران..." page />
+      ) : (
+        <UsersTable
+          users={visibleUsers}
+          selected={selected}
+          onToggleUser={toggleUser}
+          onToggleAll={toggleAllVisible}
+          allVisibleSelected={isAllVisibleSelected}
+        />
+      )}
 
       {selected.size > 0 && (
         <BulkActionsBar
           count={selected.size}
           onStartPrioritization={handleStartPrioritization}
           onDeleteFromView={handleBulkDeleteFromView}
-          onMakeGroup={handleBulkMakeGroup}
         />
       )}
 
@@ -248,6 +253,8 @@ const TestsStatus = () => {
         submitting={prioritizing}
         jobRequirements={jobRequirements}
         tests={Test_Cards}
+        selectedCount={selected.size}
+        selectedUsers={selectedUsers}
       />
     </section>
   );

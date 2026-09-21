@@ -1,0 +1,35 @@
+.chart-validation {
+  width: min(1180px, calc(100% - 32px));
+  margin: 24px auto 64px;
+  color: #172033;
+}
+
+.chart-validation > header {
+  margin-bottom: 24px;
+  border-bottom: 1px solid #d7dde8;
+}
+
+.chart-validation__case {
+  padding: 20px 0 32px;
+  border-bottom: 1px solid #d7dde8;
+}
+
+.chart-validation__data {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  direction: ltr;
+}
+
+.chart-validation pre {
+  max-height: 240px;
+  overflow: auto;
+  padding: 12px;
+  background: #f4f6fa;
+  border: 1px solid #d7dde8;
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .chart-validation__data { grid-template-columns: 1fr; }
+}

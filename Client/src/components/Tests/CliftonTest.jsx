@@ -3,8 +3,11 @@ import "../../styles/cliftonTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../context/NotificationContext";
 import { setItemWithExpiry, getItemWithExpiry, removeItem, scopedStorageKey } from "../../services/storage";
 import TopbarStatus from "./TopbarStatus";
+import { useReliableExamTimer } from "../../hooks/useReliableExamTimer";
+import { useExamDraft } from "../../hooks/useExamDraft";
 
 const STORAGE_KEY = "clifton_test_progress_v1";
 const DONE_KEY = "cliftonTestDone";
@@ -15,10 +18,11 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
-export default function CliftonTest({ questions, duration = 10 }) {
+export default function CliftonTest({ questions, duration = 10, session }) {
   const { user } = useAuth() || {};
   const navigate = useNavigate();
-  const startTimeRef = useRef(Date.now());
+  const { notify } = useNotification();
+  const startTimeRef = useRef(new Date(session?.startedAt || Date.now()).getTime());
   const userId = user?.id || user?._id;
   const doneKey = scopedStorageKey(DONE_KEY, userId, "CLIFTON");
   const storageKey = scopedStorageKey(STORAGE_KEY, userId, "CLIFTON");
@@ -26,12 +30,15 @@ export default function CliftonTest({ questions, duration = 10 }) {
   const Clifton_Test = useMemo(() => (Array.isArray(questions) ? questions : []), [questions]);
   const total = Clifton_Test.length;
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({}); // { [qid]: theme }
-  const [started, setStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [currentIndex, setCurrentIndex] = useState(session?.currentIndex || 0);
+  const [answers, setAnswers] = useState(() => Object.fromEntries((session?.answersDraft || []).map((item) => [item.questionId, item.choice])));
+  const [started, setStarted] = useState(Boolean(session));
   const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(doneKey));
   const submittingRef = useRef(false);
+  const submitHandlerRef = useRef(null);
+  const { remainingSeconds: timeLeft, tone } = useReliableExamTimer({ session, enabled: started && !blocked, onExpireRef: submitHandlerRef });
+  const draftAnswers = useMemo(() => Object.entries(answers).map(([questionId, choice]) => ({ questionId: isNaN(Number(questionId)) ? questionId : Number(questionId), choice })), [answers]);
+  useExamDraft({ sessionId: session?.sessionId, answers: draftAnswers, currentIndex, enabled: started && !blocked });
 
   const currentQ = Clifton_Test[currentIndex];
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
@@ -42,9 +49,9 @@ export default function CliftonTest({ questions, duration = 10 }) {
 
   useEffect(() => {
     if (!blocked) return;
-    alert("You have already completed this test. Please try again in 24 hours.");
+    notify("شما قبلاً این آزمون را انجام داده‌اید.", { type: "warning" });
     navigate("/dashboard");
-  }, [blocked, navigate]);
+  }, [blocked, navigate, notify]);
 
   // try resume
   useEffect(() => {
@@ -55,26 +62,13 @@ export default function CliftonTest({ questions, duration = 10 }) {
         setAnswers(saved.answers || {});
         setCurrentIndex(saved.currentIndex || 0);
         setStarted(saved.started || false);
-        setTimeLeft(saved.timeLeft ?? duration * 60);
-        startTimeRef.current = saved.startedAt || Date.now();
+        startTimeRef.current = new Date(session?.startedAt || saved.startedAt || Date.now()).getTime();
       } else {
         removeItem(storageKey);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [total]);
-
-  // timer (whole test)
-  useEffect(() => {
-    if (blocked || !started) return;
-    if (timeLeft <= 0) {
-      handleSubmit();
-      return;
-    }
-    const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocked, started, timeLeft]);
 
   // autosave (debounced)
   useEffect(() => {
@@ -87,7 +81,6 @@ export default function CliftonTest({ questions, duration = 10 }) {
           currentIndex,
           started: true,
           startedAt: startTimeRef.current,
-          timeLeft,
           questionsHash: total,
           savedAt: Date.now(),
         },
@@ -95,7 +88,7 @@ export default function CliftonTest({ questions, duration = 10 }) {
       );
     }, 2000);
     return () => clearTimeout(id);
-  }, [answers, currentIndex, started, timeLeft, total]);
+  }, [answers, blocked, currentIndex, started, storageKey, total]);
 
   const handleSelect = useCallback(
     (theme) => {
@@ -103,7 +96,7 @@ export default function CliftonTest({ questions, duration = 10 }) {
       setAnswers((prev) => ({ ...prev, [qid]: theme }));
       setTimeout(() => {
         if (currentIndex + 1 < total) setCurrentIndex((i) => i + 1);
-        else handleSubmit();
+        else submitHandlerRef.current?.();
       }, 180);
     },
     [currentIndex, currentQ?.id, total]
@@ -112,10 +105,7 @@ export default function CliftonTest({ questions, duration = 10 }) {
   const handleSubmit = useCallback(async () => {
     if (submittingRef.current) return;
     submittingRef.current = true;
-    const formattedAnswers = Object.entries(answers).map(([questionId, choice]) => ({
-      questionId: isNaN(Number(questionId)) ? questionId : Number(questionId),
-      choice,
-    }));
+    const formattedAnswers = draftAnswers;
 
     const resultData = {
       user: user?.id || user?._id || null,
@@ -124,29 +114,31 @@ export default function CliftonTest({ questions, duration = 10 }) {
       score: 0,
       analysis: {},
       adminFeedback: "",
-      startedAt: new Date(startTimeRef.current),
+      startedAt: new Date(session?.startedAt || startTimeRef.current),
       submittedAt: new Date(),
+      sessionId: session?.sessionId,
     };
 
     try {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
-        alert("🎉 آزمون کلیفتون با موفقیت ثبت شد!");
+        notify("آزمون کلیفتون با موفقیت ثبت شد.", { type: "success" });
         setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000); // 24h
         setBlocked(true);
         removeItem(storageKey);
         navigate("/dashboard");
 
       } else {
-        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        notify("ذخیره‌سازی نتیجه انجام نشد.", { type: "error" });
         submittingRef.current = false;
       }
     } catch (error) {
       console.error("Clifton submission error:", error);
-      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      notify("ارسال نتیجه با خطا مواجه شد.", { type: "error" });
       submittingRef.current = false;
     }
-  }, [answers, doneKey, navigate, storageKey, user?.id, user?._id]);
+  }, [doneKey, draftAnswers, navigate, notify, session?.sessionId, session?.startedAt, storageKey, user?.id, user?._id]);
+  submitHandlerRef.current = handleSubmit;
 
   if (blocked) {
     return null;
@@ -177,8 +169,7 @@ export default function CliftonTest({ questions, duration = 10 }) {
             className="start-btn"
             onClick={() => {
               setStarted(true);
-              startTimeRef.current = Date.now();
-              setTimeLeft(duration * 60);
+              startTimeRef.current = new Date(session?.startedAt || Date.now()).getTime();
             }}
           >
             شروع آزمون
@@ -190,6 +181,7 @@ export default function CliftonTest({ questions, duration = 10 }) {
             <TopbarStatus
               timeLeft={timeLeft}
               timeText={formatTime(timeLeft)}
+              timerTone={tone}
               progressPercent={progressPercent}
               currentIndex={currentIndex}
               totalQuestions={total}

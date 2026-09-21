@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import connectDB from "../config/db.js";
@@ -10,7 +11,7 @@ const API_BASE = process.env.SMOKE_API_BASE || "http://localhost:5000/api";
 const stamp = Date.now();
 const adminUsername = `smoke_admin_${stamp}`;
 const userUsername = `smoke_user_${stamp}`;
-const password = "SmokePass123!";
+const password = `Smoke-${randomUUID()}!Aa1`;
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -146,7 +147,7 @@ try {
     }),
   });
   assert(prioritized.ok === true, "prioritize endpoint failed");
-  assert(prioritized.meta?.algorithmVersion === "job-matching-v2.0.0", "prioritize meta is missing algorithm version");
+  assert(prioritized.meta?.algorithmVersion === "job-matching-v2.1.0", "prioritize meta is missing algorithm version");
   assert(Array.isArray(prioritized.candidateJobScores), "prioritize candidateJobScores missing");
 
   const deleted = await request(`/results/${result._id}`, {

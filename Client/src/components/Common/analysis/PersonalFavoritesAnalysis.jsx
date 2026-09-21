@@ -11,6 +11,8 @@ import {
   Legend,
 } from "chart.js";
 import "./PersonalFavoritesAnalysis.css";
+import ReportChart from "./ReportChart";
+import { useTheme } from "../../../context/ThemeContext";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -34,6 +36,7 @@ const pick = (data) => ({
 });
 
 const PersonalFavoritesAnalysis = ({ data = {}, benchmark = null }) => {
+  useTheme();
   if (!data) return <p className="muted" dir="rtl">داده‌ای برای نمایش موجود نیست.</p>;
 
   const {
@@ -329,9 +332,9 @@ const PersonalFavoritesAnalysis = ({ data = {}, benchmark = null }) => {
 
       {/* نمودار */}
       <section className="chart-section">
-        <div className="chart-wrap" ref={PFchartWrapRef} >
+        <ReportChart ref={PFchartWrapRef} testType="PERSONAL_FAVORITES" height={380}>
           <Bar ref={chartRef} data={barData} options={barOptions} />
-        </div>
+        </ReportChart>
       <br/>
         <p className="muted small">راهنما: محور افقی درصد نرمال‌شده (۰ تا ۱۰۰) است.</p>
       </section>

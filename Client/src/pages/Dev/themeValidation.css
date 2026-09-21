@@ -1,0 +1,46 @@
+.theme-validation { width:min(1120px, calc(100% - 32px)); margin:24px auto 64px; display:grid; gap:18px; }
+.theme-validation, .theme-validation * { box-sizing:border-box; }
+.theme-validation > *, .theme-validation__grid > *, .theme-validation__section > * { min-width:0; max-width:100%; }
+.theme-validation__header, .theme-validation__section-head { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.theme-validation__header { padding-bottom:18px; border-bottom:1px solid var(--border-default); }
+.theme-validation h1, .theme-validation h2, .theme-validation p { margin:0; }
+.theme-validation h1 { font-size:1.65rem; }
+.theme-validation h2 { font-size:1.05rem; }
+.theme-validation__section, .theme-validation__card { padding:18px; border:1px solid var(--border-default); background:var(--background-paper); border-radius:6px; box-shadow:var(--shadow-sm); }
+.theme-validation__section { display:grid; gap:16px; }
+.theme-validation__grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+.theme-validation__card { display:grid; gap:12px; }
+.theme-validation__card label { display:grid; gap:6px; color:var(--text-secondary); font-size:.9rem; }
+.theme-validation__card input, .theme-validation__card select, .theme-validation__card textarea { min-height:40px; padding:8px 10px; }
+.theme-validation__card input, .theme-validation__card select, .theme-validation__card textarea { width:100%; }
+.theme-validation__card textarea { min-height:80px; resize:vertical; }
+.theme-validation__check { display:flex !important; align-items:center; grid-template-columns:auto 1fr; }
+.theme-validation__row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.theme-validation__toast { position:static; width:100%; }
+.theme-validation__loader { display:flex; align-items:center; gap:10px; color:var(--text-secondary); }
+.theme-validation .skeleton-card { height:68px; }
+.theme-validation .skeleton-row { width:65%; }
+.theme-validation__tabs { display:flex; gap:4px; border-bottom:1px solid var(--border-default); }
+.theme-validation__tabs button { padding:9px 14px; border:0; border-bottom:2px solid transparent; background:transparent; }
+.theme-validation__tabs button.active { color:var(--primary-main); border-bottom-color:var(--primary-main); background:var(--action-selected); }
+.theme-validation__table-wrap { overflow:auto; border:1px solid var(--border-default); border-radius:6px; }
+.theme-validation table { width:100%; border-collapse:collapse; }
+.theme-validation th, .theme-validation td { padding:10px 12px; text-align:right; border-bottom:1px solid var(--border-subtle); }
+.theme-validation__pagination { display:flex; justify-content:center; gap:5px; }
+.theme-validation__pagination button { width:34px; height:34px; display:grid; place-items:center; padding:0; }
+.theme-validation__pagination button.active { background:var(--primary-main); color:var(--text-inverse); }
+.theme-validation__modal { padding:0 !important; width:min(620px, calc(100% - 32px)); overflow:hidden; }
+.theme-validation__modal .ts-modal-content { padding:20px; display:grid; gap:16px; }
+.theme-validation__modal .ts-modal-content p { display:flex; align-items:center; gap:8px; }
+.theme-validation__modal label { display:grid; gap:7px; }
+.theme-validation__modal input { min-height:40px; padding:8px; }
+@media (max-width:720px) {
+  .theme-validation__grid{grid-template-columns:minmax(0,1fr)}
+  .theme-validation__header{align-items:stretch;flex-direction:column}
+  .theme-validation__header h1{font-size:1.3rem;overflow-wrap:anywhere}
+  .theme-validation__header .btn{width:100%;justify-content:center}
+  .theme-validation__row{align-items:stretch}
+  .theme-validation__row .btn{flex:1 1 44%;justify-content:center}
+  .disc-head{align-items:flex-start;flex-direction:column;flex-wrap:wrap}
+  .disc-head .actions{width:100%}
+}

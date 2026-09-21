@@ -146,6 +146,15 @@ export const submitResult = async (resultData) => {
     throw error;
   }
 };
+
+export const getExamSession = async (testType) =>
+  (await API.get(`/results/sessions/${encodeURIComponent(testType)}`)).data;
+
+export const startExamSession = async (testType) =>
+  (await API.post("/results/sessions", { testType })).data;
+
+export const saveExamDraft = async (sessionId, answers, currentIndex) =>
+  (await API.put(`/results/sessions/${sessionId}/draft`, { answers, currentIndex })).data;
 export const getTestResults = async (resultId) => (await API.get(`/results/${resultId}`)).data;
 
 export const deleteResult = async (resultId) => {
@@ -213,7 +222,7 @@ export const analyzeTests = async (Data) => {
   }
 }
 
-export const prioritizeUsers = async ({ userIds, capacities, weights, jobRequirements, quotas }) => {
+export const prioritizeUsers = async ({ userIds, capacities, weights, jobRequirements, quotas, minCompleteness, minMatchScore, completenessOverrides }) => {
   // توجه: پیشوند '/api' را اگر در baseURL ست کردید، اینجا دوباره نزنید
   const { data } = await API.post("/results/jobs/prioritize", {
     userIds,   // array of strings
@@ -221,6 +230,9 @@ export const prioritizeUsers = async ({ userIds, capacities, weights, jobRequire
     weights,    // { MBTI:1, DISC:1, ... } (اختیاری)
     jobRequirements,
     quotas,
+    minCompleteness,
+    minMatchScore,
+    completenessOverrides,
   });
   // console.log("data :" , data);
   

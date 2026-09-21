@@ -3,8 +3,11 @@ import "../../styles/halandTest.css"; // ← همون فایلی که خودت �
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../context/NotificationContext";
 import TopbarStatus from "./TopbarStatus";
 import { getItemWithExpiry, scopedStorageKey, setItemWithExpiry } from "../../services/storage";
+import { useReliableExamTimer } from "../../hooks/useReliableExamTimer";
+import { useExamDraft } from "../../hooks/useExamDraft";
 
 const DONE_KEY = "hollandTestDone";
 
@@ -14,23 +17,27 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
-const HalandTest = ({ questions, duration = 8 }) => {
+const HalandTest = ({ questions, duration = 8, session }) => {
   const { user } = useAuth() || {};
   const navigate = useNavigate();
-  const startTimeRef = useRef(Date.now());
+  const { notify } = useNotification();
+  const startTimeRef = useRef(new Date(session?.startedAt || Date.now()).getTime());
   const userId = user?.id || user?._id;
   const doneKey = scopedStorageKey(DONE_KEY, userId, "HOLLAND");
 
   const Holland_Test = useMemo(() => (Array.isArray(questions) ? questions : []), [questions]);
   const total = Holland_Test.length;
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(session?.currentIndex || 0);
   // ✅ جواب‌ها را مثل MBTI به‌صورت map نگه می‌داریم: { [questionId]: answerString }
-  const [answers, setAnswers] = useState({});
-  const [started, setStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [answers, setAnswers] = useState(() => Object.fromEntries((session?.answersDraft || []).map((item) => [item.questionId, item.answer])));
+  const [started, setStarted] = useState(Boolean(session));
   const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(doneKey));
   const submittingRef = useRef(false);
+  const submitHandlerRef = useRef(null);
+  const { remainingSeconds: timeLeft, tone } = useReliableExamTimer({ session, enabled: started && !blocked, onExpireRef: submitHandlerRef });
+  const draftAnswers = useMemo(() => Object.entries(answers).map(([questionId, answer]) => ({ questionId, answer })), [answers]);
+  useExamDraft({ sessionId: session?.sessionId, answers: draftAnswers, currentIndex, enabled: started && !blocked });
 
   const currentQuestion = Holland_Test[currentIndex];
   useEffect(() => {
@@ -39,23 +46,11 @@ const HalandTest = ({ questions, duration = 8 }) => {
 
   useEffect(() => {
     if (!blocked) return;
-    alert("You have already completed this test. Please try again in 24 hours.");
+    notify("شما قبلاً این آزمون را انجام داده‌اید.", { type: "warning" });
     navigate("/dashboard");
-  }, [blocked, navigate]);
+  }, [blocked, navigate, notify]);
 
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
-
-  // Timer (کل آزمون)
-  useEffect(() => {
-    if (blocked || !started) return;
-    if (timeLeft <= 0) {
-      handleSubmit();
-      return;
-    }
-    const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocked, started, timeLeft]);
 
   const handleSelect = useCallback(
     (choice) => {
@@ -66,7 +61,7 @@ const HalandTest = ({ questions, duration = 8 }) => {
         if (currentIndex + 1 < total) {
           setCurrentIndex((i) => i + 1);
         } else {
-          handleSubmit();
+          submitHandlerRef.current?.();
         }
       }, 180);
     },
@@ -77,10 +72,7 @@ const HalandTest = ({ questions, duration = 8 }) => {
     if (submittingRef.current) return;
     submittingRef.current = true;
     // تبدیل map به آرایه مثل قبل
-    const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
-      questionId,
-      answer,
-    }));
+    const formattedAnswers = draftAnswers;
 
     const resultData = {
       user: user?.id || user?._id || null,
@@ -89,28 +81,30 @@ const HalandTest = ({ questions, duration = 8 }) => {
       score: 0,
       analysis: {},
       adminFeedback: "",
-      startedAt: new Date(startTimeRef.current),
+      startedAt: new Date(session?.startedAt || startTimeRef.current),
       submittedAt: new Date(),
+      sessionId: session?.sessionId,
     };
 
     try {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
-        alert("🎉 آزمون هالند با موفقیت ثبت شد!");
+        notify("آزمون هالند با موفقیت ثبت شد.", { type: "success" });
         setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000);
         setBlocked(true);
         navigate("/dashboard");
 
       } else {
-        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        notify("ذخیره‌سازی نتیجه انجام نشد.", { type: "error" });
         submittingRef.current = false;
       }
     } catch (err) {
       console.error("Holland submission error:", err);
-      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      notify("ارسال نتیجه با خطا مواجه شد.", { type: "error" });
       submittingRef.current = false;
     }
-  }, [answers, doneKey, navigate, user?.id, user?._id]);
+  }, [doneKey, draftAnswers, navigate, notify, session?.sessionId, session?.startedAt, user?.id, user?._id]);
+  submitHandlerRef.current = handleSubmit;
 
   if (blocked) {
     return null;
@@ -147,6 +141,7 @@ const HalandTest = ({ questions, duration = 8 }) => {
             <TopbarStatus
               timeLeft={timeLeft}
               timeText={formatTime(timeLeft)}
+              timerTone={tone}
               progressPercent={progressPercent}
               currentIndex={currentIndex}
               totalQuestions={total}

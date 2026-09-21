@@ -15,6 +15,8 @@ import {
   Legend,
 } from "chart.js";
 import "./GardnerAnalysis.css";
+import ReportChart from "./ReportChart";
+import { useTheme } from "../../../context/ThemeContext";
 
 ChartJS.register(
   BarElement,
@@ -108,6 +110,7 @@ function pickNormalizedScores(data) {
 }
 
 const GardnerAnalysis = ({ data = {}, benchmark = null, debug = false }) => {
+  useTheme();
   // اگر دیتایی نیست
   const hasPayload =
     !!data &&
@@ -628,12 +631,12 @@ const GardnerAnalysis = ({ data = {}, benchmark = null, debug = false }) => {
           )}
         </div>
 
-        <div className="chart-wrap" ref={GardchartWrapRef} data-testid="chart">
+        <ReportChart ref={GardchartWrapRef} testType="GARDNER" height={380}>
           {(mode === "bar" || mode === "compare") && (
             <Bar ref={barRef} data={barData} options={barOptions} />
           )}
           {mode === "radar" && <Radar ref={radarRef} data={radarData} options={radarOptions} />}
-        </div>
+        </ReportChart>
 
         <p className="muted small">راهنما: مقیاس نمودارها نرمال‌شده (۰ تا ۱۰۰) است.</p>
 

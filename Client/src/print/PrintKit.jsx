@@ -144,6 +144,7 @@ body {
 .chart-hint{ margin-top:8px; color:var(--muted); font-size:10.75pt; }
 .chart-wrap{ min-height:280px; }
 .chart-wrap canvas{ width:100% !important; height:280px !important; display:block; }
+.report-chart__snapshot{ display:none !important; }
 
 /* Footer */
 .footer{ position:fixed; left:0; right:0; bottom:8mm; text-align:center; color:#94a3b8; font-size:10.75pt; }
@@ -611,6 +612,10 @@ export function usePrintActions() {
 
   async function waitForChartsReady(root, tries = 40, interval = 100) {
     function ok() {
+      const reportCharts = root.querySelectorAll("[data-report-chart]");
+      if (reportCharts.length && Array.from(reportCharts).some((node) => node.dataset.chartReady !== "true")) {
+        return false;
+      }
       const nodes = root.querySelectorAll("canvas, svg");
       if (!nodes.length) return false;
       for (const n of nodes) {

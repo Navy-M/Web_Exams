@@ -9,7 +9,7 @@ const ProtectedRoute = ({ role }) => {
   if (loading) {
     return (
       <div className="route-loader">
-        <LoadingSpinner />
+        <LoadingSpinner label="در حال بررسی نشست کاربری..." page />
       </div>
     );
   }

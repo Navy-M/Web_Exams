@@ -6,9 +6,13 @@ import AdminDashboard from "./pages/Admin/Dashboard";
 import UserDashboard from "./pages/User/Dashboard";
 import StarterTestPage from "./pages/User/StarterTestPage"
 import CompleteProfilePage from "./pages/User/CompleteProfilePage"
+import ChartValidationPage from "./pages/Dev/ChartValidationPage";
+import ThemeValidationPage from "./pages/Dev/ThemeValidationPage";
 
 const App = () => (
   <Routes>
+    {import.meta.env.DEV && <Route path="/dev/chart-validation" element={<ChartValidationPage />} />}
+    {import.meta.env.DEV && <Route path="/dev/theme-validation" element={<ThemeValidationPage />} />}
     <Route path="/login" element={<LoginPage />} />
     <Route path="/signup" element={<SignupPage />} />
 

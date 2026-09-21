@@ -283,6 +283,13 @@
 .timer-center .timer-ss { font-size: 22px; }
 .timer-center .timer-colon { font-size: 22px; opacity: .9; margin: 0 2px; }
 
+.status-wrap .timer-circle {
+  border: 2px solid var(--border, #d6dae1);
+  transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
+}
+.status-wrap.timer-warning .timer-circle { color: #8a4b08; border-color: #d97706; background: #fff7ed; }
+.status-wrap.timer-critical .timer-circle { color: #991b1b; border-color: #dc2626; background: #fef2f2; font-weight: 700; }
+
 /* progress row: time-left label + bar align nicely */
 .progress-row {
   display: grid;

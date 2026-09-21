@@ -3,8 +3,11 @@ import "../../styles/DiscTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../context/NotificationContext";
 import { setItemWithExpiry, getItemWithExpiry, removeItem, scopedStorageKey } from "../../services/storage";
 import TopbarStatus from "./TopbarStatus";
+import { useReliableExamTimer } from "../../hooks/useReliableExamTimer";
+import { useExamDraft } from "../../hooks/useExamDraft";
 
 const STORAGE_KEY = "disc_test_progress_v1";
 const DONE_KEY = "discTestDone";
@@ -16,9 +19,10 @@ function fmt(sec) {
   return `${m}:${s}`;
 }
 
-export default function DiscTest({ questions = [], duration = 8 }) {
+export default function DiscTest({ questions = [], duration = 8, session }) {
   const { user } = useAuth() || {};
   const navigate = useNavigate();
+  const { notify } = useNotification();
   const userId = user?.id || user?._id;
   const doneKey = scopedStorageKey(DONE_KEY, userId, "DISC");
   const storageKey = scopedStorageKey(STORAGE_KEY, userId, "DISC");
@@ -31,19 +35,20 @@ export default function DiscTest({ questions = [], duration = 8 }) {
   );
 
   // refs/state
-  const startTimeRef = useRef(Date.now());
+  const startTimeRef = useRef(new Date(session?.startedAt || Date.now()).getTime());
   const perQTimerRef = useRef(null);
-  const overallTimerRef = useRef(null);
   const mountedRef = useRef(true);
 
-  const [started, setStarted] = useState(false);
-  const [startedAt, setStartedAt] = useState(() => Date.now());
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState([]); // { questionId, selectedTrait, answeredAt }
+  const [started, setStarted] = useState(Boolean(session));
+  const [startedAt, setStartedAt] = useState(() => new Date(session?.startedAt || Date.now()).getTime());
+  const [currentIndex, setCurrentIndex] = useState(session?.currentIndex || 0);
+  const [answers, setAnswers] = useState(() => session?.answersDraft || []);
   const [perQuestionRemaining, setPerQuestionRemaining] = useState(null);
-  const [overallRemaining, setOverallRemaining] = useState(duration * 60);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const submitHandlerRef = useRef(null);
+  const { remainingSeconds: overallRemaining, tone } = useReliableExamTimer({ session, enabled: started, onExpireRef: submitHandlerRef });
+  useExamDraft({ sessionId: session?.sessionId, answers, currentIndex, enabled: started });
 
   const currentQuestion = questions[currentIndex];
 
@@ -53,7 +58,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
 
     const done = getItemWithExpiry(doneKey);
     if (done) {
-      alert("شما قبلاً این آزمون را انجام داده‌اید.");
+      notify("شما قبلاً این آزمون را انجام داده‌اید.", { type: "warning" });
       navigate("/dashboard");
       return;
     }
@@ -65,7 +70,6 @@ export default function DiscTest({ questions = [], duration = 8 }) {
         setCurrentIndex(saved.currentIndex || 0);
         setStarted(saved.started || false);
         setStartedAt(saved.startedAt || Date.now());
-        setOverallRemaining(saved.overallRemaining ?? duration * 60);
         setPerQuestionRemaining(saved.perQuestionRemaining ?? perQuestionTime);
       } else {
         removeItem(storageKey);
@@ -75,7 +79,6 @@ export default function DiscTest({ questions = [], duration = 8 }) {
     return () => {
       mountedRef.current = false;
       clearInterval(perQTimerRef.current);
-      clearInterval(overallTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doneKey, duration, navigate, perQuestionTime, questions.length, storageKey]);
@@ -97,21 +100,8 @@ export default function DiscTest({ questions = [], duration = 8 }) {
       });
     }, 1000);
 
-    // (re)start overall timer
-    clearInterval(overallTimerRef.current);
-    overallTimerRef.current = setInterval(() => {
-      setOverallRemaining((t) => {
-        if (t <= 1) {
-          handleSubmit();
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-
     return () => {
       clearInterval(perQTimerRef.current);
-      clearInterval(overallTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, started, perQuestionTime]);
@@ -124,7 +114,6 @@ export default function DiscTest({ questions = [], duration = 8 }) {
       currentIndex,
       started: true,
       startedAt,
-      overallRemaining,
       perQuestionRemaining,
       questionsHash: questions.length,
       savedAt: Date.now(),
@@ -133,7 +122,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
       setItemWithExpiry(storageKey, payload, 25 * 60 * 60 * 1000); // 25h
     }, 2000);
     return () => clearTimeout(id);
-  }, [answers, currentIndex, started, startedAt, overallRemaining, perQuestionRemaining, questions.length]);
+  }, [answers, currentIndex, started, startedAt, perQuestionRemaining, questions.length, storageKey]);
 
   // keyboard shortcuts (1..9, arrows)
   useEffect(() => {
@@ -157,18 +146,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
     setStartedAt(Date.now());
     startTimeRef.current = Date.now();
     setPerQuestionRemaining(perQuestionTime);
-    setOverallRemaining(duration * 60);
   };
-
-  const handleAutoAdvance = useCallback(() => {
-    setAnswers((prev) => {
-      const exists = prev.find((a) => a.questionId === currentQuestion?.id);
-      if (exists) return prev;
-      return [...prev, { questionId: currentQuestion?.id, selectedTrait: null, answeredAt: new Date() }];
-    });
-    if (currentIndex + 1 < total) setCurrentIndex((i) => i + 1);
-    else handleSubmit();
-  }, [currentIndex, currentQuestion, total]);
 
   const handleSelect = (trait) => {
     if (submitting) return;
@@ -178,7 +156,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
     });
     setTimeout(() => {
       if (currentIndex + 1 < total) setCurrentIndex((i) => i + 1);
-      else handleSubmit();
+      else submitHandlerRef.current?.();
     }, 220);
   };
 
@@ -202,6 +180,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
       adminFeedback: "",
       startedAt: new Date(startTimeRef.current || Date.now()),
       submittedAt: new Date(),
+      sessionId: session?.sessionId,
     };
 
     try {
@@ -209,7 +188,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
       if (result && (result.user || result._id || result.id)) {
         setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000); // 24h
         removeItem(storageKey);
-        alert("🎉 آزمون با موفقیت ثبت شد!");
+        notify("آزمون DISC با موفقیت ثبت شد.", { type: "success" });
         navigate("/dashboard");
 
       } else {
@@ -221,7 +200,8 @@ export default function DiscTest({ questions = [], duration = 8 }) {
     } finally {
       if (mountedRef.current) setSubmitting(false);
     }
-  }, [answers, doneKey, navigate, storageKey, submitting, user]);
+  }, [answers, doneKey, navigate, notify, session?.sessionId, storageKey, submitting, user]);
+  submitHandlerRef.current = handleSubmit;
 
   // درصد پیشرفت بر اساس موقعیت (برای هماهنگی با MBTI/TopbarStatus)
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
@@ -248,6 +228,7 @@ export default function DiscTest({ questions = [], duration = 8 }) {
             <TopbarStatus
               timeLeft={overallRemaining}
               timeText={fmt(overallRemaining)}
+              timerTone={tone}
               progressPercent={progressPercent}
               currentIndex={currentIndex}
               totalQuestions={total}

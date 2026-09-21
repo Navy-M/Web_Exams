@@ -4,8 +4,11 @@ import "../../styles/mbtiTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../context/NotificationContext";
 import TopbarStatus from "./TopbarStatus";
 import { getItemWithExpiry, scopedStorageKey, setItemWithExpiry } from "../../services/storage";
+import { useReliableExamTimer } from "../../hooks/useReliableExamTimer";
+import { useExamDraft } from "../../hooks/useExamDraft";
 
 const DONE_KEY = "mbtiTestDone";
 
@@ -15,21 +18,29 @@ function formatTime(sec) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export default function MBTITest({ questions, duration = 8 }) {
+export default function MBTITest({ questions, duration = 8, session }) {
   const { user } = useAuth() || {};
   const navigate = useNavigate();
-  const startTimeRef = useRef(Date.now());
+  const { notify } = useNotification();
+  const startTimeRef = useRef(new Date(session?.startedAt || Date.now()).getTime());
   const userId = user?.id || user?._id;
   const doneKey = scopedStorageKey(DONE_KEY, userId, "MBTI");
 
   const Mbti_Test = useMemo(() => Array.isArray(questions) ? questions : [], [questions]);
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [started, setStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [currentIndex, setCurrentIndex] = useState(session?.currentIndex || 0);
+  const [answers, setAnswers] = useState(() => Object.fromEntries((session?.answersDraft || []).map((item) => [item.questionId, item.value])));
+  const [started, setStarted] = useState(Boolean(session));
   const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(doneKey));
   const submittingRef = useRef(false);
+  const submitHandlerRef = useRef(null);
+  const { remainingSeconds: timeLeft, tone } = useReliableExamTimer({
+    session,
+    enabled: started && !blocked,
+    onExpireRef: submitHandlerRef,
+  });
+  const draftAnswers = useMemo(() => Object.entries(answers).map(([questionId, value]) => ({ questionId, value })), [answers]);
+  useExamDraft({ sessionId: session?.sessionId, answers: draftAnswers, currentIndex, enabled: started && !blocked });
 
   const total = Mbti_Test.length;
   const currentQuestion = Mbti_Test[currentIndex];
@@ -41,17 +52,14 @@ export default function MBTITest({ questions, duration = 8 }) {
 
   useEffect(() => {
     if (!blocked) return;
-    alert("You have already completed this test. Please try again in 24 hours.");
+    notify("شما قبلاً این آزمون را انجام داده‌اید.", { type: "warning" });
     navigate("/dashboard");
-  }, [blocked, navigate]);
+  }, [blocked, navigate, notify]);
 
   const handleSubmit = useCallback(async () => {
     if (submittingRef.current) return;
     submittingRef.current = true;
-    const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
-      questionId,
-      value,
-    }));
+    const formattedAnswers = draftAnswers;
 
     const resultData = {
       user: user?.id || null,
@@ -60,39 +68,30 @@ export default function MBTITest({ questions, duration = 8 }) {
       score: 0,
       analysis: {},
       adminFeedback: "",
-      startedAt: new Date(startTimeRef.current),
+      startedAt: new Date(session?.startedAt || startTimeRef.current),
       submittedAt: new Date(),
+      sessionId: session?.sessionId,
     };
 
     try {
       const result = await submitResult(resultData);
       if (result?.user) {
-        alert("🎉 آزمون MBTI با موفقیت ثبت شد!");
+        notify("آزمون MBTI با موفقیت ثبت شد.", { type: "success" });
         setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000);
         setBlocked(true);
         navigate("/dashboard");
 
       } else {
-        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        notify("ذخیره‌سازی نتیجه انجام نشد.", { type: "error" });
         submittingRef.current = false;
       }
     } catch (err) {
       console.error("MBTI submission error:", err);
-      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      notify("ارسال نتیجه با خطا مواجه شد.", { type: "error" });
       submittingRef.current = false;
     }
-  }, [answers, doneKey, navigate, user?.id]);
-  useEffect(() => {
-    if (blocked || !started) return;
-    if (timeLeft <= 0) {
-      handleSubmit();
-      return;
-    }
-    const t = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(t);
-  }, [blocked, started, timeLeft, handleSubmit]);
+  }, [doneKey, draftAnswers, navigate, notify, session?.sessionId, session?.startedAt, user?.id]);
+  submitHandlerRef.current = handleSubmit;
 
   const handleSelect = useCallback((questionId, value) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -143,6 +142,7 @@ export default function MBTITest({ questions, duration = 8 }) {
             <TopbarStatus
               timeLeft={timeLeft}
               timeText={formatTime(timeLeft)}
+              timerTone={tone}
               progressPercent={progressPercent}
               currentIndex={currentIndex}
               totalQuestions={total}

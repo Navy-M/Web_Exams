@@ -557,10 +557,6 @@ const TestDrawer = ({ test, onClose }) => {
           )}
         </div>
 
-        <footer className="drawer-foot">
-          <button className="btn outline" onClick={() => alert("ویرایش آزمون (دمو)")}>ویرایش</button>
-          <button className="btn danger" onClick={() => alert("حذف آزمون (دمو)")}>حذف</button>
-        </footer>
       </aside>
     </div>
   );

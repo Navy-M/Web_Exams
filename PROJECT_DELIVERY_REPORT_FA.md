@@ -249,3 +249,73 @@ PDF visual verification: NOT RUN - Playwright/browser PDF verifier is not instal
 - Visual verification واقعی PDF با screenshot/PDF diff انجام نشد، چون Playwright یا ابزار browser automation در پروژه نصب نیست.
 - چند مسیر legacy چاپ داخل analysis componentها هنوز window-print داخلی دارند؛ مسیر اصلی کارنامه کاربر و allocation report اصلاح شد.
 - lint هنوز warningهای legacy دارد، اما exit code صفر است.
+
+---
+
+## FINAL DELIVERY POLISH
+
+تاریخ اجرا: 2026-09-21
+
+### UI/UX، Loading و Notification
+
+- سیستم Toast سراسری با چهار وضعیت موفق، خطا، هشدار و اطلاع‌رسانی اضافه شد؛ اعلان‌ها دکمه بستن، زمان حذف خودکار، لایه بالاتر از modal و چیدمان responsive دارند.
+- عملیات اصلی ادمین، ورود، ثبت‌نام، تکمیل پروفایل و ثبت آزمون‌ها از alert مرورگر به Toast منتقل شدند.
+- Loading مشترک برای bootstrap احراز هویت، جدول کاربران ادمین، وضعیت آزمون‌ها، داشبورد، شروع آزمون و دکمه‌های ورود/ثبت‌نام استفاده می‌شود.
+- retry داشبورد دیگر از `window.location.reload()` استفاده نمی‌کند و داده را در همان صفحه دوباره دریافت می‌کند.
+- دکمه‌های نمایشی و متصل‌نبوده ویرایش/حذف آزمون از پنل حذف شدند.
+
+### مودال اولویت‌بندی، Capacity و Weight
+
+- مودال دارای header و footer ثابت، محتوای scrollable، حداکثر ارتفاع viewport و layout موبایل/دسکتاپ است.
+- باگ inventory رفع شد: آزمون‌ها اکنون با `Test_Cards.id` شناسایی می‌شوند، نه category موجود در `type`.
+- هر رسته کنترل فعال/غیرفعال و ظرفیت عدد صحیح غیرمنفی دارد؛ ظرفیت صفر assignment نمی‌گیرد.
+- ظرفیت کل، تعداد کاربران انتخاب‌شده و کمبود ظرفیت نمایش داده می‌شود.
+- وزن‌های ۰ تا ۱۰۰ برای MBTI، DISC، Holland، Gardner، Clifton، Personal Favorites، معدل و رشته تحصیلی فعال‌اند.
+- presetهای متعادل، تمرکز تحصیلی و تمرکز شخصیتی اضافه شدند؛ وزن صفر مؤلفه را از محاسبه حذف می‌کند و اجرای همه‌صفر ممنوع است.
+- GHQ و ویژگی‌های حساس در UI وزن ندارند و در موتور نیز حذف می‌مانند.
+
+### Job Prioritizer v2.1.0
+
+- فرمول: `finalScore = sum(componentScore * componentWeight) / sum(activeAvailableWeights)`.
+- `finalScore` در بازه ۰ تا ۱۰۰ و `dataCompleteness` در بازه ۰ تا ۱ است.
+- داده ناموجود وارد denominator امتیاز نمی‌شود، ولی completeness را کاهش می‌دهد.
+- معدل دیپلم از مقیاس ۰ تا ۲۰ به ۰ تا ۱۰۰ نرمال می‌شود؛ تطابق رشته از required/related fields هر رسته محاسبه می‌شود.
+- هر component شامل `score`، `weight` و `contribution` است.
+- tie-break قطعی: eligibility، امتیاز نزولی، completeness نزولی، jobId و userId.
+- تخصیص سراسری است، ظرفیت را رعایت می‌کند و هر کاربر حداکثر یک assignment دارد.
+- Top 3 match و دلیل اختلاف تخصیص نهایی در contract خروجی assignment اضافه شد.
+- reason codeهای اصلی: `CAPACITY_FULL`، `NOT_ELIGIBLE`، `ASSIGNED_TO_HIGHER_GLOBAL_MATCH` و `INSUFFICIENT_DATA`.
+
+### Allocation، Export و Print
+
+- جدول تخصیص از یک dataset نرمال‌شده برای UI، CSV و Excel استفاده می‌کند.
+- فیلدهای دوره، اولویت دوم و سوم، امتیاز، completeness، وضعیت، دلیل، نقاط قوت و جزئیات مؤلفه‌ها به خروجی اضافه شدند.
+- CSV دارای UTF-8 BOM، CRLF و escaping استاندارد است.
+- Excel چهار sheet با نام‌های «تخصیص نهایی»، «لیست انتظار»، «تخصیص‌نیافته‌ها» و «جزئیات امتیاز» دارد.
+- فایل واقعی Excel در پوشه موقت تولید، دوباره خوانده و نام و تعداد Sheetها validate شد.
+- چاپ Allocation در پنجره مستقل، پس از آماده‌شدن font و دو paint مرورگر اجرا می‌شود و layout آن A4 Landscape است.
+- چاپ کارنامه برای font، image، layout و chart صبر می‌کند و canvas/SVG را پیش از چاپ rasterize می‌کند.
+- PDF مستقل از UI پنهان شد؛ مسیر قابل‌اعتماد فعلی Browser Print سپس Save as PDF است.
+
+### نتایج تست
+
+```text
+Job prioritizer tests: PASS (15/15)
+Admin consistency smoke with local Mongo: PASS
+Security smoke with temporary users: PASS
+Profile register/complete/read-back/cleanup smoke: PASS
+Server syntax check: PASS
+Client build: PASS
+Client lint: PASS (0 errors, 238 legacy warnings)
+Local client: HTTP 200
+Vite /api proxy unauthenticated check: HTTP 401 as expected
+Excel workbook generate/read-back validation: PASS
+```
+
+### محدودیت‌های شناخته‌شده
+
+- Print Preview و نمودارهای چاپی با browser automation یا screenshot diff بررسی بصری نشده‌اند؛ منطق آماده‌سازی پیاده‌سازی و build شده، اما تأیید نهایی چشمی لازم است.
+- گردش کامل UI ادمین شامل کلیک واقعی روی filter، modal، export و Print Preview با مرورگر automation اجرا نشده است؛ smoke API همان mutationها و sync دیتابیس را پوشش می‌دهد.
+- پیشنهادهای شغلی داخل کارنامه قدیمی هنوز از ranking نمایشی کلاینت ساخته می‌شوند و آخرین allocation سروری در دیتابیس persist نمی‌شود؛ برای یکسان‌سازی کامل کارنامه با آخرین تخصیص، ذخیره run تخصیص به‌عنوان entity سروری لازم است.
+- ۲۳۸ warning قدیمی lint، عمدتاً hookهای شرطی componentهای analysis، باقی است؛ خطای lint وجود ندارد و warning جدیدی نسبت به baseline اضافه نشده است.
+- bundle اصلی Vite همچنان بزرگ‌تر از ۵۰۰KB است و به code splitting آینده نیاز دارد؛ blocker عملکردی تحویل نیست.

@@ -27,7 +27,7 @@ const connectDB = async () => {
       console.log("[DB] ✅ MongoDB Connected");
       return;
     } catch (err) {
-      console.error(`[DB] ❌ MongoDB connection failed for ${uri}:`, err.message);
+      console.error(`[DB] ❌ MongoDB connection failed for ${label}:`, err.message);
     }
   }
 

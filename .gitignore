@@ -44,6 +44,19 @@ jspm_packages/
 vps terminal log/
 json_exports/
 backups/
+artifacts/
+dump/
+mongo-dump/
+exports/
+screenshots/
+temp/
+tmp/
+*.bson
+*.metadata.json
+/*.pdf
+/*.csv
+/*.xlsx
+/*.xls
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/

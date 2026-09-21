@@ -48,3 +48,11 @@
 .test-dates strong {
   color: #333;
 }
+.user-history-card{ cursor:default; display:grid; gap:12px; }
+.user-history-card header{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.history-status{ font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:999px; white-space:nowrap; }
+.history-status.published{ color:#166534; border-color:#86efac; background:#f0fdf4; }
+.history-status.analyzed{ color:#1d4ed8; border-color:#93c5fd; background:#eff6ff; }
+.history-status.pending{ color:#92400e; border-color:#fcd34d; background:#fffbeb; }
+.history-card-meta{ display:grid; gap:6px; color:var(--muted); font-size:13px; }
+.history-card-meta span{ display:flex; align-items:center; gap:6px; }

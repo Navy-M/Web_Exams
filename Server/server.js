@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import jwt from "jsonwebtoken";
 import mongoSanitize from "express-mongo-sanitize";
+import mongoose from "mongoose";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import testsRoutes from "./routes/testsRoutes.js"
@@ -120,7 +121,23 @@ app.get("/api/health", (req, res) => {
 app.use(errorHandler);
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
   });
+
+  let closing = false;
+  const shutdown = (signal) => {
+    if (closing) return;
+    closing = true;
+    console.log(`[Server] ${signal} received; closing HTTP and MongoDB connections...`);
+    server.close(async () => {
+      await mongoose.connection.close().catch(() => {});
+      console.log("[Server] Shutdown complete.");
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 5000).unref();
+  };
+
+  process.once("SIGINT", () => shutdown("SIGINT"));
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
 });

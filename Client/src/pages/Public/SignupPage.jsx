@@ -2,6 +2,7 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n';
+import { useNotification } from '../../context/NotificationContext';
 import LoadingSpinner from '../../components/Common/LoadingSpinner.jsx';
 import '../../styles/main.css';
 import '../../styles/login.css';
@@ -10,6 +11,7 @@ const SignupPage = () => {
   const navigate = useNavigate();
   const { signup, user } = useAuth();
   const { t } = useI18n();
+  const { notify } = useNotification();
 
   const [formData, setFormData] = useState({
     username: '',
@@ -54,6 +56,7 @@ const SignupPage = () => {
     const validationError = validate();
     if (validationError) {
       setFormError(validationError);
+      notify(validationError, { type: 'warning' });
       return;
     }
 
@@ -77,6 +80,7 @@ const SignupPage = () => {
     } catch (err) {
       const message = err?.response?.data?.message || t('auth.signup.errors.generic');
       setFormError(message);
+      notify(message, { type: 'error' });
     } finally {
       setSubmitting(false);
     }

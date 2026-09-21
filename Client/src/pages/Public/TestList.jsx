@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 const TestList = () => {
   const [tests, setTests] = useState([]);
@@ -19,15 +20,13 @@ const TestList = () => {
 
   return (
     <div style={{ padding: '2rem' }}>
-      <h1>Available Tests</h1>
+      <h1>آزمون‌های موجود</h1>
       <ul>
         {tests.map(test => (
           <li key={test.id} style={{ marginBottom: '1rem' }}>
             <h3>{test.title}</h3>
             <p>{test.description}</p>
-            <button onClick={() => alert(`Start test ${test.id}`)}>
-              Take Test
-            </button>
+            <Link className="button-primary" to="/login">ورود به سامانه</Link>
           </li>
         ))}
       </ul>

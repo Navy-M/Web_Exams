@@ -35,6 +35,7 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedCompletedTest, setSelectedCompletedTest] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let ignore = false;
@@ -62,7 +63,7 @@ const UserDashboard = () => {
       ignore = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, t]);
+  }, [user?.id, t, refreshKey]);
 
   const handleLogout = async () => {
     await logout();
@@ -201,7 +202,7 @@ const UserDashboard = () => {
       ) : error ? (
         <div className="error-state card">
           <p>{error}</p>
-          <button className="ui-btn" onClick={() => window.location.reload()}>
+          <button className="ui-btn" onClick={() => setRefreshKey((value) => value + 1)}>
             {t("dashboard.actions.reload")}
           </button>
         </div>

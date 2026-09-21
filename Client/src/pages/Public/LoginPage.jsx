@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n';
+import { useNotification } from '../../context/NotificationContext';
 import LoadingSpinner from '../../components/Common/LoadingSpinner.jsx';
 import '../../styles/main.css';
 import '../../styles/login.css';
@@ -10,6 +11,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { user, login, error: authError } = useAuth();
   const { t } = useI18n();
+  const { notify } = useNotification();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -41,6 +43,7 @@ const LoginPage = () => {
 
     if (!username.trim() || !password.trim()) {
       setFormError(t('auth.login.errors.required'));
+      notify(t('auth.login.errors.required'), { type: 'warning' });
       return;
     }
 
@@ -57,6 +60,7 @@ const LoginPage = () => {
     } catch (err) {
       const message = err?.response?.data?.message || t('auth.login.errors.generic');
       setFormError(message);
+      notify(message, { type: 'error' });
     } finally {
       setSubmitting(false);
     }

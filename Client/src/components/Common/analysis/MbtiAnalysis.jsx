@@ -13,6 +13,8 @@ import {
   Legend,
 } from "chart.js";
 import "./MbtiAnalysis.css";
+import ReportChart from "./ReportChart";
+import { useTheme } from "../../../context/ThemeContext";
 
 ChartJS.register(
   BarElement,
@@ -52,6 +54,7 @@ ChartJS.register(
  *   }
  */
 const MbtiAnalysis = ({ data, benchmark }) => {
+  useTheme();
   if (!data) return <p className="muted" dir="rtl">داده‌ای برای نمایش موجود نیست.</p>;
 
   const {
@@ -59,14 +62,16 @@ const MbtiAnalysis = ({ data, benchmark }) => {
     typeName = "",
     rawScores = {},
     normalizedScores = {},
-    dimensions = [],
+    dimensions: dimensionsRaw = [],
     chartData,
     analyzedAt,
     summary,
     userInfo = {},
     functions,
-    dataForUI
+    dataForUI = {}
   } = data || {};
+
+  const dimensions = Array.isArray(dimensionsRaw) ? dimensionsRaw : [];
 
   console.log("incoming Analysis MBTI data: ", data);
   
@@ -698,14 +703,14 @@ const rasterizeForPrint = async (node) => {
           )}
         </div>
 
-        <div className="chart-wrap" ref={MbtichartWrapRef} aria-live="polite">
+        <ReportChart ref={MbtichartWrapRef} testType="MBTI" height={320}>
           {(mode === "diverging" || mode === "compare") && (
   <Bar ref={barRef} data={barData} options={barOptions} />
 )}
 {mode === "radar" && (
   <Radar ref={radarRef} data={radarData} options={radarOptions} />
 )}
-        </div>
+        </ReportChart>
         <p className="muted small">راهنما: در نمودار دو‌سویه، مقادیر سمت دوم با علامت منفی نمایش داده می‌شوند تا تقارن حول صفر حفظ شود (مقیاس ۰ تا ۱۰۰).</p>
       </section>
     </section>

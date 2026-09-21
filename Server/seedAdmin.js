@@ -1,64 +1,48 @@
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
-import { MongoClient, ServerApiVersion } from "mongodb";
+import { MongoClient } from "mongodb";
 
 dotenv.config();
 
-// const MONGO_URI = process.env.MONGO_URI;
-const MONGO_URI = process.env.LOCAL_MONGO_URI;
-
-const DB_NAME = "web_exams"; // or whatever your db name is
+const required = (name) => {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`${name} must be configured in Server/.env.`);
+  return value;
+};
 
 const seed = async () => {
-  const client = new MongoClient(MONGO_URI, {
-    tlsAllowInvalidCertificates: true,
-    tlsAllowInvalidHostnames: true,
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
-    },
-  });
+  const mongoUri = process.env.LOCAL_MONGO_URI || process.env.MONGO_URI;
+  if (!mongoUri) throw new Error("LOCAL_MONGO_URI or MONGO_URI must be configured in Server/.env.");
+
+  const username = required("SEED_ADMIN_USERNAME");
+  const password = required("SEED_ADMIN_PASSWORD");
+  const fullName = process.env.SEED_ADMIN_FULL_NAME?.trim() || "System Administrator";
+  const client = new MongoClient(mongoUri);
 
   try {
     await client.connect();
-    console.log("✅ Connected to MongoDB");
-
-    const db = client.db(DB_NAME);
-    const usersCollection = db.collection("users");
-
-    const existingAdmin = await usersCollection.findOne({
-      username: "cooci.ebrahimi@gmail.com",
-    });
-    if (existingAdmin) {
-      console.log("⚠️ Admin already exists");
+    const users = client.db(process.env.DB_NAME || "web_exams").collection("users");
+    if (await users.findOne({ username })) {
+      console.log("Admin already exists; no changes were made.");
       return;
     }
 
-    const hashedPassword = await bcrypt.hash("Developer123", 10);
-
-    const adminUser = {
-      username: "cooci.ebrahimi@gmail.com",
-      password: hashedPassword,
+    await users.insertOne({
+      username,
+      password: await bcrypt.hash(password, 10),
       role: "admin",
-      profile: {
-        fullName: "Creator",
-        age: 24,
-        gender: "Male",
-      },
+      profile: { fullName },
       testsAssigned: [],
       createdAt: new Date(),
       updatedAt: new Date(),
-    };
-
-    await usersCollection.insertOne(adminUser);
-
-    console.log("✅ Admin user created successfully");
-  } catch (err) {
-    console.error("❌ Error seeding DB:", err.message);
+    });
+    console.log("Admin user created successfully.");
   } finally {
     await client.close();
   }
 };
 
-seed();
+seed().catch((error) => {
+  console.error(`Admin seed failed: ${error.message}`);
+  process.exitCode = 1;
+});

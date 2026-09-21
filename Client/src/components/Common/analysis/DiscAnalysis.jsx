@@ -16,6 +16,8 @@ import {
   Legend,
 } from "chart.js";
 import "./DiscAnalysis.css";
+import ReportChart from "./ReportChart";
+import { useTheme } from "../../../context/ThemeContext";
 
 ChartJS.register(
   BarElement,
@@ -40,6 +42,7 @@ const fmtPct = (v) =>
   v === null || v === undefined || Number.isNaN(Number(v)) ? "—" : `${Math.round(Number(v))}%`;
 
 const DiscAnalysis = ({ data, benchmark }) => {
+  useTheme();
   const hasData = !!(data && (data.normalizedScores || data.rawScores));
   if (!hasData) return <p className="muted" dir="rtl" data-testid="no-data">داده‌ای برای نمایش موجود نیست.</p>;
 
@@ -484,14 +487,14 @@ const DiscAnalysis = ({ data, benchmark }) => {
         </div>
 
         {/* ✅ give the chart wrapper a fixed height (also enforced by CSS below) */}
-        <div className="chart-wrap" ref={chartWrapRef} data-testid="chart">
+        <ReportChart ref={chartWrapRef} testType="DISC" height={340}>
           {(mode === "bar" || mode === "compare") && (
             <Bar ref={barRef} data={barData} options={barOptions} />
           )}
           {mode === "radar" && (
             <Radar ref={radarRef} data={radarData} options={radarOptions} />
           )}
-        </div>
+        </ReportChart>
         <p className="muted small">
           راهنما: محور عمودی/شعاعی درصد نرمال‌شده (۰ تا ۱۰۰) را نمایش می‌دهد.
         </p>

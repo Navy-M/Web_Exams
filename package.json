@@ -1,0 +1,21 @@
+{
+  "name": "web-exams-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.25.0",
+  "engines": {
+    "node": ">=20.12.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "pnpm --filter client run build",
+    "lint": "pnpm --filter client run lint",
+    "test": "pnpm --filter server run test && node --test Client/tests/examTimer.test.mjs Client/tests/allocationExport.test.mjs Client/tests/chartAdapters.test.mjs Client/tests/themeTokens.test.mjs",
+    "check:server": "node scripts/check-server-syntax.mjs",
+    "check": "pnpm run lint && pnpm run build && pnpm run check:server && pnpm run test",
+    "smoke": "pnpm --filter server run smoke:admin && pnpm --filter server run smoke:security:temp && pnpm --filter server run smoke:profile && pnpm --filter server run smoke:timer"
+  },
+  "devDependencies": {
+    "mongodb": "^6.20.0"
+  }
+}

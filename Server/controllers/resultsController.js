@@ -2,11 +2,88 @@
 import mongoose from "mongoose";
 const { Types } = mongoose;
 import Result from "../models/Result.js";
+import ExamSession from "../models/ExamSession.js";
+import AllocationAudit from "../models/AllocationAudit.js";
 import User from "../models/User.js";
 import { getTestAnalysisUnified } from "../utils/testAnalyzer.js";
 import { normalizeAnswers } from "../utils/normalizeAnswers.js";
 import * as dummy from "../config/dummyData.js";
 import { prioritizeCandidates } from "../services/jobPrioritizer.js";
+
+const TEST_TYPES = new Set(["MBTI", "DISC", "HOLLAND", "GARDNER", "CLIFTON", "GHQ", "PERSONAL_FAVORITES"]);
+
+function sessionPayload(session) {
+  return {
+    sessionId: String(session._id),
+    testType: session.testType,
+    startedAt: session.startedAt,
+    deadlineAt: session.deadlineAt,
+    submittedAt: session.submittedAt,
+    durationLimitSeconds: session.durationLimitSeconds,
+    answersDraft: session.answersDraft || [],
+    currentIndex: session.currentIndex || 0,
+    resultId: session.resultId,
+    serverTime: new Date().toISOString(),
+  };
+}
+
+function durationForTest(testType) {
+  const test = dummy.Test_Cards?.find((item) => item.id === testType);
+  return Math.max(60, Number(test?.duration?.to || 10) * 60);
+}
+
+export async function getExamSession(req, res) {
+  const testType = String(req.params.testType || "").toUpperCase();
+  if (!TEST_TYPES.has(testType)) return res.status(400).json({ ok: false, error: "INVALID_TEST_TYPE" });
+  const session = await ExamSession.findOne({ user: req.user._id, testType }).lean();
+  return res.json({ ok: true, session: session ? sessionPayload(session) : null, serverTime: new Date().toISOString() });
+}
+
+export async function startExamSession(req, res) {
+  try {
+    const testType = String(req.body?.testType || "").toUpperCase();
+    if (!TEST_TYPES.has(testType)) return res.status(400).json({ ok: false, error: "INVALID_TEST_TYPE" });
+
+    const completed = await Result.findOne({ user: req.user._id, testType }).select("_id").lean();
+    if (completed) return res.status(409).json({ ok: false, error: "TEST_ALREADY_SUBMITTED", resultId: completed._id });
+
+    let session = await ExamSession.findOne({ user: req.user._id, testType });
+    if (!session) {
+      const startedAt = new Date();
+      const durationLimitSeconds = durationForTest(testType);
+      try {
+        session = await ExamSession.create({
+          user: req.user._id,
+          testType,
+          startedAt,
+          deadlineAt: new Date(startedAt.getTime() + durationLimitSeconds * 1000),
+          durationLimitSeconds,
+        });
+      } catch (error) {
+        if (error?.code !== 11000) throw error;
+        session = await ExamSession.findOne({ user: req.user._id, testType });
+      }
+    }
+
+    return res.json({ ok: true, session: sessionPayload(session) });
+  } catch (error) {
+    console.error("startExamSession error:", error);
+    return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+  }
+}
+
+export async function saveExamDraft(req, res) {
+  const { sessionId } = req.params;
+  const answers = Array.isArray(req.body?.answers) ? req.body.answers : [];
+  const currentIndex = Math.max(0, Number(req.body?.currentIndex) || 0);
+  const session = await ExamSession.findOneAndUpdate(
+    { _id: sessionId, user: req.user._id, submittedAt: null },
+    { $set: { answersDraft: answers, currentIndex } },
+    { new: true }
+  );
+  if (!session) return res.status(404).json({ ok: false, error: "ACTIVE_SESSION_NOT_FOUND" });
+  return res.json({ ok: true, savedAt: new Date().toISOString(), serverTime: new Date().toISOString() });
+}
 
 // Create new test result
 export const createResult = async (req, res) => {
@@ -109,11 +186,27 @@ export const getResultById = async (req, res) => {
       });
     }
 
+    let responseResult = result;
+    if (!isAdmin && isOwner) {
+      const owner = await User.findOne(
+        { _id: result.user, "testsAssigned.resultId": result._id },
+        { testsAssigned: { $elemMatch: { resultId: result._id } } }
+      ).lean();
+      const published = owner?.testsAssigned?.[0]?.isPublic === true;
+      if (!published) {
+        responseResult = result.toObject();
+        delete responseResult.analysis;
+        delete responseResult.adminFeedback;
+        delete responseResult.answers;
+        responseResult.publicationStatus = "WAITING_FOR_PUBLICATION";
+      }
+    }
+
     return res.status(200).json({
       ok: true,
       status: "success",
       resultId: String(result._id),
-      data: result,
+      data: responseResult,
     });
   } catch (error) {
     console.error("❌ Error fetching result:", error);
@@ -148,8 +241,14 @@ export const getResultsByUser = async (req, res) => {
     const results = await Result.find({ user: userId }).populate(
       "user",
       "name email"
-    );
-    res.status(200).json(results);
+    ).lean();
+    const owner = await User.findById(userId).select("testsAssigned").lean();
+    const summaries = new Map((owner?.testsAssigned || []).map((item) => [String(item.resultId), item]));
+    res.status(200).json(results.map((result) => ({
+      ...result,
+      ...(summaries.get(String(result._id)) || {}),
+      _id: result._id,
+    })));
   } catch (error) {
     console.error("Error fetching user results:", error);
     res.status(500).json({ message: "Server error" });
@@ -159,7 +258,7 @@ export const getResultsByUser = async (req, res) => {
 // Save Results
 export async function submitUInfo(req, res) {
   try {
-    const { userId: requestedUserId, testType, answers, startedAt } = req.body;
+    const { userId: requestedUserId, testType, answers, startedAt, sessionId } = req.body;
     const isAdmin = req.user?.role === "admin";
     const userId = isAdmin && requestedUserId ? requestedUserId : req.user?._id;
 
@@ -175,9 +274,9 @@ export async function submitUInfo(req, res) {
       "_id user testType submittedAt durationInSeconds"
     );
     if (existing) {
-      return res.status(409).json({
-        ok: false,
-        error: "DUPLICATE_RESULT",
+      return res.status(200).json({
+        ok: true,
+        idempotent: true,
         resultId: existing._id,
         result: {
           _id: existing._id,
@@ -189,17 +288,35 @@ export async function submitUInfo(req, res) {
       });
     }
 
+    const session = sessionId
+      ? await ExamSession.findOne({ _id: sessionId, user: userId, testType })
+      : null;
+    if (sessionId && !session) {
+      return res.status(409).json({ ok: false, error: "INVALID_EXAM_SESSION" });
+    }
+    if (session?.submittedAt && session.resultId) {
+      const prior = await Result.findById(session.resultId).select("_id user testType submittedAt durationInSeconds");
+      if (prior) return res.json({ ok: true, idempotent: true, resultId: prior._id, result: prior });
+    }
+
     const normalized = normalizeAnswers(testType, answers);
 
     const result = new Result({
       user: userId,
       testType,
       answers: normalized,
-      startedAt: startedAt ? new Date(startedAt) : new Date(),
+      startedAt: session?.startedAt || (startedAt ? new Date(startedAt) : new Date()),
       submittedAt: new Date(),
     });
 
     await result.save();
+
+    if (session) {
+      session.submittedAt = result.submittedAt;
+      session.resultId = result._id;
+      session.answersDraft = normalized;
+      await session.save();
+    }
 
     await User.updateOne(
       { _id: userId, "testsAssigned.resultId": { $ne: result._id } },
@@ -671,7 +788,7 @@ export const updateTestFeedback = async (req, res) => {
 
 export async function prioritizeJobs(req, res) {
   try {
-    const { userIds, capacities, weights, jobRequirements, quotas } = req.body || {};
+    const { userIds, capacities, weights, jobRequirements, quotas, minCompleteness, minMatchScore, completenessOverrides } = req.body || {};
 
     if (!Array.isArray(userIds) || !userIds.length) {
       return res.status(400).json({ ok: false, error: "userIds (array) is required" });
@@ -686,6 +803,9 @@ export async function prioritizeJobs(req, res) {
       capacities,
       weights: weights || {},
       jobRequirements: jobRequirements || {},
+      minCompleteness,
+      minMatchScore,
+      completenessOverrides,
     });
 
     const meta = {
@@ -693,6 +813,17 @@ export async function prioritizeJobs(req, res) {
       source: "api",
       receivedAt: new Date().toISOString(),
     };
+    const audit = await AllocationAudit.create({
+      actor: req.user._id,
+      candidateIds: userIds,
+      completenessOverrides: completenessOverrides || [],
+      minCompleteness: out.meta?.minCompleteness ?? 0.6,
+      minMatchScore: out.meta?.minMatchScore ?? 50,
+      capacities,
+      weights: weights || {},
+      algorithmVersion: out.meta?.algorithmVersion || "unknown",
+    });
+    meta.auditId = String(audit._id);
 
     // If the frontend expects the original quotas object for the summary,
     // pass it through. If you don’t have it, you can reconstruct from capacities.
@@ -712,6 +843,8 @@ export async function prioritizeJobs(req, res) {
       quotas: quotasOut,                     // keep original UI quotas format if you have it
       meta,
       assignments: out.assignments || [],
+      candidates: out.candidates || [],
+      jobs: out.jobs || [],
       waitlist: out.waitlist || [],
       unassigned: out.unassigned || [],
       candidateJobScores: out.candidateJobScores || [],

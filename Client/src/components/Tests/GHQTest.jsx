@@ -3,8 +3,11 @@ import "../../styles/GHQTest.css";
 import { useAuth } from "../../context/AuthContext";
 import { submitResult } from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../context/NotificationContext";
 import TopbarStatus from "./TopbarStatus";
 import { getItemWithExpiry, scopedStorageKey, setItemWithExpiry } from "../../services/storage";
+import { useReliableExamTimer } from "../../hooks/useReliableExamTimer";
+import { useExamDraft } from "../../hooks/useExamDraft";
 
 const DONE_KEY = "ghqTestDone";
 
@@ -14,22 +17,26 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
-export default function GHQTest({ questions, duration = 8 }) {
+export default function GHQTest({ questions, duration = 8, session }) {
   const { user } = useAuth() || {};
   const navigate = useNavigate();
-  const startTimeRef = useRef(Date.now());
+  const { notify } = useNotification();
+  const startTimeRef = useRef(new Date(session?.startedAt || Date.now()).getTime());
   const userId = user?.id || user?._id;
   const doneKey = scopedStorageKey(DONE_KEY, userId, "GHQ");
 
   const Ghq_Test = useMemo(() => (Array.isArray(questions) ? questions : []), [questions]);
   const total = Ghq_Test.length;
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({}); // { [qid]: number }
-  const [started, setStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
+  const [currentIndex, setCurrentIndex] = useState(session?.currentIndex || 0);
+  const [answers, setAnswers] = useState(() => Object.fromEntries((session?.answersDraft || []).map((item) => [item.questionId, item.value])));
+  const [started, setStarted] = useState(Boolean(session));
   const [blocked, setBlocked] = useState(() => !!getItemWithExpiry(doneKey));
   const submittingRef = useRef(false);
+  const submitHandlerRef = useRef(null);
+  const { remainingSeconds: timeLeft, tone } = useReliableExamTimer({ session, enabled: started && !blocked, onExpireRef: submitHandlerRef });
+  const draftAnswers = useMemo(() => Object.entries(answers).map(([questionId, value]) => ({ questionId: isNaN(Number(questionId)) ? questionId : Number(questionId), value })), [answers]);
+  useExamDraft({ sessionId: session?.sessionId, answers: draftAnswers, currentIndex, enabled: started && !blocked });
 
   const currentQuestion = Ghq_Test[currentIndex];
   const progressPercent = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
@@ -40,21 +47,9 @@ export default function GHQTest({ questions, duration = 8 }) {
 
   useEffect(() => {
     if (!blocked) return;
-    alert("You have already completed this test. Please try again in 24 hours.");
+    notify("شما قبلاً این آزمون را انجام داده‌اید.", { type: "warning" });
     navigate("/dashboard");
-  }, [blocked, navigate]);
-
-  // countdown (whole test)
-  useEffect(() => {
-    if (blocked || !started) return;
-    if (timeLeft <= 0) {
-      handleSubmit();
-      return;
-    }
-    const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocked, started, timeLeft]);
+  }, [blocked, navigate, notify]);
 
   const handleSelect = useCallback(
     (questionId, value) => {
@@ -63,7 +58,7 @@ export default function GHQTest({ questions, duration = 8 }) {
 
       setTimeout(() => {
         if (currentIndex + 1 < total) setCurrentIndex((i) => i + 1);
-        else handleSubmit();
+        else submitHandlerRef.current?.();
       }, 180);
     },
     [currentIndex, total]
@@ -72,10 +67,7 @@ export default function GHQTest({ questions, duration = 8 }) {
   const handleSubmit = useCallback(async () => {
     if (submittingRef.current) return;
     submittingRef.current = true;
-    const formattedAnswers = Object.entries(answers).map(([questionId, value]) => ({
-      questionId: isNaN(Number(questionId)) ? questionId : Number(questionId),
-      value,
-    }));
+    const formattedAnswers = draftAnswers;
 
     const resultData = {
       user: user?.id || user?._id || null,
@@ -84,28 +76,30 @@ export default function GHQTest({ questions, duration = 8 }) {
       score: 0,
       analysis: {},
       adminFeedback: "",
-      startedAt: new Date(startTimeRef.current),
+      startedAt: new Date(session?.startedAt || startTimeRef.current),
       submittedAt: new Date(),
+      sessionId: session?.sessionId,
     };
 
     try {
       const result = await submitResult(resultData);
       if (result?.user || result?._id || result?.id) {
-        alert("🎉 آزمون سلامت عمومی (GHQ) با موفقیت ثبت شد!");
+        notify("آزمون سلامت عمومی با موفقیت ثبت شد.", { type: "success" });
         setItemWithExpiry(doneKey, true, 24 * 60 * 60 * 1000);
         setBlocked(true);
         navigate("/dashboard");
 
       } else {
-        alert("❌ ذخیره‌سازی نتایج انجام نشد!");
+        notify("ذخیره‌سازی نتیجه انجام نشد.", { type: "error" });
         submittingRef.current = false;
       }
     } catch (err) {
       console.error("GHQ submission error:", err);
-      alert("⚠️ ارسال نتایج با خطا مواجه شد.");
+      notify("ارسال نتیجه با خطا مواجه شد.", { type: "error" });
       submittingRef.current = false;
     }
-  }, [answers, doneKey, navigate, user?.id, user?._id]);
+  }, [doneKey, draftAnswers, navigate, notify, session?.sessionId, session?.startedAt, user?.id, user?._id]);
+  submitHandlerRef.current = handleSubmit;
 
   if (blocked) {
     return null;
@@ -136,8 +130,7 @@ export default function GHQTest({ questions, duration = 8 }) {
             className="start-btn"
             onClick={() => {
               setStarted(true);
-              startTimeRef.current = Date.now();
-              setTimeLeft(duration * 60);
+              startTimeRef.current = new Date(session?.startedAt || Date.now()).getTime();
             }}
           >
             شروع آزمون
@@ -149,6 +142,7 @@ export default function GHQTest({ questions, duration = 8 }) {
             <TopbarStatus
               timeLeft={timeLeft}
               timeText={formatTime(timeLeft)}
+              timerTone={tone}
               progressPercent={progressPercent}
               currentIndex={currentIndex}
               totalQuestions={total}

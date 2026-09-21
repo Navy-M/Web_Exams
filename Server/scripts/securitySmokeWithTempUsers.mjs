@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import connectDB from "../config/db.js";
@@ -9,7 +10,7 @@ process.env.NODE_ENV = "development";
 const stamp = Date.now();
 const adminUsername = `security_smoke_admin_${stamp}`;
 const userUsername = `security_smoke_user_${stamp}`;
-const password = "SmokePass123!";
+const password = `Smoke-${randomUUID()}!Aa1`;
 
 async function createUsers() {
   await connectDB();

@@ -13,6 +13,8 @@ import {
   Legend,
 } from "chart.js";
 import "./GHQAnalysis.css";
+import ReportChart from "./ReportChart";
+import { useTheme } from "../../../context/ThemeContext";
 
 ChartJS.register(
   BarElement,
@@ -43,6 +45,7 @@ ChartJS.register(
  * - benchmark?: { label?: string, normalizedScores: Record<string, number> } // اختیاری برای مقایسه
  */
 const GHQAnalysis = ({ data, benchmark }) => {
+  useTheme();
   if (!data) return <p className="muted" dir="rtl">داده‌ای برای نمایش موجود نیست.</p>;
 
   const {
@@ -530,14 +533,14 @@ const GHQAnalysis = ({ data, benchmark }) => {
           )}
         </div>
 
-        <div className="chart-wrap" ref={GHQchartWrapRef} aria-live="polite">
+        <ReportChart ref={GHQchartWrapRef} testType="GHQ" height={360}>
           {(mode === "bar" || mode === "compare") && (
             <Bar ref={barRef} data={barData} options={barOptions} />
           )}
           {mode === "radar" && (
             <Radar ref={radarRef} data={radarData} options={radarOptions} />
           )}
-        </div>
+        </ReportChart>
         <p className="muted small">راهنما: مقیاس همه نمودارها نرمال‌شده (۰ تا ۱۰۰) است.</p>
       </section>
     </section>

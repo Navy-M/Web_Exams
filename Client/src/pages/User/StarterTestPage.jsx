@@ -3,6 +3,7 @@ import { Test_Cards } from "../../services/dummyData";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
+import LoadingSpinner from "../../components/Common/LoadingSpinner";
 import "../../styles/starterTestPage.css";
 import { FaClock, FaQuestionCircle, FaLightbulb, FaArrowLeft, FaCheckCircle } from "react-icons/fa";
 
@@ -13,7 +14,7 @@ import MBTITest from "../../components/Tests/MBTITest";
 import CliftonTest from "../../components/Tests/CliftonTest";
 import GHQTest from "../../components/Tests/GHQTest";
 import PersonalFavoritesTest from "../../components/Tests/PersonalFavoritesTest";
-import { getTestQuestions } from "../../services/api";
+import { getExamSession, getTestQuestions, startExamSession } from "../../services/api";
 
 const StarterTestPage = () => {
   const { user } = useAuth();
@@ -26,6 +27,8 @@ const StarterTestPage = () => {
   const [started, setStarted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [examSession, setExamSession] = useState(null);
+  const [starting, setStarting] = useState(false);
 
   const completedTests = useMemo(() => user?.testsAssigned ?? [], [user?.testsAssigned]);
   const isCompleted = useMemo(
@@ -44,6 +47,12 @@ const StarterTestPage = () => {
         }
         const qs = await getTestQuestions(foundTest.id);
         setQuestions(qs.questions || []);
+        const sessionResponse = await getExamSession(foundTest.id);
+        const activeSession = sessionResponse?.session;
+        if (activeSession && !activeSession.submittedAt) {
+          setExamSession(activeSession);
+          setStarted(true);
+        }
       } catch (err) {
         setError(t("starterTest.loadError"));
       } finally {
@@ -53,9 +62,19 @@ const StarterTestPage = () => {
     if (user?.id) fetchTests();
   }, [user?.id, testId, t]);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (isCompleted) return;
-    setStarted(true);
+    try {
+      setStarting(true);
+      setError("");
+      const response = await startExamSession(testId);
+      setExamSession(response.session);
+      setStarted(true);
+    } catch (err) {
+      setError(err?.message || "شروع آزمون امکان‌پذیر نیست.");
+    } finally {
+      setStarting(false);
+    }
   };
   const handleBackDash = () => navigate("/dashboard");
 
@@ -75,7 +94,7 @@ const StarterTestPage = () => {
     return translated === key ? currentTest[keySuffix] : translated;
   };
 
-  if (loading) return <div className="loading-screen">{t("starterTest.loading")}</div>;
+  if (loading) return <div className="loading-screen"><LoadingSpinner label={t("starterTest.loading")} page /></div>;
   if (error) return <div className="error-screen">{error}</div>;
   if (!currentTest) return <div className="loading-screen">{t("starterTest.notFound")}</div>;
 
@@ -145,9 +164,9 @@ const StarterTestPage = () => {
             <button
               className="start-button"
               onClick={handleStart}
-              disabled={isCompleted}
+              disabled={isCompleted || starting}
             >
-              {isCompleted ? completedActionLabel : t("starterTest.start")}
+              {isCompleted ? completedActionLabel : starting ? "در حال شروع..." : t("starterTest.start")}
             </button>
           </div>
         </div>
@@ -157,14 +176,14 @@ const StarterTestPage = () => {
             <h2>{formatName("name")}</h2>
           </div>
 
-          {testId === "MBTI" && <MBTITest questions={questions} duration={currentTest.duration?.to} />}
-          {testId === "DISC" && <DiscTest questions={questions} duration={currentTest.duration?.to} />}
-          {testId === "HOLLAND" && <HollandTest questions={questions} duration={currentTest.duration?.to} />}
-          {testId === "GARDNER" && <GardnerTest questions={questions} duration={currentTest.duration?.to} />}
-          {testId === "CLIFTON" && <CliftonTest questions={questions} duration={currentTest.duration?.to} />}
-          {testId === "GHQ" && <GHQTest questions={questions} duration={currentTest.duration?.to} />}
+          {testId === "MBTI" && <MBTITest questions={questions} duration={currentTest.duration?.to} session={examSession} />}
+          {testId === "DISC" && <DiscTest questions={questions} duration={currentTest.duration?.to} session={examSession} />}
+          {testId === "HOLLAND" && <HollandTest questions={questions} duration={currentTest.duration?.to} session={examSession} />}
+          {testId === "GARDNER" && <GardnerTest questions={questions} duration={currentTest.duration?.to} session={examSession} />}
+          {testId === "CLIFTON" && <CliftonTest questions={questions} duration={currentTest.duration?.to} session={examSession} />}
+          {testId === "GHQ" && <GHQTest questions={questions} duration={currentTest.duration?.to} session={examSession} />}
           {testId === "PERSONAL_FAVORITES" && (
-            <PersonalFavoritesTest questions={questions} duration={currentTest.duration?.to} />
+            <PersonalFavoritesTest questions={questions} duration={currentTest.duration?.to} session={examSession} />
           )}
         </div>
       )}

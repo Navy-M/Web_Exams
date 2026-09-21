@@ -185,14 +185,16 @@ const PrintChoiceModal = ({
             {busy ? "…" : printLabel}
           </button>
 
-          <button
-            className="btn primary"
-            onClick={onDownload}
-            disabled={busy}
-            style={btnStyle({ primary: true })}
-          >
-            {busy ? "…" : downloadLabel}
-          </button>
+          {typeof onDownload === "function" && (
+            <button
+              className="btn primary"
+              onClick={onDownload}
+              disabled={busy}
+              style={btnStyle({ primary: true })}
+            >
+              {busy ? "…" : downloadLabel}
+            </button>
+          )}
 
           <button
             className="btn ghost"
