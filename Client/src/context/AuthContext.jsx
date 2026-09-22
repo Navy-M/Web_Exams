@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import * as api from "../services/api";
 import { useI18n } from "../i18n";
 
@@ -11,6 +11,17 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const refreshUser = useCallback(async () => {
+    const response = await api.getProfile();
+
+    if (!response?.user) {
+      throw new Error("Profile response does not include a user.");
+    }
+
+    setUser(response.user);
+    return response.user;
+  }, []);
+
   useEffect(() => {
     const checkAuth = async () => {
       if (!userToken) {
@@ -19,8 +30,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await api.getProfile();
-        setUser(res.user);
+        await refreshUser();
       } catch (err) {
         console.error("Profile error:", err);
         setUser(null);
@@ -33,7 +43,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     checkAuth();
-  }, [userToken, t]);
+  }, [userToken, refreshUser, t]);
 
   const login = async (credentials) => {
     try {
@@ -85,7 +95,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, signup, logout, loading, error }}
+      value={{ user, login, signup, logout, refreshUser, loading, error }}
     >
       {children}
     </AuthContext.Provider>
