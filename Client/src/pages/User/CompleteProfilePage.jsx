@@ -52,7 +52,7 @@ const isValidGPA20 = (v) => {
 };
 
 const CompleteProfilePage = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const { notify } = useNotification();
 
@@ -224,8 +224,9 @@ const CompleteProfilePage = () => {
 
       const status = response?.message?.status || response?.status || "";
       if (String(status).toLowerCase() === "success") {
+        await refreshUser();
         notify("اطلاعات با موفقیت ثبت شد.", { type: "success" });
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       } else {
         notify(response?.message?.text || "خطا در ارسال اطلاعات.", { type: "error" });
         console.warn("Server response:", response);
